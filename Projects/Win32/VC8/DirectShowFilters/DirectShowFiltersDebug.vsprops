@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="DirectShowFiltersDebug"
+	>
+	<Tool
+		Name="VCCustomBuildTool"
+		CommandLine="regsvr32 /s $(DebugBuildDir)\$(ProjectName)d.dll"
+		Outputs="Registering filter"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		OutputFile="$(DebugBuildDir)\$(ProjectName)D.dll"
+	/>
+</VisualStudioPropertySheet>

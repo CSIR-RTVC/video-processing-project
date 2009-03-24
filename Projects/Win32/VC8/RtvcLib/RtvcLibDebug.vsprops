@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="Windows-1252"?>
+<VisualStudioPropertySheet
+	ProjectType="Visual C++"
+	Version="8.00"
+	Name="RtvcLibDebug"
+	>
+	<Tool
+		Name="VCLibrarianTool"
+		OutputFile="$(LibDir)\libRtvc$(ProjectName)D.lib"
+	/>
+	<Tool
+		Name="VCLinkerTool"
+		OutputFile="$(DebugBuildDir)\libRtvc$(ProjectName)D.dll"
+		ImportLibrary="$(LibDir)\$(TargetName).lib"
+	/>
+</VisualStudioPropertySheet>
