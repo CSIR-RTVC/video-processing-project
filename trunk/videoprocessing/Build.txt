@@ -1,0 +1,17 @@
+--------------------------------------------------------------------------------------------------
+Build instructions:
+The batch files setup the Visual Studio environments. Follow the instructions below:
+--------------------------------------------------------------------------------------------------
+Windows - Microsoft Visual Studio
+1) VS2005 and 2008 solutions have been provided. 
+2) Edit the following files to setup the build environement: 
+- Projects\Win32\Launch\VsVersion.bat - update the Visual Studio version and paths
+- Projects\Win32\Launch\User.bat - set DirectShow base classes path and Windows SDK path
+								 - set RTVCRootDir to the path of the videoprocessing directory
+3) Execute RTVC.bat: this will launch Visual Studio with a configured environment.
+4) Build the solution (F7)
+
+--------------------------------------------------------------------------------------------------################ Only required to build PCM RTSP/RTP Source Filter ################
+To build the Rtsp filter you need to download the latest version of the open source LGPL live555 RTP/RTCP/RTSP library from http://www.live555.com
+- Projects\Win32\Launch\3rdParty.bat - set the path to the liveMedia library "live" directory
+--------------------------------------------------------------------------------------------------
