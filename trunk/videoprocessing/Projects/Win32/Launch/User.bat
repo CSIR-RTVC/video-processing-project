@@ -6,6 +6,6 @@
 @set WindowsSDKDir=C:\Program Files\Microsoft SDKs\Windows\v6.0
 @echo -- WindowsSDKDir set to %WindowsSDKDir%
 
-@echo Setting RTVC Roots
-@set RTVCRootDir=D:\RTVC\Open Source\RTVC
+@echo Setting Video Processing Root
+@set RTVCRootDir=<<videoprocessingroot>>
 @echo -- RTVCRootDir set to %RTVCRootDir%
