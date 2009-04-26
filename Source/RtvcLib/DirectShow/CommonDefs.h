@@ -57,3 +57,5 @@ const double BYTES_PER_PIXEL_YUV420P = 1.5;
 #define LEFT_CROP			"leftcrop"
 #define RIGHT_CROP			"rightcrop"
 
+#define ORIENTATION			"orientation"
+
