@@ -180,12 +180,20 @@
 				RelativePath="..\..\..\..\..\Source\RtvcLib\DirectShow\stdafx.cpp"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\DirectShow\VideoMixingBase.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Header Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\DirectShow\CommonDefs.h"
+				>
+			</File>
 			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\DirectShow\CSettingsInterface.h"
 				>
@@ -236,6 +244,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\DirectShow\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\DirectShow\VideoMixingBase.h"
 				>
 			</File>
 		</Filter>
