@@ -40,6 +40,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "3rdParty\Bas
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liveMedia", "3rdParty\liveMedia\liveMedia.vcproj", "{F11B43F2-53A3-4F0D-9D0E-52723E4E98BC}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TimestampLoggerFilter", "DirectShowFilters\TimestampLoggerFilter\TimestampLoggerFilter.vcproj", "{834C9E50-4FC6-4F2D-80F3-9E7530221768}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoMixingFilter", "DirectShowFilters\VideoMixingFilter\VideoMixingFilter.vcproj", "{35B95D64-36AA-45DF-AF32-8ABED588AECE}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -86,6 +90,14 @@ Global
 		{F11B43F2-53A3-4F0D-9D0E-52723E4E98BC}.Debug|Win32.Build.0 = Debug|Win32
 		{F11B43F2-53A3-4F0D-9D0E-52723E4E98BC}.Release|Win32.ActiveCfg = Release|Win32
 		{F11B43F2-53A3-4F0D-9D0E-52723E4E98BC}.Release|Win32.Build.0 = Release|Win32
+		{834C9E50-4FC6-4F2D-80F3-9E7530221768}.Debug|Win32.ActiveCfg = Debug|Win32
+		{834C9E50-4FC6-4F2D-80F3-9E7530221768}.Debug|Win32.Build.0 = Debug|Win32
+		{834C9E50-4FC6-4F2D-80F3-9E7530221768}.Release|Win32.ActiveCfg = Release|Win32
+		{834C9E50-4FC6-4F2D-80F3-9E7530221768}.Release|Win32.Build.0 = Release|Win32
+		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Debug|Win32.ActiveCfg = Debug|Win32
+		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Debug|Win32.Build.0 = Debug|Win32
+		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Release|Win32.ActiveCfg = Release|Win32
+		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
