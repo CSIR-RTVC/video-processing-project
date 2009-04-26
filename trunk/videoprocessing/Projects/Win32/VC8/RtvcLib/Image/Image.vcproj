@@ -150,11 +150,27 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB24Impl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB32Impl.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicCropperRGB24Impl.cpp"
 				>
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicCropperRGB32Impl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicInPicRGB24Impl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicInPicRGB32Impl.cpp"
 				>
 			</File>
 			<File
@@ -184,6 +200,18 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicConcatBase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB24Impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB32Impl.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicCropperBase.h"
 				>
 			</File>
@@ -193,6 +221,18 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicCropperRGB32Impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicInPicBase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicInPicRGB24Impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicInPicRGB32Impl.h"
 				>
 			</File>
 			<File
