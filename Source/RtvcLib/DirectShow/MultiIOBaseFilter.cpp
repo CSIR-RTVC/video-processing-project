@@ -41,7 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma comment(lib, "atls.lib")
 
 CMultiIOBaseFilter::CMultiIOBaseFilter(TCHAR *pObjectName, LPUNKNOWN lpUnk, CLSID clsid)
-: CBaseFilter(pObjectName, lpUnk, &m_csFilter, clsid)
+: CBaseFilter(pObjectName, lpUnk, &m_csFilter, clsid),
+m_bInitialised(false)
 {}
 
 CMultiIOBaseFilter::~CMultiIOBaseFilter(void)
@@ -91,18 +92,22 @@ void CMultiIOBaseFilter::CleanupTypeMap(MEDIA_TYPE_MAP mTypeMap)
 
 void CMultiIOBaseFilter::Initialise()
 {
-	//Create initial number of inputs/outputs
-	for (int i = 0; i < InitialNumberOfInputPins(); i++)
+	if (!m_bInitialised)
 	{
-		CreateInputPin();
-	}
+		//Create initial number of inputs/outputs
+		for (int i = 0; i < InitialNumberOfInputPins(); i++)
+		{
+			CreateInputPin();
+		}
 
-	for (int i = 0; i < InitialNumberOfOutputPins(); i++)
-	{
-		CreateOutputPin();
+		for (int i = 0; i < InitialNumberOfOutputPins(); i++)
+		{
+			CreateOutputPin();
+		}
+		InitialiseInputTypes();
+		InitialiseOutputTypes();
 	}
-	InitialiseInputTypes();
-	InitialiseOutputTypes();
+	m_bInitialised = true;
 }
 
 void CMultiIOBaseFilter::AddInputType( const GUID* pType, const GUID* pSubType, const GUID* pFormat, int nPin  )

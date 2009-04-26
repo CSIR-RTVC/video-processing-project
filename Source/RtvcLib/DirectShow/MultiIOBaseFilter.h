@@ -167,6 +167,7 @@ protected:
 	CCritSec m_csReceive;
 
 private:
+	bool m_bInitialised;
 
 	//#######################################################################################
 	//Nested helper class and methods for media type storage and search
