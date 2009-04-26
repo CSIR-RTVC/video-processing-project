@@ -22,9 +22,6 @@ RESTRICTIONS			: The information/data/code contained within this file is
 #ifndef _PICCONCATRGB32IMPL_H
 #define _PICCONCATRGB32IMPL_H
 
-#include "DllSetup.h"
-
-
 #include "PicConcatBase.h"
 #include "PicInPicRGB32Impl.h"
 
@@ -33,7 +30,7 @@ RESTRICTIONS			: The information/data/code contained within this file is
   Class definition.
 ===========================================================================
 */
-class IMAGE_API PicConcatRGB32Impl: public PicConcatBase
+class PicConcatRGB32Impl: public PicConcatBase
 {
 public:
 	// Construction and destruction.
