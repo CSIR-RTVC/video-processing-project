@@ -1,6 +1,6 @@
 @echo Running 3rdParty.bat commands
 
-@set LIVEMEDIAROOT=D:\RTVC\Source\3rdParty\LiveMedia\live
+@set LIVEMEDIAROOT=<<Insert LiveMedia live Directory>> 
 @echo -- LIVEMEDIAROOT set to %LIVEMEDIAROOT%
 
 @echo Setting up 3rd Party INCLUDE...
