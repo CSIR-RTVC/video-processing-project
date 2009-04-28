@@ -562,7 +562,7 @@ HRESULT VideoMixingFilter::CheckOutputType( const CMediaType* pMediaType )
 	{
 		if (*(pMediaType->Subtype()) == MEDIASUBTYPE_RGB32)
 		{
-			return true;
+			return S_OK;
 		}
 	}
 	return S_FALSE;
