@@ -35,8 +35,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 
-typedef std::vector<GUID*> GUIDList_t;
-
 const int BYTES_PER_PIXEL_RGB24 = 3;
 const int BYTES_PER_PIXEL_RGB32 = 4;
 const double BYTES_PER_PIXEL_YUV420P = 1.5;
@@ -59,3 +57,4 @@ const double BYTES_PER_PIXEL_YUV420P = 1.5;
 
 #define ORIENTATION			"orientation"
 
+#define ROTATION_MODE		"rotationmode"
