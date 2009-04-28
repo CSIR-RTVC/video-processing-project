@@ -175,6 +175,18 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGB24Impl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGB32Impl.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGBBase.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicScalerRGB24Impl.cpp"
 				>
 			</File>
@@ -234,6 +246,22 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicInPicRGB32Impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateBase.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGB24Impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGB32Impl.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGBBase.h"
 				>
 			</File>
 			<File
