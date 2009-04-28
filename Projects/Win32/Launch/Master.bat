@@ -2,7 +2,7 @@
 
 @call User.bat
 
-@call 3rdParty.bat
+#@call 3rdParty.bat
 
 @echo Running Master.bat commands
 @echo Setting up System Specific Variables...
