@@ -105,6 +105,10 @@ public:
 		{
 			return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
 		}
+		else if(riid == (IID_ISettingsInterface))
+		{
+			return GetInterface((ISettingsInterface*) this, ppv);
+		}
 		else
 		{
 			// Call the parent class.
