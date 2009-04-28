@@ -295,10 +295,6 @@
 				>
 			</File>
 			<File
-				RelativePath="$(DSHOWBASECLASSES)\arithutil.cpp"
-				>
-			</File>
-			<File
 				RelativePath="$(DSHOWBASECLASSES)\combase.cpp"
 				>
 			</File>
@@ -328,10 +324,6 @@
 			</File>
 			<File
 				RelativePath="$(DSHOWBASECLASSES)\outputq.cpp"
-				>
-			</File>
-			<File
-				RelativePath="$(DSHOWBASECLASSES)\perflog.cpp"
 				>
 			</File>
 			<File
@@ -466,10 +458,6 @@
 			</File>
 			<File
 				RelativePath="$(DSHOWBASECLASSES)\outputq.h"
-				>
-			</File>
-			<File
-				RelativePath="$(DSHOWBASECLASSES)\perflog.h"
 				>
 			</File>
 			<File
