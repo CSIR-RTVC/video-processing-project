@@ -44,6 +44,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "TimestampLoggerFilter", "Di
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoMixingFilter", "DirectShowFilters\VideoMixingFilter\VideoMixingFilter.vcproj", "{35B95D64-36AA-45DF-AF32-8ABED588AECE}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RotateFilter", "DirectShowFilters\RotateFilter\RotateFilter.vcproj", "{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -98,6 +100,10 @@ Global
 		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Debug|Win32.Build.0 = Debug|Win32
 		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Release|Win32.ActiveCfg = Release|Win32
 		{35B95D64-36AA-45DF-AF32-8ABED588AECE}.Release|Win32.Build.0 = Release|Win32
+		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Debug|Win32.ActiveCfg = Debug|Win32
+		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Debug|Win32.Build.0 = Debug|Win32
+		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Release|Win32.ActiveCfg = Release|Win32
+		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
