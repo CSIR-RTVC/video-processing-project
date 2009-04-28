@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
 
+typedef std::vector<GUID*> GUIDList_t;
+
 using namespace std;
 
 class CCustomBaseFilter : public CTransformFilter, public CSettingsInterface, public CStatusInterface
