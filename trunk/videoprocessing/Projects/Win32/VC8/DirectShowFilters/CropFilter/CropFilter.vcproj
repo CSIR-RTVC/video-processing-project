@@ -221,6 +221,10 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\CropFilter\CropProperties.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\CropFilter\stdafx.h"
 				>
 			</File>
