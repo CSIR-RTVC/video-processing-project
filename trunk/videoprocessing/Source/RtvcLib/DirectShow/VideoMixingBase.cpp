@@ -124,9 +124,15 @@ HRESULT VideoMixingBase::GetMediaType( int iPosition, CMediaType* pMediaType, in
 	{
 
 		CMultiIOInputPin* pConnectedPin = NULL;
+		CMultiIOInputPin* pOtherPin = NULL;
+
 		if (m_vInputPins[0]->IsConnected())
 		{
 			pConnectedPin = m_vInputPins[0];
+			if (m_vInputPins[1]->IsConnected())
+			{
+				pOtherPin = m_vInputPins[1];
+			}
 		}
 		else
 		{
@@ -145,6 +151,16 @@ HRESULT VideoMixingBase::GetMediaType( int iPosition, CMediaType* pMediaType, in
 		if (FAILED(hr))
 		{
 			return hr;
+		}
+
+		if (pOtherPin)
+		{
+			// We need to recalculate the new width and height
+			hr = SetOutputDimensions(&(m_VideoInHeader[0].bmiHeader), &(m_VideoInHeader[1].bmiHeader));
+		}
+		else
+		{
+			// There is only one pin
 		}
 
 		VIDEOINFOHEADER* pVih1 = (VIDEOINFOHEADER*)pMediaType->pbFormat;
