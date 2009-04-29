@@ -93,7 +93,6 @@ public:
 			int iCheck = SendMessage( GetDlgItem(m_Dlg, nRadioID),	(UINT) BM_GETCHECK,	0, 0);
 			if (iCheck != 0)
 			{
-				char szBuffer[BUFFER_SIZE];
 				std::string sID = StringUtil::itos(i);
 				HRESULT hr = m_pSettingsInterface->SetParameter(ROTATION_MODE, sID.c_str());
 				break;
