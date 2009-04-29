@@ -48,6 +48,9 @@ static const GUID CLSID_CropProperties =
 // Forward declarations
 class PicCropperBase;
 
+/**
+*  Crop filter for RGB24 and RGB32 media. Crop parameters can be set using the COM SettingsInterface SetParameter method.
+*/
 class CCropFilter : public CCustomBaseFilter,
 					public ISpecifyPropertyPages
 {
