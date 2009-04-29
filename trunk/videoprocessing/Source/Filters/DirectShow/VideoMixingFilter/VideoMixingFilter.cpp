@@ -79,98 +79,6 @@ CUnknown * WINAPI VideoMixingFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pH
 	return pFilter;
 }
 
-	/*
-	// Copy sample to buffer
-	switch (nIndex)
-	{
-	case 0:
-		{
-			memcpy(m_pSampleBuffer1, pBufferIn, m_nSampleSize1);
-			break;
-		}
-	case 1:
-		{
-			memcpy(m_pSampleBuffer2, pBufferIn, m_nSampleSize2);
-			break;
-		}
-	}
-
-	// Prepare output sample
-	AM_SAMPLE2_PROPERTIES * const pProps = m_vInputPins[nIndex]->SampleProps();
-	DbgLog((LOG_TRACE,0,TEXT("Video Mixer: Sample Received from input 0: start time: %I64d end time: %I64d"), pProps->tStart, pProps->tStop));
-	if (pProps->dwStreamId != AM_STREAM_MEDIA) {
-		return m_vInputPins[nIndex]->Receive(pSample);
-	}
-	IMediaSample * pOutSample;
-	// Set up the output sample
-	hr = InitializeOutputSample(pSample, &pOutSample, nIndex, 0);
-
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	BYTE *pBufferOut = NULL;
-	hr = pOutSample->GetPointer(&pBufferOut);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-
-	// Concatenate the images
-	DWORD cbDest ;
-	//TODO
-	//m_pPicConcat->Set1stDimensions(nWidth, nHeight);
-	//m_pPicConcat->Set2ndDimensions(nWidthAdvert, nHeightAdvert);
-	//m_pPicConcat->SetOutDimensions(nOutWidth, nOutHeight);
-	////Set orientation
-	//m_pPicConcat->SetOrientation(m_eOrientation);
-	//m_pPicConcat->Concat(pBufferIn, pBufferIn2, pBufferOut);
-
-	//hr = Transform(pBufferIn, m_vadvert_buffer.size()?&m_vadvert_buffer[0]:0, m_hadvert_buffer.size()?&m_hadvert_buffer[0]:0, pOutSample);
-	KASSERT((long)cbDest <= pOutSample->GetSize());
-	pOutSample->SetActualDataLength(cbDest);
-	pOutSample->SetSyncPoint(TRUE);
-
-
-	// Stop the clock and log it (if PERF is defined)
-	MSR_STOP(m_idTransform);
-
-	if (FAILED(hr)) {
-		DbgLog((LOG_TRACE,1,TEXT("Error from transform")));
-	} 
-	else 
-	{
-		// the Transform() function can return S_FALSE to indicate that the
-		// sample should not be delivered; we only deliver the sample if it's
-		// really S_OK (same as NOERROR, of course.)
-		if (hr == NOERROR) 
-		{
-			hr = m_vOutputPins[nIndex]->GetInputPin()->Receive(pOutSample);
-		} 
-		else 
-		{
-			// S_FALSE returned from Transform is a PRIVATE agreement
-			// We should return NOERROR from Receive() in this cause because returning S_FALSE
-			// from Receive() means that this is the end of the stream and no more data should
-			// be sent.
-			if (S_FALSE == hr) 
-			{
-
-				//  Release the sample before calling notify to avoid
-				//  deadlocks if the sample holds a lock on the system
-				//  such as DirectDraw buffers do
-				pOutSample->Release();
-				return NOERROR;
-			}
-		}
-	}
-	// release the output buffer. If the connected pin still needs it,
-	// it will have addrefed it itself.
-	pOutSample->Release();
-	return hr;
-
-	*/
-
 void VideoMixingFilter::initParameters()
 {
 	addParameter(ORIENTATION, &m_nOrientation, 0);
@@ -212,20 +120,24 @@ HRESULT VideoMixingFilter::GenerateOutputSample(IMediaSample *pSample, int nInde
 		m_pPicConcat->SetOrientation(1);
 	}
 
-	// TEMP
-	int nTemp = m_pPicConcat->Get1stWidth();
-	nTemp = m_pPicConcat->Get1stHeight();
-
-	nTemp = m_pPicConcat->Get2ndWidth();
-	nTemp = m_pPicConcat->Get2ndHeight();
-	// TEMP
-
 	// Concat the pictures
-	m_pPicConcat->Concat(m_pSampleBuffers[0], m_pSampleBuffers[1], pBufferOut);
-	//memcpy(pBufferOut, m_pSampleBuffers[0], m_nOutputSize >> 1);
+	if (m_pSampleBuffers[0] && m_pSampleBuffers[1])
+		m_pPicConcat->Concat(m_pSampleBuffers[0], m_pSampleBuffers[1], pBufferOut);
+	else if (m_pSampleBuffers[0])
+	{
+		int nWidth = m_pPicConcat->Get1stWidth();
+		int nHeight = m_pPicConcat->Get1stHeight();
+		memcpy(pBufferOut, m_pSampleBuffers[0], nWidth * nHeight* m_nBytesPerPixel);
+	}
+	else
+	{
+		int nWidth = m_pPicConcat->Get2ndWidth();
+		int nHeight = m_pPicConcat->Get2ndHeight();
+		memcpy(pBufferOut, m_pSampleBuffers[1], nWidth * nHeight* m_nBytesPerPixel);
+	}
+
 	pOutSample->SetActualDataLength(m_nOutputSize);
 	pOutSample->SetSyncPoint(TRUE);
-
 
 	// Stop the clock and log it (if PERF is defined)
 	MSR_STOP(m_idTransform);
