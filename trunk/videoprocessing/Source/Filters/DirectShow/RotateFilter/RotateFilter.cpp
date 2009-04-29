@@ -256,7 +256,7 @@ DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 	if (m_pRotate)
 	{
 		// Create temp buffer for crop
-		// TODO: Add stride parameter for crop class to avoid this extra mem alloc
+		// TODO: Add stride parameter for rotate class to avoid this extra mem alloc
 		BYTE* pBuffer = new BYTE[m_nOutWidth * m_nOutHeight * m_nBytesPerPixel];
 
 		m_pRotate->SetInDimensions(m_nInWidth, m_nInHeight);
