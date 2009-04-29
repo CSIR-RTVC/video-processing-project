@@ -33,11 +33,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
+#include <string>
+
 #include <DirectShow/FilterPropertiesBase.h>
+#include <Shared/StringUtil.h>
 
 #include "resource.h"
 
 #define BUFFER_SIZE 256
+
+const int RADIO_BUTTON_IDS[] = {IDC_RADIO1, IDC_RADIO2, IDC_RADIO3, IDC_RADIO4, IDC_RADIO5, IDC_RADIO6};
 
 class RotateProperties : public FilterPropertiesBase
 {
@@ -59,11 +64,41 @@ public:
 
 	HRESULT ReadSettings()
 	{
-		return S_OK;
+		int nLength = 0;
+		char szBuffer[BUFFER_SIZE];
+		HRESULT hr = m_pSettingsInterface->GetParameter(ROTATION_MODE, sizeof(szBuffer), szBuffer, &nLength);
+		if (SUCCEEDED(hr))
+		{
+			int nRotationMode = atoi(szBuffer);
+			int nRadioID = RADIO_BUTTON_IDS[nRotationMode];
+			long lResult = SendMessage(				// returns LRESULT in lResult
+				GetDlgItem(m_Dlg, nRadioID),		// handle to destination control
+				(UINT) BM_SETCHECK,					// message ID
+				(WPARAM) 1,							// = 0; not used, must be zero
+				(LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+				);
+			return S_OK;
+		}
+		else
+		{
+			return E_FAIL;
+		}
 	}
 
 	HRESULT OnApplyChanges(void)
 	{
+		for (int i = 0; i < 6; ++i)
+		{
+			int nRadioID = RADIO_BUTTON_IDS[i];
+			int iCheck = SendMessage( GetDlgItem(m_Dlg, nRadioID),	(UINT) BM_GETCHECK,	0, 0);
+			if (iCheck != 0)
+			{
+				char szBuffer[BUFFER_SIZE];
+				std::string sID = StringUtil::itos(i);
+				HRESULT hr = m_pSettingsInterface->SetParameter(ROTATION_MODE, sID.c_str());
+				break;
+			}
+		}
 		return S_OK;
 	} 
 

@@ -43,6 +43,8 @@ RotateFilter::RotateFilter()
 : CCustomBaseFilter(NAME("Meraka RTVC Rotate Filter"), 0, CLSID_RotateFilter),
 	m_pRotate(NULL),
 	m_nBytesPerPixel(BYTES_PER_PIXEL_RGB24),
+	m_nOutWidth(0),
+	m_nOutHeight(0),
 	m_nStride(0),
 	m_nPadding(0)
 {
@@ -168,6 +170,7 @@ HRESULT RotateFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 
 		pMediaType->lSampleSize = pBi->biSizeImage;
 
+		RecalculateFilterParameters();
 		return S_OK;
 	}
 	return VFW_S_NO_MORE_ITEMS;
@@ -238,7 +241,6 @@ STDMETHODIMP RotateFilter::SetParameter( const char* type, const char* value )
 
 	if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
 	{
-		RecalculateFilterParameters();
 		return S_OK;
 	}
 	else
@@ -279,31 +281,6 @@ DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 		}
 		nTotalSize = (m_nOutWidth + m_nPadding) * m_nOutHeight * m_nBytesPerPixel;
 		delete[] pBuffer;
-
-		//Call cropping conversion code
-		//m_pCropper->SetInDimensions(m_nInWidth, m_nInHeight);
-		//m_pCropper->SetOutDimensions(m_nOutWidth, m_nOutHeight);
-		//m_pCropper->SetCrop(m_nLeftCrop, m_nRightCrop, m_nTopCrop, m_nBottomCrop);
-		//m_pCropper->Crop((void*)pBufferIn, (void*)pBuffer);
-		//
-		//// Copy the cropped image with stride padding
-		//BYTE* pFrom = pBuffer;
-		//BYTE* pTo = pBufferOut;
-
-		//int nBytesPerLine = m_nOutWidth * m_nBytesPerPixel;
-		//for (size_t i = 0; i < m_nOutHeight; i++)
-		//{
-		//	memcpy(pTo, pFrom, nBytesPerLine);
-		//	pFrom += nBytesPerLine;
-		//	pTo += nBytesPerLine;
-		//	for (size_t j = 0; j < m_nPadding; j++)
-		//	{
-		//		*pTo = 0;
-		//		pTo++;
-		//	}
-		//}
-		//nTotalSize = (m_nOutWidth + m_nPadding) * m_nOutHeight * m_nBytesPerPixel;
-		//delete[] pBuffer;
 	}
 	else
 	{
@@ -314,7 +291,6 @@ DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 
 void RotateFilter::RecalculateFilterParameters()
 {
-	//m_nOutPixels = m_nOutWidth * m_nOutHeight;
 	m_nStride =  (m_nOutWidth * (m_nBitCount / 8) + 3) & ~3;
 	m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
 }
