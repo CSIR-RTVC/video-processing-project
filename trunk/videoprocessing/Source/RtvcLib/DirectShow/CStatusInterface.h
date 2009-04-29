@@ -49,6 +49,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/StatusInterface.h>
 #include <Windows.h>
 
+/**
+*  IStatusInterface implementation.
+*/
 class CStatusInterface : public IStatusInterface
 {
 public:

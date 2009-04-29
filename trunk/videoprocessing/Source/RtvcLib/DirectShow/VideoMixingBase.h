@@ -35,6 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <DirectShow/MultiIOBaseFilter.h>
 
+/**
+* Base class for video mixing renderers. 
+* Implements common video mixing functionality for RGB24/32 mixers with two inputs and one output.
+*/
 class VideoMixingBase : public CMultiIOBaseFilter
 {
 public:
@@ -60,8 +64,8 @@ public:
 	/// filter should return E_FAIL from this method if the image dimensions do not match
 	virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2) = 0;
 
+	/// Delegates call to virtual ReceiveFirstSample and ReceiveSecondSample methods.
 	virtual HRESULT Receive(IMediaSample *pSample, int nIndex );
-
 
 	/// From CBaseOutputPin
 	virtual HRESULT DecideBufferSize(IMemAllocator* pAlloc, ALLOCATOR_PROPERTIES* pRequestProperties, int m_nIndex);
@@ -70,7 +74,7 @@ public:
 	virtual HRESULT GetMediaType(int iPosition, CMediaType* pmt, int nOutputPinIndex) ;
 
 	/// Overriding this so that we can set whether this is an RGB24 or an RGB32 Filter and create
-	/// the picture concatentor dynamically. This method also tells us if the advert stream is tagged
+	/// the picture concatenator dynamically. This method also tells us if the advert stream is tagged
 	HRESULT SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt, int nIndex);
 
 	STDMETHODIMP Stop();

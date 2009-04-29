@@ -160,12 +160,13 @@ STDMETHODIMP CCustomBaseFilter::NonDelegatingQueryInterface( REFIID riid, void *
 	}
 }
 
-STDMETHODIMP CCustomBaseFilter::GetParameter( const char* szParamName, char* szResult , int& nResultLength)
-{
-	return S_FALSE;
-}
-
-STDMETHODIMP CCustomBaseFilter::SetParameter( const char* szParamName, const char* szValue )
-{
-	return S_FALSE;
-}
+// TOREMOVE? Obsolete since we are now inheriting CSettingsInterface
+//STDMETHODIMP CCustomBaseFilter::GetParameter( const char* szParamName, char* szResult , int& nResultLength)
+//{
+//	return S_FALSE;
+//}
+//
+//STDMETHODIMP CCustomBaseFilter::SetParameter( const char* szParamName, const char* szValue )
+//{
+//	return S_FALSE;
+//}

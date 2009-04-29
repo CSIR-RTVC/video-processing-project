@@ -33,7 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 */
-
 #pragma once
 
 #pragma warning(push)     // disable for this header only
@@ -54,10 +53,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class CMultiIOInputPin;
 class CMultiIOOutputPin;
 
-
-using namespace std;
-
 //Typedefs
+
+/*! \typedef vector<CMultiIOInputPin*> INPUT_PIN_LIST
+*/
 typedef vector<CMultiIOInputPin*> INPUT_PIN_LIST;
 typedef vector<CMultiIOOutputPin*> OUTPUT_PIN_LIST;
 typedef map<int, CMediaType> MEDIA_TYPE_LIST;
@@ -68,6 +67,10 @@ enum RTVC_DIRECTION
 	RTVC_OUT
 };
 
+/**
+ * This base class takes care of doing most of the menial work when writing a transform filter that 
+ * has multiple input and output pins.
+ */
 class CMultiIOBaseFilter : public CBaseFilter
 {
 	friend class CMultiIOInputPin;
