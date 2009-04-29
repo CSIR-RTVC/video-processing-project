@@ -157,34 +157,29 @@ HRESULT VideoMixingBase::GetMediaType( int iPosition, CMediaType* pMediaType, in
 		{
 			// We need to recalculate the new width and height
 			hr = SetOutputDimensions(&(m_VideoInHeader[0].bmiHeader), &(m_VideoInHeader[1].bmiHeader));
+			VIDEOINFOHEADER* pVih1 = (VIDEOINFOHEADER*)pMediaType->pbFormat;
+			BITMAPINFOHEADER* bmh1 = &(pVih1->bmiHeader);
+
+			// Adjust media parameters
+			bmh1->biWidth = m_nOutputWidth;
+			bmh1->biHeight = m_nOutputHeight;
+
+			bmh1->biSizeImage = m_nOutputSize;
+			//Set sample size
+			pMediaType->SetSampleSize(m_nOutputSize);
+
+			// Set source rect
+			pVih1->rcSource.left = 0;
+			pVih1->rcSource.top = 0;
+			pVih1->rcSource.right = m_nOutputWidth;
+			pVih1->rcSource.bottom = m_nOutputHeight;
+
+			// Set target rect
+			pVih1->rcTarget.left = 0;
+			pVih1->rcTarget.top = 0;
+			pVih1->rcTarget.right = m_nOutputWidth;
+			pVih1->rcTarget.bottom = m_nOutputHeight;
 		}
-		else
-		{
-			// There is only one pin
-		}
-
-		VIDEOINFOHEADER* pVih1 = (VIDEOINFOHEADER*)pMediaType->pbFormat;
-		BITMAPINFOHEADER* bmh1 = &(pVih1->bmiHeader);
-
-		// Adjust media parameters
-		bmh1->biWidth = m_nOutputWidth;
-		bmh1->biHeight = m_nOutputHeight;
-
-		bmh1->biSizeImage = m_nOutputSize;
-		//Set sample size
-		pMediaType->SetSampleSize(m_nOutputSize);
-
-		// Set source rect
-		pVih1->rcSource.left = 0;
-		pVih1->rcSource.top = 0;
-		pVih1->rcSource.right = m_nOutputWidth;
-		pVih1->rcSource.bottom = m_nOutputHeight;
-
-		// Set target rect
-		pVih1->rcTarget.left = 0;
-		pVih1->rcTarget.top = 0;
-		pVih1->rcTarget.right = m_nOutputWidth;
-		pVih1->rcTarget.bottom = m_nOutputHeight;
 		return S_OK;
 	}
 	return VFW_S_NO_MORE_ITEMS;
