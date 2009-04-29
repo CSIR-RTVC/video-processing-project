@@ -35,9 +35,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <DirectShow/CommonDefs.h>
 #include <DirectShow/FilterPropertiesBase.h>
+#include <Shared/StringUtil.h>
 
 #include "resource.h"
 #define BUFFER_SIZE 256
+
+const int RADIO_BUTTON_IDS[] = {IDC_HORIZONTAL, IDC_VERTICAL};
 
 class VideoMixingProperties : public FilterPropertiesBase
 {
@@ -64,18 +67,15 @@ public:
 		HRESULT hr = m_pSettingsInterface->GetParameter(ORIENTATION, sizeof(szBuffer), szBuffer, &nLength);
 		if (SUCCEEDED(hr))
 		{
-			WPARAM wParam;
-			if (szBuffer[0] == '0')
-				wParam = 0;	
-			else
-				wParam = 1;
-			// TODO: Change to radio button
-			//long lResult = SendMessage(				// returns LRESULT in lResult
-			//	GetDlgItem(m_Dlg, IDC_CHECK_TCP),	// handle to destination control
-			//	(UINT) BM_SETCHECK,					// message ID
-			//	(WPARAM) wParam,							// = 0; not used, must be zero
-			//	(LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			//	);
+			int nMixingMode = atoi(szBuffer);
+			int nRadioID = RADIO_BUTTON_IDS[nMixingMode];
+			long lResult = SendMessage(				// returns LRESULT in lResult
+				GetDlgItem(m_Dlg, nRadioID),		// handle to destination control
+				(UINT) BM_SETCHECK,					// message ID
+				(WPARAM) 1,							// = 0; not used, must be zero
+				(LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+				);
+			return S_OK;
 		}
 		else
 		{
@@ -86,16 +86,17 @@ public:
 
 	HRESULT OnApplyChanges(void)
 	{
-		//TODO: Radio button
-		//int iCheck = SendMessage( GetDlgItem(m_Dlg, IDC_CHECK_TCP),	(UINT) BM_GETCHECK,	0, 0);
-		//if (iCheck == 0)
-		//{
-		//	HRESULT hr = m_pSettingsInterface->SetParameter(ORIENTATION, iCheck);
-		//}
-		//else
-		//{
-		//	HRESULT hr = m_pSettingsInterface->SetParameter(STREAM_USING_TCP, "true");
-		//}
+		for (int i = 0; i < 2; ++i)
+		{
+			int nRadioID = RADIO_BUTTON_IDS[i];
+			int iCheck = SendMessage( GetDlgItem(m_Dlg, nRadioID),	(UINT) BM_GETCHECK,	0, 0);
+			if (iCheck != 0)
+			{
+				std::string sID = StringUtil::itos(i);
+				HRESULT hr = m_pSettingsInterface->SetParameter(ORIENTATION, sID.c_str());
+				break;
+			}
+		}
 		return S_OK;
 	} 
 };
