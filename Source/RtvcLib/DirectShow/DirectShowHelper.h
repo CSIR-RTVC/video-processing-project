@@ -42,52 +42,67 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <string>
 
-typedef std::vector<std::string> FILTER_NAME_LIST ;
+using namespace std;
 
+/*! \var typedef unsigned int UINT32
+\brief A type definition for a .
+Details.
+*/
+typedef std::vector<std::string> FILTER_NAME_LIST;
+
+/**
+ * Helper class that provides static DirectShow related helper methods for generic DirectShow functionality
+ */
 class CDirectShowHelper
 {
 public:
 	CDirectShowHelper();
 
-	// Find an unconnected pin on a filter
-	// This too is stolen from the DX9 SDK
+	/// Find an unconnected pin on a filter.
+	/// This too is stolen from the DX9 SDK.
 	static HRESULT GetUnconnectedPin(IBaseFilter *pFilter, PIN_DIRECTION PinDir, IPin **ppPin);
 
-
-	// Connect two filters together with the filter graph manager
-	// Stolen from the DX9 SDK
-	// This is the base version
+	/// Connect two filters together with the filter graph manager.
+	/// Stolen from the DX9 SDK.
+	/// This is the base version.
 	static HRESULT ConnectFilters(IGraphBuilder *pGraph, IPin *pOut, IBaseFilter *pDest);
 
-	// Connect two filters together with the filter graph manager
-	// Again, stolen from the DX9 SDK
-	// This is an overloaded version
+	/// Connect two filters together with the filter graph manager.
+	/// Again, stolen from the DX9 SDK.
+	/// This is an overloaded version.
 	static HRESULT ConnectFilters(IGraphBuilder *pGraph, IBaseFilter *pSrc, IBaseFilter *pDest);
 
-	//Helper function to retrieve filters of a certain type
+	/// Helper function to retrieve filters of a certain type using wide string
 	static HRESULT GetFilterByCategory(IBaseFilter** gottaFilter, LPCWSTR matchName, GUID Category);
 	
+	/// Helper function to retrieve filters of a certain type using STL string.
 	static HRESULT GetFilterByCategory(IBaseFilter** gottaFilter, std::string sMatchName, GUID Category);
 
-	// This code was also brazenly stolen from the DX9 SDK
-	// Pass it a file name in wszPath, and it will save the filter graph to that file.
+	/// This code was also brazenly stolen from the DX9 SDK.
+	/// Pass it a file name in wszPath, and it will save the filter graph to that file.
 	static HRESULT SaveGraphFile(IGraphBuilder *pGraph, WCHAR *wszPath);
 
-	// A very useful bit of code 
-	// Stolen from the DX9 SDK
+	/// Helper method to add filter to graph using GUID.
+	/// Stolen from the DX9 SDK.
 	static HRESULT AddFilterByCLSID(IGraphBuilder *pGraph, const GUID& clsid, LPCWSTR wszName, IBaseFilter **ppF);
 	//static HRESULT AddFilterByCLSID(IGraphBuilder *pGraph, const GUID& clsid, std::string sName, IBaseFilter **ppF);
 
+	/// Helper method to add filter to graph using category GUID and name.
 	static HRESULT AddFilterByCategoryAndName(IGraphBuilder *pGraph, const GUID& category, LPCWSTR wszName, IBaseFilter **ppF);
+	/// Helper method to add filter to graph using category GUID and name.
 	static HRESULT AddFilterByCategoryAndName(IGraphBuilder *pGraph, const GUID& category, std::string sName, IBaseFilter **ppF);
 
-	// Show the property pages for a filter
-	// This is stolen from the DX9 SDK
+	/// Show the property pages for a filter.
+	/// This is stolen from the DX9 SDK.
 	HRESULT ShowFilterPropertyPages(IBaseFilter *pFilter);
 
+	/// Retrieves filter names in a vector filtered by category.
 	static HRESULT GetFilterNamesByCategory(GUID Category, FILTER_NAME_LIST& vList);
+	/// Retrieves video device filter names in a vector.
 	static HRESULT GetVideoInputs(FILTER_NAME_LIST& vList);
+	/// Retrieves audio device filter names in a vector.
 	static HRESULT GetAudioInputs(FILTER_NAME_LIST& vList);
 
+	/// Helper method to retrieve pin from filter.
 	static HRESULT GetPin(IBaseFilter *pFilter, PIN_DIRECTION PinDir, IPin **ppPin);
 };

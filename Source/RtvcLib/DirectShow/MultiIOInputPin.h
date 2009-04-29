@@ -39,6 +39,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <streams.h>
 #pragma warning(pop)      // restore original warning level
 
+/**
+ * Base class for input pins of the CMultiIOBaseFilter
+ */
 class CMultiIOInputPin : public CBaseInputPin
 {
 	friend class CMultiIOBaseFilter;

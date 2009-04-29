@@ -40,13 +40,18 @@ typedef std::vector<GUID*> GUIDList_t;
 
 using namespace std;
 
+/**
+*  Base class for Meraka 1 to 1 transform filters. This class inherits from CSettingsInterface and CStatusInterface to give all our filters basic configuration and notification functionality.
+*/
 class CCustomBaseFilter : public CTransformFilter, public CSettingsInterface, public CStatusInterface
 {
 	///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
 	DECLARE_IUNKNOWN;
 
 public:
+	/// Constructor
 	CCustomBaseFilter(TCHAR *pObjectName, LPUNKNOWN lpUnk, CLSID clsid);
+	/// Destructor
 	virtual ~CCustomBaseFilter(void);
 	
 	/// Overridden method which validates the input media type against the ones accepted by this filter
@@ -68,9 +73,11 @@ public:
 	/// override this to publicize our interfaces
 	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 	
-	///Overridden from ISettingsInterface
-	STDMETHODIMP GetParameter( const char* szParamName, char* szResult, int& length );
-	STDMETHODIMP SetParameter( const char* szParamName, const char* szValue);
+	// TOREMOVE
+	/// Overridden from CSettingsInterface
+	// STDMETHODIMP GetParameter( const char* szParamName, char* szResult, int& length );
+	/// Overridden from CSettingsInterface
+	// STDMETHODIMP SetParameter( const char* szParamName, const char* szValue);
 
 	/// This method needs to overridden by child classes - add all possible accepted input combinations
 	/// using the AddInputType method

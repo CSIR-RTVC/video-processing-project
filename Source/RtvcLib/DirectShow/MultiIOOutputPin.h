@@ -39,6 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <streams.h>
 #pragma warning(pop)      // restore original warning level
 
+/**
+* Base class for output pins of the CMultiIOBaseFilter.
+* This class uses COutputQueue internally to deliver data in separate threads.
+*/
 class CMultiIOOutputPin : public CBaseOutputPin
 {
 	friend class CMultiIOBaseFilter;

@@ -46,17 +46,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "resource.h"
 
-/*
-* From: http://msdn.microsoft.com/en-us/library/dd375010(VS.85).aspx Creating a Filter Property Page
-* OnConnect is called when the client creates the property page. It sets the IUnknown pointer to the filter.
-* OnActivate is called when the dialog is created.
-* OnReceiveMessage is called when the dialog receives a window message.
-* OnApplyChanges is called when the user commits the property changes by clicking the OK or Apply button.
-* OnDisconnect is called when the user dismisses the property sheet.
-*/
-
 #define BUFFER_SIZE 256
 
+/**
+* Property dialog base class. This is the base classes for the property pages of filters that provide the ISettingsInterface COM interface.
+* Sub classes must implement 
+* - ReadSettings in which the filter settings need to be read and the dialog needs to be setup.
+* - OnApplyChanges in which the dialog values must be stored in the filter.
+* 
+* From: http://msdn.microsoft.com/en-us/library/dd375010(VS.85).aspx Creating a Filter Property Page.
+* - OnConnect is called when the client creates the property page. It sets the IUnknown pointer to the filter.
+* - OnActivate is called when the dialog is created.
+* - OnReceiveMessage is called when the dialog receives a window message.
+* - OnApplyChanges is called when the user commits the property changes by clicking the OK or Apply button.
+* - OnDisconnect is called when the user dismisses the property sheet.
+*/
 class FilterPropertiesBase : public CBasePropertyPage
 {
 public:
@@ -125,7 +129,8 @@ protected:
 		}
 	}
 
-
-	ISettingsInterface* m_pSettingsInterface;    // Pointer to the filter's custom interface.
+	/// Pointer to the filter's custom interface.
+	/// This pointer allows subclasses access to the filter for setting configuration.
+	ISettingsInterface* m_pSettingsInterface;    
 };
 

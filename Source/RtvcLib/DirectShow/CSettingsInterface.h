@@ -44,133 +44,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <vector>
 
-// Templated helper class to store string - parameter mappings, access attributes and allowed values
-template <class T>
-class RtvcParameterValue
-{
-public:
-	RtvcParameterValue()
-	{;}
-
-	~RtvcParameterValue()
-	{;}
-
-	bool contains(const std::string& sName)
-	{
-		return (m_mAddresses.find(sName) != m_mAddresses.end());
-	}
-
-	std::vector<std::string> getParameterNames()
-	{
-		std::vector<std::string> vResults;
-		for (std::map<std::string, T*>::iterator it = m_mAddresses.begin(); it != m_mAddresses.end(); it++)
-		{
-			vResults.push_back(it->first);
-		}
-		return vResults;
-	}
-
-	T* getParamAddress(const std::string& sName)
-	{
-		std::map<std::string, T*>::iterator it = m_mAddresses.find(sName);
-		if (it != m_mAddresses.end())
-		{
-			return it->second;
-		}
-		else
-		{
-			return NULL;
-		}
-	}
-
-	bool setParameterValue(const std::string& sName, T newValue)
-	{
-		std::map<std::string, std::vector<T> >::iterator it = m_mAllowedValues.find(sName);
-		if (it != m_mAllowedValues.end())
-		{
-			// If access through this interface is read only then exit
-			if (m_mReadOnly[sName] == true)
-			{
-				return false;
-			}
-
-			// Get allowed values if they exist
-			std::vector<T> vAllowedValues = it->second;
-			if (vAllowedValues.size() != 0)
-			{
-				// Only these values are allowed
-				std::vector<T>::iterator it = std::find(vAllowedValues.begin(), vAllowedValues.end(), newValue);
-				if (it != vAllowedValues.end())
-				{
-					// Get pointer to address
-					T* pValue = getParamAddress(sName);
-					// Store previous value
-					m_mPreviousValues[sName] = *pValue;
-					*pValue = newValue;
-					return true;
-				}
-				else
-				{
-					// Allowed values does not contain value
-					return false;
-				}
-			}
-			else
-			{
-				T* pValue = getParamAddress(sName);
-				// Store previous value
-				m_mPreviousValues[sName] = *pValue;
-				*pValue = newValue;
-				return true;
-			}
-		}
-		else
-		{
-			return false;
-		}		
-	}
-
-	// Reverts the parameters value back to the previous one if it exists in the map
-	// Parameters get stored in the previousmap on setting
-	bool revertToPreviousValue(const std::string& sName)
-	{
-		std::map<std::string, T>::iterator it = m_mPreviousValues.find(sName);
-		if (it != m_mPreviousValues.end())
-		{
-			// We found the previous value
-			// Get pointer to address
-			T* pValue = getParamAddress(sName);
-			*pValue = it->second;
-			return true;
-		}
-		else
-		{
-			return false;
-		}
-	}
-
-	// This method should be called by child classes to initialise the parameter
-	void addParam(const std::string& sName, T* pAddr, T defaultValue, bool bReadOnly, std::vector<T>& vAllowedValues)
-	{
-		// Check if it exists already
-		if (m_mAddresses.find(sName) == m_mAddresses.end())
-		{
-			m_mAddresses[sName] = pAddr;
-			m_mAllowedValues[sName] = vAllowedValues; 
-			m_mReadOnly[sName] = bReadOnly;
-			// Set initial value
-			*pAddr = defaultValue;
-		}
-	}
-
-	int getSize(){ return m_vAddresses.size();}
-private:
-	std::map<std::string, T*> m_mAddresses;
-	std::map<std::string, T> m_mPreviousValues;
-	std::map<std::string, bool> m_mReadOnly;
-	std::map<std::string, std::vector<T> > m_mAllowedValues;
-};
-
+/**
+*  ISettingsInterface implementation.
+*/
 class CSettingsInterface :
 	public ISettingsInterface
 {
@@ -181,7 +57,7 @@ public:
 	/// SetParameter are unfulfilled. This is usually the case if other conditions exist upon which the success of SetParameter depends.
 	/// One way to use this method is to override SetParameter and call the base class method. Then check the postcondition and if that has not been met,
 	/// Call revertParameter
-	/// @param[in] The name of the parameter that should be reverted to its previous value
+	/// @param[in] szParamName The name of the parameter that should be reverted to its previous value
 	virtual bool revertParameter(const char* szParamName);
 
 	/// Overridden from ISettingsInterface
@@ -225,21 +101,21 @@ protected:
 	/// The addParameter methods should be called from inside initParameters at start up
 	/// @param[in] szParamName The name of the parameter that should be reverted to its previous value
 	/// @param[in] pAddr A pointer to the member variable that will store the value
-	/// @param[in] nDefaultValue An optional default value for the member variable
+	/// @param[in] szDefaultValue An optional default value for the member variable
 	/// @param[in] bReadOnly Readonly parameters cannot be set using the SetParameter method
 	/// @param[in] vAllowedValues A vector of allowed values. If the size of this vector > 0 only the values in the vector are considered valid
-	virtual void addParameter(const char* szParamName, std::string* pAddr, std::string szDefaultValue, bool bReadOnly= false, std::vector<std::string> vAllowedValues = std::vector<std::string>());
+	virtual void addParameter(const char* szParamName, std::string* pAddr, std::string szDefaultValue, bool bReadOnly = false, std::vector<std::string> vAllowedValues = std::vector<std::string>());
 	/// The addParameter methods should be called from inside initParameters at start up
 	/// @param[in] szParamName The name of the parameter that should be reverted to its previous value
 	/// @param[in] pAddr A pointer to the member variable that will store the value
-	/// @param[in] nDefaultValue An optional default value for the member variable
+	/// @param[in] bDefaultValue An optional default value for the member variable
 	/// @param[in] bReadOnly Readonly parameters cannot be set using the SetParameter method
 	/// @param[in] vAllowedValues A vector of allowed values. If the size of this vector > 0 only the values in the vector are considered valid
 	virtual void addParameter(const char* szParamName, bool* pAddr, bool bDefaultValue, bool bReadOnly = false, std::vector<bool> vAllowedValues = std::vector<bool>());
 	/// The addParameter methods should be called from inside initParameters at start up
 	/// @param[in] szParamName The name of the parameter that should be reverted to its previous value
 	/// @param[in] pAddr A pointer to the member variable that will store the value
-	/// @param[in] nDefaultValue An optional default value for the member variable
+	/// @param[in] dDefaultValue An optional default value for the member variable
 	/// @param[in] bReadOnly Readonly parameters cannot be set using the SetParameter method
 	/// @param[in] vAllowedValues A vector of allowed values. If the size of this vector > 0 only the values in the vector are considered valid
 	virtual void addParameter(const char* szParamName, double* pAddr, double dDefaultValue, bool bReadOnly = false, std::vector<double> vAllowedValues = std::vector<double>());
@@ -259,6 +135,133 @@ private:
 
 	std::vector<std::string> m_vParameters;
 	
+	/// Templated helper class to store string - parameter mappings, access attributes and allowed values
+	template <class T>
+	class RtvcParameterValue
+	{
+	public:
+		RtvcParameterValue()
+		{;}
+
+		~RtvcParameterValue()
+		{;}
+
+		bool contains(const std::string& sName)
+		{
+			return (m_mAddresses.find(sName) != m_mAddresses.end());
+		}
+
+		std::vector<std::string> getParameterNames()
+		{
+			std::vector<std::string> vResults;
+			for (std::map<std::string, T*>::iterator it = m_mAddresses.begin(); it != m_mAddresses.end(); it++)
+			{
+				vResults.push_back(it->first);
+			}
+			return vResults;
+		}
+
+		T* getParamAddress(const std::string& sName)
+		{
+			std::map<std::string, T*>::iterator it = m_mAddresses.find(sName);
+			if (it != m_mAddresses.end())
+			{
+				return it->second;
+			}
+			else
+			{
+				return NULL;
+			}
+		}
+
+		bool setParameterValue(const std::string& sName, T newValue)
+		{
+			std::map<std::string, std::vector<T> >::iterator it = m_mAllowedValues.find(sName);
+			if (it != m_mAllowedValues.end())
+			{
+				// If access through this interface is read only then exit
+				if (m_mReadOnly[sName] == true)
+				{
+					return false;
+				}
+
+				// Get allowed values if they exist
+				std::vector<T> vAllowedValues = it->second;
+				if (vAllowedValues.size() != 0)
+				{
+					// Only these values are allowed
+					std::vector<T>::iterator it = std::find(vAllowedValues.begin(), vAllowedValues.end(), newValue);
+					if (it != vAllowedValues.end())
+					{
+						// Get pointer to address
+						T* pValue = getParamAddress(sName);
+						// Store previous value
+						m_mPreviousValues[sName] = *pValue;
+						*pValue = newValue;
+						return true;
+					}
+					else
+					{
+						// Allowed values does not contain value
+						return false;
+					}
+				}
+				else
+				{
+					T* pValue = getParamAddress(sName);
+					// Store previous value
+					m_mPreviousValues[sName] = *pValue;
+					*pValue = newValue;
+					return true;
+				}
+			}
+			else
+			{
+				return false;
+			}		
+		}
+
+		// Reverts the parameters value back to the previous one if it exists in the map
+		// Parameters get stored in the previousmap on setting
+		bool revertToPreviousValue(const std::string& sName)
+		{
+			std::map<std::string, T>::iterator it = m_mPreviousValues.find(sName);
+			if (it != m_mPreviousValues.end())
+			{
+				// We found the previous value
+				// Get pointer to address
+				T* pValue = getParamAddress(sName);
+				*pValue = it->second;
+				return true;
+			}
+			else
+			{
+				return false;
+			}
+		}
+
+		// This method should be called by child classes to initialise the parameter
+		void addParam(const std::string& sName, T* pAddr, T defaultValue, bool bReadOnly, std::vector<T>& vAllowedValues)
+		{
+			// Check if it exists already
+			if (m_mAddresses.find(sName) == m_mAddresses.end())
+			{
+				m_mAddresses[sName] = pAddr;
+				m_mAllowedValues[sName] = vAllowedValues; 
+				m_mReadOnly[sName] = bReadOnly;
+				// Set initial value
+				*pAddr = defaultValue;
+			}
+		}
+
+		int getSize(){ return m_vAddresses.size();}
+	private:
+		std::map<std::string, T*> m_mAddresses;
+		std::map<std::string, T> m_mPreviousValues;
+		std::map<std::string, bool> m_mReadOnly;
+		std::map<std::string, std::vector<T> > m_mAllowedValues;
+	};
+
 	RtvcParameterValue<int> m_intParams;
 	RtvcParameterValue<double> m_doubleParams;
 	RtvcParameterValue<bool> m_boolParams;
