@@ -53,10 +53,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class CMultiIOInputPin;
 class CMultiIOOutputPin;
 
-//Typedefs
+using namespace std;
 
-/*! \typedef vector<CMultiIOInputPin*> INPUT_PIN_LIST
-*/
+//Typedefs
 typedef vector<CMultiIOInputPin*> INPUT_PIN_LIST;
 typedef vector<CMultiIOOutputPin*> OUTPUT_PIN_LIST;
 typedef map<int, CMediaType> MEDIA_TYPE_LIST;
