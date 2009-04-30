@@ -213,14 +213,20 @@ HRESULT RotateFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 	// RG: 27/08/2008 Bug FIX: Resulted in incorrect image in VMR9
-	if (!
+	/*if (!
 		((mtIn->subtype == MEDIASUBTYPE_RGB24)&&(mtOut->subtype == MEDIASUBTYPE_RGB24))
 		||
 		((mtIn->subtype == MEDIASUBTYPE_RGB32)&&(mtOut->subtype == MEDIASUBTYPE_RGB32))
-		)
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+		)*/
+
+	if (mtIn->subtype == MEDIASUBTYPE_RGB24)
+		if (mtOut->subtype != MEDIASUBTYPE_RGB24)
+			return VFW_E_TYPE_NOT_ACCEPTED;
+
+	if (mtIn->subtype == MEDIASUBTYPE_RGB32)
+		if (mtOut->subtype != MEDIASUBTYPE_RGB32)
+			return VFW_E_TYPE_NOT_ACCEPTED;
+
 	if (mtOut->formattype != FORMAT_VideoInfo)
 	{
 		return VFW_E_TYPE_NOT_ACCEPTED;
