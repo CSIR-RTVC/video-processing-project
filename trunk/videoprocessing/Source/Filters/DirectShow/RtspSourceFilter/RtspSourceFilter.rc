@@ -86,7 +86,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_RTSP_CAPTION        "Meraka RTSP PCM Source Filter Properties"
+    IDS_RTSP_CAPTION        "CSIR RTSP PCM Source Filter Properties"
 END
 
 #endif    // English (South Africa) resources

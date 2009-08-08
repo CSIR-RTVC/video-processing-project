@@ -87,7 +87,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_VM_CAPTION          "Meraka Video Mixing Filter Properties"
+    IDS_VM_CAPTION          "CSIR Video Mixing Filter Properties"
 END
 
 #endif    // English (South Africa) resources

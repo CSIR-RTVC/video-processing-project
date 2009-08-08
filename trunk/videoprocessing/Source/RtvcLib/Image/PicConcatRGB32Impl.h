@@ -12,10 +12,10 @@ DESCRIPTION				: An RGB32 implementation derived from the general
 
 REVISION HISTORY	: 
 
-COPYRIGHT					: (c)CSIR, Meraka Institute 2007 all rights resevered
+COPYRIGHT					: (c)CSIR, CSIR 2007 all rights resevered
 
 RESTRICTIONS			: The information/data/code contained within this file is 
-										the property of CSIR, Meraka Institute and has been 
+										the property of CSIR, CSIR and has been 
 										classified as CONFIDENTIAL.
 ===========================================================================
 */

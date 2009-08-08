@@ -8,14 +8,14 @@ DESCRIPTION			: Header file for custom media type GUIDS
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, Meraka Institute
+Copyright (c) 2008, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
 * Redistributions of source code must retain the above copyright notice, this list of conditions and the following disclaimer.
 * Redistributions in binary form must reproduce the above copyright notice, this list of conditions and the following disclaimer in the documentation and/or other materials provided with the distribution.
-* Neither the name of the Meraka Institute nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
+* Neither the name of the CSIR nor the names of its contributors may be used to endorse or promote products derived from this software without specific prior written permission.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
 "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
@@ -33,7 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-/// Custom Meraka YUV420 Planer media format
+/// Custom CSIR YUV420 Planer media format
 // {C528B79F-F025-4eb7-92B0-46CE8167E9F8}
 static const GUID MEDIASUBTYPE_YUV420P = 
 { 0xc528b79f, 0xf025, 0x4eb7, { 0x92, 0xb0, 0x46, 0xce, 0x81, 0x67, 0xe9, 0xf8 } };

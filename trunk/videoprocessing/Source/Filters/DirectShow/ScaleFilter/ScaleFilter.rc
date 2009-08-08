@@ -91,7 +91,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_SCALE_CAPTION       "Meraka Scale Filter Properties"
+    IDS_SCALE_CAPTION       "CSIR Scale Filter Properties"
 END
 
 #endif    // English (South Africa) resources
