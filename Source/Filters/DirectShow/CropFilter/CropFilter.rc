@@ -99,7 +99,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_CROP_CAPTION        "Meraka Crop Filter Properties"
+    IDS_CROP_CAPTION        "CSIR Crop Filter Properties"
 END
 
 #endif    // English (South Africa) resources

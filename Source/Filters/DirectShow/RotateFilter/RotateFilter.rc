@@ -92,7 +92,7 @@ END
 
 STRINGTABLE 
 BEGIN
-    IDS_ROTATE_CAPTION      "Meraka Rotate Filter Properties"
+    IDS_ROTATE_CAPTION      "CSIR Rotate Filter Properties"
 END
 
 #endif    // English (South Africa) resources
