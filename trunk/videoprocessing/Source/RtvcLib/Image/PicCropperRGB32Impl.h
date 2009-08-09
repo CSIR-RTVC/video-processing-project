@@ -41,11 +41,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "PicCropperBase.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * An RGB32 implementation derived from the general
+ * PicCropperBase() class. Crop a packed RGB32 image
+ * into another packed RGB32 image.
+ */
 class PicCropperRGB32Impl: public PicCropperBase
 {
 public:

@@ -44,6 +44,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 const int RADIO_BUTTON_IDS[] = {IDC_RADIO1, IDC_RADIO2, IDC_RADIO3, IDC_RADIO4, IDC_RADIO5, IDC_RADIO6};
 
+/**
+ * \ingroup DirectShowFilters
+ * Rotate property dialog class
+ */
 class RotateProperties : public FilterPropertiesBase
 {
 public:

@@ -39,11 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "YUV420toRGBConverter.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * Floating point implementation of YUV420 (8 bpp) to RGB 24 bit 
+ * colour convertion derived from the YUV420toRGBConverter base 
+ * class.
+ */
 class RealYUV420toRGB24Converter: public YUV420toRGBConverter
 {
 	public:

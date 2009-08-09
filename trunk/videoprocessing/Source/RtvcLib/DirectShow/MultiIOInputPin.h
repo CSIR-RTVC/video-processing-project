@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning(pop)      // restore original warning level
 
 /**
+ * \ingroup DirectShowLib
  * Base class for input pins of the CMultiIOBaseFilter
  */
 class CMultiIOInputPin : public CBaseInputPin

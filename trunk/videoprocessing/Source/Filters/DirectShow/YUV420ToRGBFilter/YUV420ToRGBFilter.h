@@ -46,6 +46,10 @@ static const GUID CLSID_YUV420toRGBColorConverter =
 // Forward declarations
 class YUV420toRGBConverter;
 
+/**
+ * \ingroup DirectShowFilters
+ * This Filter converts the YUV420 Planar media back into RGB24 media.
+ */
 class YUV420toRGBFilter : public CCustomBaseFilter
 {
 public:

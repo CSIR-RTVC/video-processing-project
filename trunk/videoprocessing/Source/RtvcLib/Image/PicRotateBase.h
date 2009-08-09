@@ -4,7 +4,12 @@ MODULE                : PicRotateBase
 
 FILE NAME             : PicRotateBase.h
 
-DESCRIPTION           :
+DESCRIPTION           : This class is the base class defining the minimum interface	
+						and properties for all derived implementations to rotate an image.
+						The instantiation process must set the input dimensions and the rotation mode
+						so that the Rotate implementation only requires source image data
+						pointers. The Rotate method is pure virtual and must be 
+						implemented by derived classes.
                      
 LICENSE: Software License Agreement (BSD License)
 
@@ -43,6 +48,15 @@ enum ROTATE_MODE
 	ROTATE_FLIP_HORIZONTAL
 };
 
+/**
+ * \ingroup ImageLib
+ * This class is the base class defining the minimum interface	
+ * and properties for all derived implementations to rotate an image.
+ * The instantiation process must set the input dimensions and the rotation mode
+ * so that the Rotate implementation only requires source image data
+ * pointers. The Rotate method is pure virtual and must be 
+ * implemented by derived classes.
+ */
 class PicRotateBase
 {
 public:

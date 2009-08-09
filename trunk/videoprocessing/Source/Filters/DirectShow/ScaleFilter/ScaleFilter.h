@@ -54,6 +54,11 @@ typedef signed char yuvType ;
 // Forward declarations
 class PicScalerBase;
 
+/**
+* \ingroup DirectShowFilters
+* Scale Filter for RGB24 and YUV420P Media
+* Scale parameters are settable via the ISettingsInterface COM interface.
+*/
 class CScaleFilter : public CCustomBaseFilter,
 					public ISpecifyPropertyPages
 {

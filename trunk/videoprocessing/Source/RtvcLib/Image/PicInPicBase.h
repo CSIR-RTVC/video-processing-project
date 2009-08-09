@@ -48,11 +48,16 @@ RESTRICTIONS			: Redistribution and use in source and binary forms, with or with
 #ifndef _PICINPICBASE_H
 #define _PICINPICBASE_H
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * This class is the base class defining the minimum interface	
+ * and properties for all derived implementations to insert a
+ * sub image within another image. The instantiation process 
+ * must set the parameters and limits to the images such that
+ * the Insert() implementation only requires source image data
+ * pointers. The insertion method is pure virtual and must be 
+ * implemented by derived classes.
+ */
 class PicInPicBase
 {
 public:

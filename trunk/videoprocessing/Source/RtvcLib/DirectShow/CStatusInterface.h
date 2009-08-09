@@ -50,6 +50,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Windows.h>
 
 /**
+* \ingroup DirectShowLib
 *  IStatusInterface implementation.
 */
 class CStatusInterface : public IStatusInterface

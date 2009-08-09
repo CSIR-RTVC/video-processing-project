@@ -69,9 +69,10 @@ static const GUID CLSID_RtspProperties =
 { 0x3955be86, 0xa1e9, 0x4fa3, { 0x86, 0x54, 0x62, 0x3d, 0x73, 0xdd, 0x2f, 0x29 } };
 
 /**
-* RTSP Source filter that receives PCM audio data from an RTSP server using the LGPL liveMedia streaming library.
-* The liveMedia library can be obtained at http://www.live555.com
-*/
+ * \ingroup DirectShowFilters
+ * RTSP Source filter that receives PCM audio data from an RTSP server using the LGPL liveMedia streaming library.
+ * The liveMedia library can be obtained at http://www.live555.com
+ */
 class RtspSourceFilter :	public CSource,				/* Source Filter */
 							public CSettingsInterface,	/* Rtvc Settings Interface */
 							public CStatusInterface,	/* Rtvc Status Interface */

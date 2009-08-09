@@ -57,7 +57,6 @@ of an event asynchronously via Windows events. If an error occurs in the DirectS
 processing, this can be communicated to the main application provided that the Media Event Sink has been set.
 The friendly ID is passed as a part of the windows message and allows the main application to determine
 in from which filter the notification came.
-
 */
 
 //Smart Pointers

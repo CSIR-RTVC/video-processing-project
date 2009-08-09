@@ -45,11 +45,12 @@ RESTRICTIONS			: Redistribution and use in source and binary forms, with or with
 
 #include "PicInPicBase.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * An RGB32 implementation derived from the general
+ * PicInPicBase() class. Insert a packed RGB32 image
+ * into another packed RGB32 image.
+ */
 class PicInPicRGB32Impl: public PicInPicBase
 {
 public:

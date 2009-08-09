@@ -40,6 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define BUFFER_SIZE 256
 
 /**
+ * \ingroup DirectShowFilters
  * Crop property dialog class
  */
 class CropProperties : public FilterPropertiesBase

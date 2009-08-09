@@ -39,11 +39,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * Colour convertions to between differing RGB colour spaces.
+ * This class is the base class defining the minimum interface	
+ * and properties for all derived classes. The conversion method
+ * is pure virtual and must be implemented by derived classes.
+ */
 class RGBtoRGBConverter
 {
 public:

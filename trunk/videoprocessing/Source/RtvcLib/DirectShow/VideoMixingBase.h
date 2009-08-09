@@ -36,9 +36,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/MultiIOBaseFilter.h>
 
 /**
-* Base class for video mixing renderers. 
-* Implements common video mixing functionality for RGB24/32 mixers with two inputs and one output.
-*/
+ * \ingroup DirectShowLib
+ * Base class for video mixing renderers. 
+ * Implements common video mixing functionality for RGB24/32 mixers with two inputs and one output.
+ */
 class VideoMixingBase : public CMultiIOBaseFilter
 {
 public:

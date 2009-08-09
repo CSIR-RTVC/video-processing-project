@@ -40,6 +40,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define BUFFER_SIZE 256
 
+/**
+ * \ingroup DirectShowFilters
+ * Scale Filter Property Dialog
+ */
 class ScaleProperties : public FilterPropertiesBase
 {
 public:

@@ -39,6 +39,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 typedef unsigned char BYTE;
 #endif
 
+/**
+ * \ingroup ImageLib
+ * This class extends the PicRotateBase to cater for RGB images
+ * It adds the pure virtual BytesPerPixel method which must be implemented
+ * by sub-classes. 
+ */
 class PicRotateRGBBase : public PicRotateBase
 {
 public:

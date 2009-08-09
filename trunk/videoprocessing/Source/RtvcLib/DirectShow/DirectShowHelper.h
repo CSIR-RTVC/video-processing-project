@@ -51,6 +51,7 @@ Details.
 typedef std::vector<std::string> FILTER_NAME_LIST;
 
 /**
+ * \ingroup DirectShowLib
  * Helper class that provides static DirectShow related helper methods for generic DirectShow functionality
  */
 class CDirectShowHelper

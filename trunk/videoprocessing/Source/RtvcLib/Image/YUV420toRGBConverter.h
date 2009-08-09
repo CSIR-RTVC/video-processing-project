@@ -46,11 +46,14 @@ typedef short yuvType;
 typedef signed char yuvType ;
 #endif
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * Colour convertions are required on the output of
+ * all video codecs. For embedded applications only some
+ * combinations of colour depths and inversions are required.
+ * This class is the base class defining the minimum interface
+ * and properties for all derived classes. 
+ */
 class YUV420toRGBConverter
 {
 	public:

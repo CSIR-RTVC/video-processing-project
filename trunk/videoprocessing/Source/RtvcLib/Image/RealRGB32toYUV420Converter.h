@@ -40,11 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "RGBtoYUV420Converter.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * Double precision floating point RGB 32 bit to YUV420 colour 
+ * convertion derived from the RGBtoYUV420Converter base class.
+ * Use this implementation as the reference.
+ */
 class RealRGB32toYUV420Converter: public RGBtoYUV420Converter
 {
 public:

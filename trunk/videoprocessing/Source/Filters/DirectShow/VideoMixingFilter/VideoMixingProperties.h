@@ -42,6 +42,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 const int RADIO_BUTTON_IDS[] = {IDC_HORIZONTAL, IDC_VERTICAL};
 
+/**
+ * \ingroup DirectShowFilters
+ * Video mixing filter property dialog
+ */
 class VideoMixingProperties : public FilterPropertiesBase
 {
 public:
