@@ -35,6 +35,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "PicRotateRGBBase.h"
 
+/**
+ * \ingroup ImageLib
+ * RGB24 implementation of PicRotateRGBBase
+ */ 
 class PicRotateRGB24Impl : public PicRotateRGBBase
 {
 public:

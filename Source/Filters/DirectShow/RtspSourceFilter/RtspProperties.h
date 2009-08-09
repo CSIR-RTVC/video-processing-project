@@ -4,7 +4,7 @@ MODULE				: RtspProperties
 
 FILE NAME			: RtspProperties.h
 
-DESCRIPTION			: 
+DESCRIPTION			: Properties dialog for Rtsp PCM Source Filter
 					  
 LICENSE: Software License Agreement (BSD License)
 
@@ -39,6 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define BUFFER_SIZE 256
 
+/**
+ * \ingroup DirectShowFilters
+ * Properties dialog for Rtsp PCM Source Filter
+ */
 class RtspProperties : public FilterPropertiesBase
 {
 public:

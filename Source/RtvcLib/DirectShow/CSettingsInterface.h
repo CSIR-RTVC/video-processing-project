@@ -45,8 +45,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 /**
-*  ISettingsInterface implementation.
-*/
+ * \ingroup DirectShowLib
+ * ISettingsInterface implementation.
+ */
 class CSettingsInterface :
 	public ISettingsInterface
 {

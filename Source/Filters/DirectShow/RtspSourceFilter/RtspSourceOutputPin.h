@@ -48,7 +48,11 @@ class MediaSample;
 class RtspSourceFilter;
 class MediaSubsession;
 
-
+/**
+ * \ingroup DirectShowFilters
+ * Output pin for RtspSourceFilter
+ * This pin currently caters for PCM output media types.
+ */
 class RtspSourceOutputPin : public CSourceStream,
 							public IAMPushSource
 {

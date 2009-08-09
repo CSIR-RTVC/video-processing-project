@@ -46,11 +46,12 @@ RESTRICTIONS			: Redistribution and use in source and binary forms, with or with
 #include "PicConcatBase.h"
 #include "PicInPicRGB24Impl.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * An RGB24 implementation derived from the general
+ * PicConcatBase() class. Concatenate a packed RGB24 
+ * image	to another packed RGB24 image.
+ */
 class PicConcatRGB24Impl: public PicConcatBase
 {
 public:

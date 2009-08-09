@@ -67,6 +67,7 @@ enum RTVC_DIRECTION
 };
 
 /**
+ * \ingroup DirectShowLib
  * This base class takes care of doing most of the menial work when writing a transform filter that 
  * has multiple input and output pins.
  */

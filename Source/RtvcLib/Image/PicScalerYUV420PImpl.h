@@ -48,11 +48,13 @@ typedef short scaleType;
 typedef char scaleType ;
 #endif
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * A YUV420P planar implementation derived from the 
+ * general PicScalerBase() class. Scale a YUV420P
+ * planar image to the dimensions of another YUV420P
+ * planar image.
+ */
 class PicScalerYUV420PImpl: public PicScalerBase
 {
 public:

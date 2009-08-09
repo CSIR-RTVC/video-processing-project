@@ -40,11 +40,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "PicCropperBase.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * An RGB24 implementation derived from the general
+ * PicCropperBase() class. Crop a packed RGB24 image
+ * into another packed RGB24 image.
+ */
 class PicCropperRGB24Impl: public PicCropperBase
 {
 public:

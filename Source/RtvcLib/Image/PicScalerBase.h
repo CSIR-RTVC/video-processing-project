@@ -44,11 +44,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * This class is the base class defining the minimum interface	
+ * and properties for all derived implementations to scale the
+ * dimensions of an image either up or down. The instantiation 
+ * process must set the parameters and limits to the images such 
+ * that the Scale()implementation only requires source image 
+ * data pointers. All memory new/delete must be handled outside 
+ * of these objects. The scale method is pure virtual and must be 
+ * implemented by derived classes.
+ */
 class PicScalerBase
 {
 public:

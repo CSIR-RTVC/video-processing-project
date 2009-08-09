@@ -43,6 +43,11 @@ static const GUID CLSID_RTVCTimeStampLoggerFilter =
 
 // Forward declarations
 
+/**
+ * \ingroup DirectShowFilters
+ * Filter that logs media sample timestamps and durations 
+ * to file specified using IFileSourceFilter interface
+ */
 class TimestampLoggerFilter : public CTransInPlaceFilter,
 							  public IFileSourceFilter
 {

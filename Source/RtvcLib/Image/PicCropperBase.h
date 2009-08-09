@@ -43,11 +43,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #pragma once
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * This class is the base class defining the minimum interface	
+ * and properties for all derived implementations to crop an
+ * image and write it to another image. The instantiation process 
+ * must set the parameters and limits to the images such that
+ * the Crop() implementation only requires source image data
+ * pointers. The insertion method is pure virtual and must be 
+ * implemented by derived classes.
+ */
 class PicCropperBase
 {
 public:

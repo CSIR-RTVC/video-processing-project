@@ -41,11 +41,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "PicScalerBase.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * An RGB24 implementation derived from the general
+ * PicScalerBase() class. Scale a packed RGB24 image
+ * to the dimensions of another packed RGB24 image.
+ */
 class PicScalerRGB24Impl: public PicScalerBase
 {
 public:

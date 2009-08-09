@@ -41,6 +41,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 static const GUID CLSID_RtvcTee = 
 { 0x2ba06815, 0x1f7, 0x43fd, { 0xb1, 0xf3, 0x55, 0x35, 0x44, 0x0, 0xe8, 0x49 } };
 
+/**
+ * \ingroup DirectShowFilters
+ * Basic Tee filter implementation demonstrating how the usage of the CMultiIOBaseFilter class
+ * NOTE: This filter will not handle ALL media types and has been created for demonstration purposes.
+ * Use the standard DirectShow tee in applications.
+ */
 class CRtvcTee : public CMultiIOBaseFilter
 {
 public:

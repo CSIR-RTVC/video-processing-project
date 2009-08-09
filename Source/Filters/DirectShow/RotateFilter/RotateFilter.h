@@ -48,6 +48,11 @@ static const GUID CLSID_RotateProperties =
 // Forward declarations
 class PicRotateBase;
 
+/**
+ * \ingroup DirectShowFilters
+ * Rotate for RGB24 and RGB32 media. 
+ * Rotation parameters can be set using the COM SettingsInterface SetParameter method.
+ */
 class RotateFilter : public CCustomBaseFilter,
 					public ISpecifyPropertyPages
 {

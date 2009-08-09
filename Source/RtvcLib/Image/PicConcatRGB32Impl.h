@@ -25,11 +25,12 @@ RESTRICTIONS			: The information/data/code contained within this file is
 #include "PicConcatBase.h"
 #include "PicInPicRGB32Impl.h"
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * An RGB32 implementation derived from the general
+ * PicConcatBase() class. Concatenate a packed RGB32 
+ * image to another packed RGB32 image.
+ */
 class PicConcatRGB32Impl: public PicConcatBase
 {
 public:

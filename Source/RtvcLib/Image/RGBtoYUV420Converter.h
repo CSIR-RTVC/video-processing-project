@@ -49,11 +49,15 @@ typedef short yuvType;
 typedef signed char yuvType ;
 #endif
 
-/*
-===========================================================================
-  Class definition.
-===========================================================================
-*/
+/**
+ * \ingroup ImageLib
+ * Colour convertions to YUV420 are required on the input of
+ * all video codecs. For embedded applications only some
+ * combinations of colour depths are required. This class is 
+ * the base class defining the minimum interface	and 
+ * properties for all derived classes. The conversion method
+ * is pure virtual and must be implemented by derived classes.
+ */
 class RGBtoYUV420Converter
 {
 public:
