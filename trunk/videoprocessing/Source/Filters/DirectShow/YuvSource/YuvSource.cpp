@@ -34,10 +34,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <streams.h>
 
 #include <fstream>
+#include <sstream>
 
 #include "YuvSource.h"
 
-#define BITMAP_NAME TEXT("sample.bmp")
+#include <Shared/StringUtil.h>
 
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 {
@@ -53,43 +54,40 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
  *
  **********************************************/
 
-YuvOutputPin::YuvOutputPin(HRESULT *phr, CSource *pFilter)
+YuvOutputPin::YuvOutputPin(HRESULT *phr, YuvSourceFilter* pFilter)
       : CSourceStream(NAME("YUV Source"), phr, pFilter, L"Out"),
-		m_szYuvFile(NULL),
-		m_iNoFrames(0),
-		m_iFrameSize(0),
-		m_iLengthY(0),
-		m_iLengthUV(0),
+		m_pYuvFilter(pFilter),
+		//m_szYuvFile(NULL),
+		//m_iNoFrames(0),
+		//m_iFrameSize(0),
+		//m_iLengthY(0),
+		//m_iLengthUV(0),
 		m_iCurrentFrame(0),
-//         m_hFile(INVALID_HANDLE_VALUE),
-//         m_pFile(NULL),
-//         m_pImage(NULL),
-//         m_iFrameNumber(0),
-        m_rtFrameLength(FPS_30) // Display 5 bitmap frames per second
+        m_rtFrameLength(FPS_30) // Display 5 bitmap frames per second: TODO_ move to property page
 {
-    std::ifstream in1("BUS_352x288_30.yuv", std::ifstream::in | std::ifstream::binary);
-	if ( in1.is_open() )
-	{
-		in1.seekg( 0, std::ios::end );
-		int iLength = in1.tellg();
-		in1.seekg( 0 , std::ios::beg );
-
-		m_szYuvFile = new unsigned char[ iLength ];
-		in1.read( (char*)m_szYuvFile, iLength );
-
-		in1.close();
-
-// 		// Init memory pointers
-// 		m_pY = m_szYuvFile;
-
-		m_iNoFrames = 150;
-		m_iFrameSize = iLength/m_iNoFrames;
-		m_iLengthY = 352*288;
-		m_iLengthUV = m_iLengthY >> 1;
-
-// 		m_pU = m_pY + ( m_iLengthY );
-// 		m_pV = m_pU + ( m_iLengthUV );
-	}
+//    std::ifstream in1("BUS_352x288_30.yuv", std::ifstream::in | std::ifstream::binary);
+//	if ( in1.is_open() )
+//	{
+//		in1.seekg( 0, std::ios::end );
+//		int iLength = in1.tellg();
+//		in1.seekg( 0 , std::ios::beg );
+//
+//		m_szYuvFile = new unsigned char[ iLength ];
+//		in1.read( (char*)m_szYuvFile, iLength );
+//
+//		in1.close();
+//
+//// 		// Init memory pointers
+//// 		m_pY = m_szYuvFile;
+//
+//		m_iNoFrames = 150;
+//		m_iFrameSize = iLength/m_iNoFrames;
+//		m_iLengthY = 352*288;
+//		m_iLengthUV = m_iLengthY >> 1;
+//
+//// 		m_pU = m_pY + ( m_iLengthY );
+//// 		m_pV = m_pU + ( m_iLengthUV );
+//	}
 }
 
 
@@ -132,9 +130,11 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
 	pvi->bmiHeader.biPlanes = 1;
 	pvi->bmiHeader.biXPelsPerMeter = 0;
 	pvi->bmiHeader.biYPelsPerMeter = 0;
-	pvi->bmiHeader.biWidth = 352;
-	pvi->bmiHeader.biHeight = 288;
-	pvi->bmiHeader.biSizeImage = 352*288*1.5;
+	pvi->bmiHeader.biWidth = m_pYuvFilter->m_iWidth;
+	pvi->bmiHeader.biHeight = m_pYuvFilter->m_iHeight;
+
+	int iSize = m_pYuvFilter->m_iWidth * m_pYuvFilter->m_iHeight * m_pYuvFilter->m_iBitsPerPixel;
+	pvi->bmiHeader.biSizeImage = iSize;
 	pvi->bmiHeader.biSize = 40;
 
     // Clear source and target rectangles
@@ -147,7 +147,7 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
 
 	pMediaType->SetSubtype(&MEDIASUBTYPE_YV12);
 
-	pMediaType->SetSampleSize(352*288*1.5);
+	pMediaType->SetSampleSize( iSize );
     return S_OK;
 }
 
@@ -205,7 +205,7 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
 
     CAutoLock cAutoLockShared(&m_cSharedState);
 
-	if ( m_iCurrentFrame < m_iNoFrames )
+	if ( m_iCurrentFrame < m_pYuvFilter->m_iNoFrames )
 	{
 		// Access the sample's data buffer
 		pSample->GetPointer(&pData);
@@ -226,10 +226,10 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
 		// Copy the DIB bits over into our filter's output buffer.
 		// Since sample size may be larger than the image size, bound the copy size.
 
+		
+		BYTE* pSource = m_pYuvFilter->m_szYuvFile + ( m_iCurrentFrame * m_pYuvFilter->m_iFrameSize );
 
-		BYTE* pSource = m_szYuvFile + ( m_iCurrentFrame * m_iFrameSize );
-
-		memcpy( pData, pSource, m_iFrameSize );
+		memcpy( pData, pSource, m_pYuvFilter->m_iFrameSize );
 
 		// CRASH
 		//BYTE* pSourceY = m_pY + ( m_iCurrentFrame * m_iFrameSize );
@@ -261,7 +261,7 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
 		REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
 		REFERENCE_TIME rtStop  = rtStart + m_rtFrameLength;
 
-		pSample->SetTime(&rtStart, &rtStop);
+		pSample->SetTime( &rtStart, &rtStop );
 // 		m_iFrameNumber++;
 
 		// Set TRUE on every sample for uncompressed frames
@@ -286,8 +286,17 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
  **********************************************/
 
 YuvSourceFilter::YuvSourceFilter(IUnknown *pUnk, HRESULT *phr)
-	: CSource(NAME("CSIR RTVC YUV Source"), pUnk, CLSID_YUVSource)
+	: CSource(NAME("CSIR RTVC YUV Source"), pUnk, CLSID_YUVSource),
+	m_iWidth(0),
+	m_iHeight(0),
+	m_iNoFrames(150),		//TODO: move to property page
+	m_iBitsPerPixel(1.5),	//TODO: move to property page
+	m_szYuvFile(NULL),
+	m_iFileSize(0)
 {
+	// Init CSettingsInterface
+	initParameters();
+
     m_pPin = new YuvOutputPin(phr, this);
 
     if (phr)
@@ -301,7 +310,10 @@ YuvSourceFilter::YuvSourceFilter(IUnknown *pUnk, HRESULT *phr)
 
 YuvSourceFilter::~YuvSourceFilter()
 {
-    delete m_pPin;
+	if (m_szYuvFile)
+		delete[] m_szYuvFile;
+
+	delete m_pPin;
 }
 
 CUnknown * WINAPI YuvSourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
@@ -317,4 +329,129 @@ CUnknown * WINAPI YuvSourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
     }
 
     return pNewFilter;
+}
+
+STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt )
+{
+	// Store the URL
+	m_sFile = StringUtil::wideToStl(lpwszFileName);
+
+	std::ifstream in1(m_sFile.c_str()/*"BUS_352x288_30.yuv"*/, std::ifstream::in | std::ifstream::binary);
+	if ( in1.is_open() )
+	{
+		in1.seekg( 0, std::ios::end );
+		m_iFileSize = in1.tellg();
+		in1.seekg( 0 , std::ios::beg );
+
+		m_szYuvFile = new unsigned char[ m_iFileSize ];
+		in1.read( (char*)m_szYuvFile, m_iFileSize );
+
+		in1.close();
+
+		// TODO: move to property page
+		m_iFrameSize = m_iFileSize/m_iNoFrames;
+		//m_iNoFrames = 150;
+		//m_iFrameSize = iLength/m_iNoFrames;
+		//m_iLengthY = 352*288;
+		//m_iLengthUV = m_iLengthY >> 1;
+
+		return S_OK;
+	}
+	else
+	{
+		SetLastError("Failed to open file: " + m_sFile, true);
+		return E_FAIL;
+	}
+}
+
+STDMETHODIMP YuvSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt )
+{
+	//TODO: do we need to return the media type?
+
+	// Copied from Async filter sample
+	*ppszFileName = NULL;
+
+	if (m_sFile.length()!=0) 
+	{
+		WCHAR* pFileName = (StringUtil::stlToWide(m_sFile));	
+
+		DWORD n = sizeof(WCHAR)*(1+lstrlenW(pFileName));
+
+		*ppszFileName = (LPOLESTR) CoTaskMemAlloc( n );
+		if (*ppszFileName!=NULL) {
+			CopyMemory(*ppszFileName, pFileName, n);
+		}
+		delete[] pFileName;
+	}
+	return NOERROR;
+}
+
+STDMETHODIMP YuvSourceFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
+{
+	if(riid == (IID_ISettingsInterface))
+	{
+		return GetInterface((ISettingsInterface*) this, ppv);
+	}
+	else if (riid == IID_IStatusInterface)
+	{
+		return GetInterface((IStatusInterface*) this, ppv);
+	}
+	else if (riid == IID_IFileSourceFilter)
+	{
+		return GetInterface((IFileSourceFilter*) this, ppv);
+	}
+	else if (riid == IID_ISpecifyPropertyPages)
+	{
+		return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+	}
+	else
+	{
+		return CSource::NonDelegatingQueryInterface(riid, ppv);
+	}
+}
+
+STDMETHODIMP YuvSourceFilter::SetParameter( const char* type, const char* value )
+{
+	if (strcmp(type, SOURCE_DIMENSIONS) == 0)
+	{
+		if ( parseDimensions(value) )
+		{
+			return CSettingsInterface::SetParameter(type, value);
+		}
+		else
+		{
+			return E_FAIL;
+		}
+	}
+	else return CSettingsInterface::SetParameter(type, value);
+}
+
+bool YuvSourceFilter::parseDimensions( const std::string& sDimensions )
+{
+	size_t pos = sDimensions.find( "x" );
+	if (pos == std::string::npos ) return false;
+	else
+	{
+		int iWidth = 0, iHeight = 0;
+		std::istringstream istr( sDimensions.substr( 0, pos ) );
+		istr >> iWidth;
+		std::istringstream istr2( sDimensions.substr( pos + 1) );
+		istr2 >> iHeight;
+		if (iWidth > 0 && iHeight > 0)
+		{
+			m_iWidth = iWidth;
+			m_iHeight = iHeight;
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+	}
+}
+
+STDMETHODIMP YuvSourceFilter::Stop()
+{
+	m_pPin->m_iCurrentFrame = 0;
+	return CSource::Stop();
 }

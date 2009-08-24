@@ -33,6 +33,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <strsafe.h>
 
+#include <DirectShow/CStatusInterface.h>
+#include <DirectShow/CSettingsInterface.h>
+
+
 // UNITS = 10 ^ 7  
 // UNITS / 30 = 30 fps;
 // UNITS / 20 = 20 fps, etc
@@ -51,9 +55,17 @@ const REFERENCE_TIME rtDefaultFrameLength = FPS_10;
 DEFINE_GUID(CLSID_YUVSource, 
 			0xdac3aa2a, 0x5ab3, 0x4705, 0x96, 0x3b, 0xff, 0xaf, 0x9c, 0xd, 0x8, 0xd8);
 
+// {B044F35E-A7BD-464a-AD9F-9A1BEFBD95ED}
+DEFINE_GUID(CLSID_YUVProperties, 
+			0xb044f35e, 0xa7bd, 0x464a, 0xad, 0x9f, 0x9a, 0x1b, 0xef, 0xbd, 0x95, 0xed);
+
+
 // Filter name strings
 #define g_wszYuvSource     L"CSIR RTVC YUV Source"
 
+#define YUV_WIDTH	"width"
+#define YUV_HEIGHT	"height"
+#define SOURCE_DIMENSIONS "sourcedimensions"
 
 /**********************************************
  *
@@ -63,67 +75,108 @@ DEFINE_GUID(CLSID_YUVSource,
 
 class YuvOutputPin : public CSourceStream
 {
-protected:
-	unsigned char* m_szYuvFile;
-
-// 	BITMAPINFOHEADER m_bitmapInfo;
-// 	unsigned char* m_pY;
-// 	unsigned char* m_pU;
-// 	unsigned char* m_pV;
-	int m_iNoFrames;
-	int m_iFrameSize;
-	int m_iLengthY;
-	int m_iLengthUV;
-	int m_iCurrentFrame;
-
-//     CRefTime m_rtSampleTime;	        // The time stamp for each sample
-
-//     DWORD       m_cbBitmapInfo;         // Size of the bitmap header	
-	// File opening variables 
-// 	HANDLE m_hFile;                     // Handle returned from CreateFile
-//     BYTE * m_pFile;                     // Points to beginning of file buffer
-// 	BYTE * m_pImage;                    // Points to pixel bits                                      
-// 
-//     int m_iFrameNumber;
-    const REFERENCE_TIME m_rtFrameLength;
-
-    CCritSec m_cSharedState;            // Protects our internal state
-//     CImageDisplay m_Display;            // Figures out our media type for us
+	friend class YuvSourceFilter;
 
 public:
 
-    YuvOutputPin(HRESULT *phr, CSource *pFilter);
-    ~YuvOutputPin();
+	YuvOutputPin(HRESULT *phr, YuvSourceFilter *pFilter);
+	~YuvOutputPin();
 
-    // Override the version that offers exactly one media type
-    HRESULT GetMediaType(CMediaType *pMediaType);
-    HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest);
-    HRESULT FillBuffer(IMediaSample *pSample);
-    
-    // Quality control
+	// Override the version that offers exactly one media type
+	HRESULT GetMediaType(CMediaType *pMediaType);
+	HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest);
+	HRESULT FillBuffer(IMediaSample *pSample);
+
+	// Quality control
 	// Not implemented because we aren't going in real time.
 	// If the file-writing filter slows the graph down, we just do nothing, which means
 	// wait until we're unblocked. No frames are ever dropped.
-    STDMETHODIMP Notify(IBaseFilter *pSelf, Quality q)
-    {
-        return E_FAIL;
-    }
+	STDMETHODIMP Notify(IBaseFilter *pSelf, Quality q)
+	{
+		return E_FAIL;
+	}
 
+protected:
+	YuvSourceFilter* m_pYuvFilter;
+	//unsigned char* m_szYuvFile;
+
+	/*int m_iNoFrames;
+	int m_iFrameSize;
+	int m_iLengthY;
+	int m_iLengthUV;*/
+	int m_iCurrentFrame;
+
+    const REFERENCE_TIME m_rtFrameLength;
+
+    CCritSec m_cSharedState;            // Protects our internal state
 };
 
-class YuvSourceFilter : public CSource
+class YuvSourceFilter : public CSource,
+						public CSettingsInterface,	/* Rtvc Settings Interface */
+						public CStatusInterface,	/* Rtvc Status Interface */
+						public IFileSourceFilter,	/* To facilitate loading of URL */
+						public ISpecifyPropertyPages
 {
+	friend class YuvOutputPin;
+
+public:
+	///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
+	DECLARE_IUNKNOWN;
+
+	static CUnknown * WINAPI CreateInstance(IUnknown *pUnk, HRESULT *phr);  
+
+	/// override this to publicize our interfaces
+	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
+
+	/// From CSource
+	STDMETHODIMP Stop();
+
+	/// From CSettingsInterface
+	virtual void initParameters()
+	{
+		addParameter(SOURCE_DIMENSIONS, &m_sDimensions, "352x288"); 
+		addParameter(YUV_WIDTH, &m_iWidth, 0);
+		addParameter(YUV_WIDTH, &m_iHeight, 0);
+	}
+	STDMETHODIMP SetParameter( const char* type, const char* value );
+
+	/// From IFileSourceFilter
+	STDMETHODIMP Load(LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt);
+	/// From IFileSourceFilter
+	STDMETHODIMP GetCurFile(LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt);
+
+	STDMETHODIMP GetPages(CAUUID *pPages)
+	{
+		if (pPages == NULL) return E_POINTER;
+		pPages->cElems = 1;
+		pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+		if (pPages->pElems == NULL) 
+		{
+			return E_OUTOFMEMORY;
+		}
+		pPages->pElems[0] = CLSID_YUVProperties;
+		return S_OK;
+	}
 
 private:
     // Constructor is private because you have to use CreateInstance
     YuvSourceFilter(IUnknown *pUnk, HRESULT *phr);
     ~YuvSourceFilter();
 
+	bool parseDimensions(const std::string& sDimensions);
     YuvOutputPin *m_pPin;
 
-public:
-    static CUnknown * WINAPI CreateInstance(IUnknown *pUnk, HRESULT *phr);  
+	int m_iWidth;
+	int m_iHeight;
+	std::string m_sDimensions;
+	int m_iNoFrames;
+	int m_iFrameSize;
+	double m_iBitsPerPixel;
 
+	std::string m_sFile;
+
+	unsigned char* m_szYuvFile;
+	int m_iFileSize;
 };
 
 

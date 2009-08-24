@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <initguid.h>
 
 #include "YuvSource.h"
+#include "YuvProperties.h"
 
 // Note: It is better to register no media types than to register a partial 
 // media type (subtype == GUID_NULL) because that can slow down intelligent connect 
@@ -82,7 +83,7 @@ const AMOVIESETUP_FILTER sudPushSourceBitmap =
 // being created. The class factory will call the static CreateInstance.
 // We provide a set of filters in this one DLL.
 
-CFactoryTemplate g_Templates[1] = 
+CFactoryTemplate g_Templates[] = 
 {
     { 
       g_wszYuvSource,						// Name
@@ -91,6 +92,14 @@ CFactoryTemplate g_Templates[1] =
       NULL,									// Initialization function
       &sudPushSourceBitmap				    // Set-up information (for filters)
     },
+	// This entry is for the property page.
+	{ 
+		L"YUV Source Filter Properties",
+		&CLSID_YUVProperties,
+		YuvProperties::CreateInstance, 
+		NULL, 
+		NULL
+	  }
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
