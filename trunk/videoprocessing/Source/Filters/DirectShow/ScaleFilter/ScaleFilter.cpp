@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicScalerRGB24Impl.h>
 #include <Image/PicScalerYUV420PImpl.h>
 
-CScaleFilter::CScaleFilter()
+ScaleFilter::ScaleFilter()
 : CCustomBaseFilter(NAME("CSIR RTVC Scale Filter"), 0, CLSID_ScaleFilter),
 	m_pScaler(NULL),
 	m_nBytesPerPixel(BYTES_PER_PIXEL_RGB24)
@@ -51,7 +51,7 @@ CScaleFilter::CScaleFilter()
 	initParameters();
 }
 
-CScaleFilter::~CScaleFilter()
+ScaleFilter::~ScaleFilter()
 {
 	if (m_pScaler)
 	{
@@ -60,9 +60,9 @@ CScaleFilter::~CScaleFilter()
 	}
 }
 
-CUnknown * WINAPI CScaleFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
+CUnknown * WINAPI ScaleFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 {
-	CScaleFilter *pFilter = new CScaleFilter();
+	ScaleFilter *pFilter = new ScaleFilter();
 	if (pFilter== NULL) 
 	{
 		*pHr = E_OUTOFMEMORY;
@@ -71,13 +71,13 @@ CUnknown * WINAPI CScaleFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 }
 
 
-void CScaleFilter::InitialiseInputTypes()
+void ScaleFilter::InitialiseInputTypes()
 {
 	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24, &FORMAT_VideoInfo);
 	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_YUV420P, &FORMAT_VideoInfo);
 }
 
-HRESULT CScaleFilter::SetMediaType( PIN_DIRECTION direction, const CMediaType *pmt )
+HRESULT ScaleFilter::SetMediaType( PIN_DIRECTION direction, const CMediaType *pmt )
 {
 	HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
 	if (direction == PINDIR_INPUT)
@@ -115,7 +115,7 @@ HRESULT CScaleFilter::SetMediaType( PIN_DIRECTION direction, const CMediaType *p
 	return hr;
 }
 
-HRESULT CScaleFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
+HRESULT ScaleFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 {
 	if (iPosition < 0)
 	{
@@ -165,7 +165,7 @@ HRESULT CScaleFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 	return VFW_S_NO_MORE_ITEMS;
 }
 
-HRESULT CScaleFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp )
+HRESULT ScaleFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp )
 {
 	// Leaving this var so that we can cater for RGB32 at a later stage
 	pProp->cbBuffer = m_nOutPixels * m_nBytesPerPixel;
@@ -199,7 +199,7 @@ HRESULT CScaleFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PROPERT
 	return S_OK;
 }
 
-HRESULT CScaleFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )
+HRESULT ScaleFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )
 {
 	//Make sure the input and output types are related
 	if (mtOut->majortype != MEDIATYPE_Video)
@@ -230,7 +230,7 @@ HRESULT CScaleFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *
 }
 
 
-STDMETHODIMP CScaleFilter::SetParameter( const char* type, const char* value )
+STDMETHODIMP ScaleFilter::SetParameter( const char* type, const char* value )
 {
 	// For now, one cannot set any parameters once the output has been connected -> this will affect the buffersize
 	if (m_pOutput)
@@ -253,7 +253,7 @@ STDMETHODIMP CScaleFilter::SetParameter( const char* type, const char* value )
 	}
 }
 
-DWORD CScaleFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
+DWORD ScaleFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialize our converter
@@ -273,7 +273,7 @@ DWORD CScaleFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 }
 
 
-HRESULT CScaleFilter::RecalculateFilterParameters()
+HRESULT ScaleFilter::RecalculateFilterParameters()
 {
 	// Update the number of out pixels
 	m_nOutPixels = m_nOutWidth * m_nOutHeight;
