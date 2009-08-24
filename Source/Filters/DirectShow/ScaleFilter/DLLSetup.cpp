@@ -53,7 +53,7 @@ CFactoryTemplate g_Templates[] =
 	{ 
 		g_wszName,						// Name
 		&CLSID_ScaleFilter,				// CLSID
-		CScaleFilter::CreateInstance,	// Method to create an instance of MyComponent
+		ScaleFilter::CreateInstance,	// Method to create an instance of MyComponent
 		NULL,							// Initialization function
 		&FilterInfo						// Set-up information (for filters)
 	},

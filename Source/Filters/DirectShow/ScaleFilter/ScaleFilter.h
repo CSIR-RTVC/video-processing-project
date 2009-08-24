@@ -55,20 +55,20 @@ typedef signed char yuvType ;
 class PicScalerBase;
 
 /**
-* \ingroup DirectShowFilters
-* Scale Filter for RGB24 and YUV420P Media
-* Scale parameters are settable via the ISettingsInterface COM interface.
-*/
-class CScaleFilter : public CCustomBaseFilter,
+ * \ingroup DirectShowFilters
+ * Scale Filter for RGB24 and YUV420P Media
+ * Scale parameters are settable via the ISettingsInterface COM interface.
+ */
+class ScaleFilter : public CCustomBaseFilter,
 					public ISpecifyPropertyPages
 {
 public:
 	DECLARE_IUNKNOWN;
 
 	/// Constructor
-	CScaleFilter();
+	ScaleFilter();
 	/// Destructor
-	~CScaleFilter();
+	~ScaleFilter();
 
 	/// Static object-creation method (for the class factory)
 	static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr); 
