@@ -39,19 +39,19 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // CSIR includes
 #include "Tee.h"
 
-CRtvcTee::CRtvcTee() 
+RtvcTee::RtvcTee() 
 	:CMultiIOBaseFilter(NAME("CSIR RTVC Tee Filter"), 0, CLSID_RtvcTee)
 {
 	//Hack virtual method of subclass can't be called from base class contructor, hence must be called in child contructor
 	Initialise();
 }
 
-CRtvcTee::~CRtvcTee()
+RtvcTee::~RtvcTee()
 {;}
 
-CUnknown * WINAPI CRtvcTee::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
+CUnknown * WINAPI RtvcTee::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 {
-	CRtvcTee *pFilter = new CRtvcTee();
+	RtvcTee *pFilter = new RtvcTee();
 	if (pFilter== NULL) 
 	{
 		*pHr = E_OUTOFMEMORY;
@@ -59,7 +59,7 @@ CUnknown * WINAPI CRtvcTee::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 	return pFilter;
 }
 
-HRESULT CRtvcTee::Receive( IMediaSample *pSample, int nIndex )
+HRESULT RtvcTee::Receive( IMediaSample *pSample, int nIndex )
 {
 	ASSERT(nIndex >= 0);
 	ASSERT (nIndex < m_vInputPins.size());
@@ -171,17 +171,17 @@ HRESULT CRtvcTee::Receive( IMediaSample *pSample, int nIndex )
 	}
 }
 
-void CRtvcTee::InitialiseInputTypes()
+void RtvcTee::InitialiseInputTypes()
 {
 	AddInputType(NULL, NULL, NULL);
 }
 
-void CRtvcTee::InitialiseOutputTypes()
+void RtvcTee::InitialiseOutputTypes()
 {
 	AddOutputType(NULL, NULL, NULL);
 }
 
-HRESULT CRtvcTee::DecideBufferSize( IMemAllocator* pAlloc, ALLOCATOR_PROPERTIES* pRequestProperties, int m_nIndex )
+HRESULT RtvcTee::DecideBufferSize( IMemAllocator* pAlloc, ALLOCATOR_PROPERTIES* pRequestProperties, int m_nIndex )
 {
 	// Get media type of the output pin
 	AM_MEDIA_TYPE mt;
@@ -230,7 +230,7 @@ HRESULT CRtvcTee::DecideBufferSize( IMemAllocator* pAlloc, ALLOCATOR_PROPERTIES*
 	return S_OK;
 }
 
-HRESULT CRtvcTee::GetMediaType( int iPosition, CMediaType* pMediaType, int nOutputPinIndex )
+HRESULT RtvcTee::GetMediaType( int iPosition, CMediaType* pMediaType, int nOutputPinIndex )
 {
 	if (iPosition < 0)
 	{
@@ -243,7 +243,7 @@ HRESULT CRtvcTee::GetMediaType( int iPosition, CMediaType* pMediaType, int nOutp
 	return VFW_S_NO_MORE_ITEMS;
 }
 
-HRESULT CRtvcTee::CheckOutputType( const CMediaType* pMediaType )
+HRESULT RtvcTee::CheckOutputType( const CMediaType* pMediaType )
 {
 	AM_MEDIA_TYPE mediaType;
 	HRESULT hr = m_vInputPins[0]->ConnectionMediaType(&mediaType);

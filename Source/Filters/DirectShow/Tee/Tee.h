@@ -47,13 +47,13 @@ static const GUID CLSID_RtvcTee =
  * NOTE: This filter will not handle ALL media types and has been created for demonstration purposes.
  * Use the standard DirectShow tee in applications.
  */
-class CRtvcTee : public CMultiIOBaseFilter
+class RtvcTee : public CMultiIOBaseFilter
 {
 public:
 	/// Constructor
-	CRtvcTee();
+	RtvcTee();
 	/// Destructor
-	~CRtvcTee();
+	~RtvcTee();
 
 	/// Static object-creation method (for the class factory)
 	static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr); 
