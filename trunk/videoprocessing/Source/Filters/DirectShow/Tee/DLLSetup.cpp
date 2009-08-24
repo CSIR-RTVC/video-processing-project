@@ -53,7 +53,7 @@ CFactoryTemplate g_Templates[1] =
 	{ 
 		g_wszName,						// Name
 		&CLSID_RtvcTee,					// CLSID
-		CRtvcTee::CreateInstance,		// Method to create an instance of MyComponent
+		RtvcTee::CreateInstance,		// Method to create an instance of MyComponent
 		NULL,							// Initialization function
 		&FilterInfo						// Set-up information (for filters)
 	}
