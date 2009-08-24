@@ -27,7 +27,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="regsvr32 /s  &quot;$(BuildDir)\Debug\$(ProjectName)d.dll&quot;"
+				CommandLine="regsvr32 /s  &quot;$(BuildDir)\Debug\$(ProjectName)d.dll&quot;&#x0D;&#x0A;"
 				Outputs="DLL registered"
 			/>
 			<Tool
@@ -64,7 +64,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Msvcrtd.lib strmbasd.lib winmm.lib "
+				AdditionalDependencies="Msvcrtd.lib strmbasd.lib winmm.lib comctl32.lib libRtvcDirectShowD.lib"
 				OutputFile="$(BuildDir)\Debug\$(ProjectName)d.dll"
 				LinkIncremental="2"
 				IgnoreAllDefaultLibraries="false"
@@ -110,7 +110,7 @@
 			/>
 			<Tool
 				Name="VCCustomBuildTool"
-				CommandLine="regsvr32 /s &quot;$(BuildDir)\Release\$(ProjectName).dll&quot;"
+				CommandLine="regsvr32 /s &quot;$(BuildDir)\Release\$(ProjectName).dll&quot;&#x0D;&#x0A;"
 				Outputs="DLL registered"
 			/>
 			<Tool
@@ -145,7 +145,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmbase.lib winmm.lib msvcrt.lib"
+				AdditionalDependencies="strmbase.lib winmm.lib msvcrt.lib comctl32.lib libRtvcDirectShow.lib"
 				OutputFile="$(BuildDir)\Release\$(ProjectName).dll"
 				LinkIncremental="1"
 				IgnoreAllDefaultLibraries="false"
@@ -209,6 +209,14 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\resource.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvProperties.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvSource.h"
 				>
 			</File>
@@ -218,6 +226,10 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvSource.rc"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
