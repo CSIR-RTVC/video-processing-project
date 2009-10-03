@@ -138,8 +138,31 @@ private:
 	/// 0 = horizontal, 1 = vertical
 	//int m_nOrientation;
 
+	enum SUB_PIC_POSITION
+	{
+		SUB_PIC_POSITION_1		= 0,
+		SUB_PIC_POSITION_2		= 1,
+		SUB_PIC_POSITION_3		= 2,
+		SUB_PIC_POSITION_4		= 3,
+		SUB_PIC_POSITION_CUSTOM = 4
+	};
+
+	// Position where subvideo is inserted
+	int m_nPosition;
+	// Target dimensions 
+	int m_nTargetWidth;
+	int m_nTargetHeight;
+	// Target dimensions of sub pic
+	int m_nSubPictureWidth;
+	int m_nSubPictureHeight;
+	// Position-dependent offset from nearest corner when position = SUB_PIC_POSITION_1 to SUB_PIC_POSITION_4
+	// Custom offset from bottom left corner used when position = SUB_PIC_POSITION_CUSTOM
+	int m_nCustomOffsetX;
+	int m_nCustomOffsetY;
+
 	// Picture in pic class
 	PicInPicBase* m_pPicInPic;
+	PicScalerBase* m_pTargetPicScaler;
 	PicScalerBase* m_pSubPicScaler;
 
 	/// Stores bytes per needed to store pixel according to media type
