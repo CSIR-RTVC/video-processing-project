@@ -1,8 +1,8 @@
 /** @file
 
-MODULE				: VideoMixingProperties
+MODULE				: PicInPicProperties
 
-FILE NAME			: VideoMixingProperties.h
+FILE NAME			: PicInPicProperties.h
 
 DESCRIPTION			: 
 					  
