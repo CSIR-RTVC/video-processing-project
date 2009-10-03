@@ -63,9 +63,8 @@ DEFINE_GUID(CLSID_YUVProperties,
 // Filter name strings
 #define g_wszYuvSource     L"CSIR RTVC YUV Source"
 
-#define YUV_WIDTH	"width"
-#define YUV_HEIGHT	"height"
-#define SOURCE_DIMENSIONS "sourcedimensions"
+#define SOURCE_DIMENSIONS	"sourcedimensions"
+#define SOURCE_FPS			"fps"
 
 /**********************************************
  *
@@ -78,7 +77,6 @@ class YuvOutputPin : public CSourceStream
 	friend class YuvSourceFilter;
 
 public:
-
 	YuvOutputPin(HRESULT *phr, YuvSourceFilter *pFilter);
 	~YuvOutputPin();
 
@@ -98,15 +96,9 @@ public:
 
 protected:
 	YuvSourceFilter* m_pYuvFilter;
-	//unsigned char* m_szYuvFile;
 
-	/*int m_iNoFrames;
-	int m_iFrameSize;
-	int m_iLengthY;
-	int m_iLengthUV;*/
 	int m_iCurrentFrame;
-
-    const REFERENCE_TIME m_rtFrameLength;
+    REFERENCE_TIME m_rtFrameLength;
 
     CCritSec m_cSharedState;            // Protects our internal state
 };
@@ -134,9 +126,8 @@ public:
 	/// From CSettingsInterface
 	virtual void initParameters()
 	{
-		addParameter(SOURCE_DIMENSIONS, &m_sDimensions, "352x288"); 
-		addParameter(YUV_WIDTH, &m_iWidth, 0);
-		addParameter(YUV_WIDTH, &m_iHeight, 0);
+		addParameter( SOURCE_DIMENSIONS, &m_sDimensions, "352x288"); 
+		addParameter( SOURCE_FPS, &m_iFramesPerSecond, 30);
 	}
 	STDMETHODIMP SetParameter( const char* type, const char* value );
 
@@ -164,14 +155,17 @@ private:
     ~YuvSourceFilter();
 
 	bool parseDimensions(const std::string& sDimensions);
+	void recalculate();
+
     YuvOutputPin *m_pPin;
 
 	int m_iWidth;
 	int m_iHeight;
 	std::string m_sDimensions;
+	int m_iFramesPerSecond;
 	int m_iNoFrames;
 	int m_iFrameSize;
-	double m_iBitsPerPixel;
+	double m_dBitsPerPixel;
 
 	std::string m_sFile;
 
