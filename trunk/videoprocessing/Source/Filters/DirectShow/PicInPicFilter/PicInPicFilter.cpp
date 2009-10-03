@@ -90,6 +90,13 @@ void PicInPicFilter::initParameters()
 	//addParameter(ORIENTATION, &m_nOrientation, 0);
 	//addParameter(TARGET_WIDTH, &m_nOutWidth, 0);
 	//addParameter(TARGET_HEIGHT, &m_nOutHeight, 0);
+	addParameter(SUB_PICTURE_POSITION, &m_nPosition, (int)SUB_PIC_POSITION_1);
+	addParameter(TARGET_WIDTH, &m_nTargetWidth, 0);
+	addParameter(TARGET_HEIGHT, &m_nTargetHeight, 0);
+	addParameter(SUB_PIC_WIDTH, &m_nSubPictureWidth, 0);
+	addParameter(SUB_PIC_HEIGHT, &m_nSubPictureHeight, 0);
+	addParameter(OFFSET_X, &m_nCustomOffsetX, 0);
+	addParameter(OFFSET_Y, &m_nCustomOffsetY, 0);
 }
 
 HRESULT PicInPicFilter::GenerateOutputSample(IMediaSample *pSample, int nIndex)
@@ -139,6 +146,8 @@ HRESULT PicInPicFilter::GenerateOutputSample(IMediaSample *pSample, int nIndex)
 		m_pSubPicScaler->Scale((void*)pScaledSecondaryImage, (void*)m_pSampleBuffers[1]);
 
 		m_pPicInPic->Insert((void*)pScaledSecondaryImage, pBufferOut);
+
+		delete[] pScaledSecondaryImage;
 	}
  	else if (m_pSampleBuffers[0])
  	{
@@ -163,23 +172,9 @@ HRESULT PicInPicFilter::GenerateOutputSample(IMediaSample *pSample, int nIndex)
 		m_pSubPicScaler->Scale((void*)pScaledSecondaryImage, (void*)m_pSampleBuffers[1]);
 
 		m_pPicInPic->Insert((void*)pScaledSecondaryImage, pBufferOut);
- 	}
 
-	// Concat the pictures
-// 	if (m_pSampleBuffers[0] && m_pSampleBuffers[1])
-// 		m_pPicInPic->Concat(m_pSampleBuffers[0], m_pSampleBuffers[1], pBufferOut);
-// 	else if (m_pSampleBuffers[0])
-// 	{
-// 		int nWidth = m_pPicInPic->Get1stWidth();
-// 		int nHeight = m_pPicInPic->Get1stHeight();
-// 		memcpy(pBufferOut, m_pSampleBuffers[0], nWidth * nHeight* m_nBytesPerPixel);
-// 	}
-// 	else
-// 	{
-// 		int nWidth = m_pPicInPic->Get2ndWidth();
-// 		int nHeight = m_pPicInPic->Get2ndHeight();
-// 		memcpy(pBufferOut, m_pSampleBuffers[1], nWidth * nHeight* m_nBytesPerPixel);
-// 	}
+		delete[] pScaledSecondaryImage;
+ 	}
 
 	pOutSample->SetActualDataLength(m_nOutputSize);
 	pOutSample->SetSyncPoint(TRUE);
@@ -357,7 +352,11 @@ HRESULT PicInPicFilter::SetOutputDimensions( BITMAPINFOHEADER* pBmih1, BITMAPINF
 			int iSubHeight = pBmih1->biHeight * 0.4;
 
 			m_pPicInPic->SetSubDimensions(iSubWidth, iSubHeight);
-			m_pPicInPic->SetPos(0, 0);
+
+			int iPosWidth = pBmih1->biWidth * 0.1;
+			int iPosHeight = pBmih1->biHeight * 0.1;
+
+			m_pPicInPic->SetPos(iPosWidth, iPosHeight);
 		}
 	}
 	else

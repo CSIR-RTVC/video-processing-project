@@ -62,6 +62,7 @@ public:
 
 	HRESULT ReadSettings()
 	{
+		initialiseControls();
 		return S_OK;
 		//int nLength = 0;
 		//char szBuffer[BUFFER_SIZE];
@@ -99,6 +100,38 @@ public:
 		//	}
 		//}
 		return S_OK;
-	} 
+	}
+
+private:
+	void initialiseControls()
+	{
+		InitCommonControls();
+
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_RESETCONTENT, 0, 0);
+		//Add default option
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_ADDSTRING,	   0, (LPARAM)"Left bottom");
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_SELECTSTRING,  0, (LPARAM)"Left bottom");
+		// Now populate the graphs
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_INSERTSTRING,  1, (LPARAM)"Left top");
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_INSERTSTRING,  2, (LPARAM)"Right top");
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_INSERTSTRING,  3, (LPARAM)"Right bottom");
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_INSERTSTRING,  4, (LPARAM)"Custom");
+		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_POSITION), CB_SETMINVISIBLE, 5, 0);
+
+		//// Init frames per second
+		//short lower = 1;
+		//short upper = 60;
+
+		//// Init UI
+		//long lResult = SendMessage(			// returns LRESULT in lResult
+		//	GetDlgItem(m_Dlg, IDC_SPIN_FPS),	// handle to destination control
+		//	(UINT) UDM_SETRANGE,			// message ID
+		//	(WPARAM) 0,						// = 0; not used, must be zero
+		//	(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+		//	);
+		//// Default value of 30 FPS
+		//SetDlgItemText(m_Dlg, IDC_FPS, "30");
+
+	}
 };
 
