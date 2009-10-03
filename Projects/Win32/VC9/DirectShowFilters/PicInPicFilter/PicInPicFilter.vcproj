@@ -2,9 +2,9 @@
 <VisualStudioProject
 	ProjectType="Visual C++"
 	Version="9.00"
-	Name="YuvSource"
-	ProjectGUID="{39469123-3EB7-45F3-A15B-3854DFD2C2EB}"
-	RootNamespace="YuvSource"
+	Name="PicInPicFilter"
+	ProjectGUID="{05A99009-23E7-47A0-844C-700D37D36F33}"
+	RootNamespace="PicInPicFilter"
 	Keyword="Win32Proj"
 	TargetFrameworkVersion="131072"
 	>
@@ -18,8 +18,8 @@
 	<Configurations>
 		<Configuration
 			Name="Debug|Win32"
-			OutputDirectory="Debug"
-			IntermediateDirectory="Debug"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
 			>
@@ -43,16 +43,15 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				AdditionalIncludeDirectories="..\..\BaseClasses\"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;YUVSOURCE_EXPORTS"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;PicInPicFilter_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
+				TreatWChar_tAsBuiltInType="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
-				CallingConvention="2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -65,11 +64,11 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Msvcrtd.lib strmbasd.lib winmm.lib comctl32.lib libRtvcDirectShowD.lib"
+				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
+				AdditionalDependencies="Msvcrtd.lib Winmm.lib strmbasd.lib comctl32.lib libRtvcImageD.lib libRtvcDirectShowD.lib"
 				OutputFile="$(BuildDir)\Debug\$(ProjectName)d.dll"
 				LinkIncremental="2"
-				IgnoreAllDefaultLibraries="false"
-				ModuleDefinitionFile="YuvSource.def"
+				ModuleDefinitionFile="PicInPicFilter.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				RandomizedBaseAddress="1"
@@ -100,10 +99,11 @@
 		</Configuration>
 		<Configuration
 			Name="Release|Win32"
-			OutputDirectory="Release"
-			IntermediateDirectory="Release"
+			OutputDirectory="$(SolutionDir)$(ConfigurationName)"
+			IntermediateDirectory="$(ConfigurationName)"
 			ConfigurationType="2"
 			CharacterSet="2"
+			WholeProgramOptimization="1"
 			>
 			<Tool
 				Name="VCPreBuildEventTool"
@@ -111,7 +111,7 @@
 			<Tool
 				Name="VCCustomBuildTool"
 				CommandLine="regsvr32 /s &quot;$(BuildDir)\Release\$(ProjectName).dll&quot;&#x0D;&#x0A;"
-				Outputs="DLL registered"
+				Outputs="DLL Registered"
 			/>
 			<Tool
 				Name="VCXMLDataGeneratorTool"
@@ -124,15 +124,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				Optimization="2"
-				AdditionalIncludeDirectories="..\..\BaseClasses\"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;YUVSOURCE_EXPORTS"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;PicInPicFilter_EXPORTS;_BUILD_FOR_SHORT;_CRT_SECURE_NO_DEPRECATE"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
-				CallingConvention="2"
 			/>
 			<Tool
 				Name="VCManagedResourceCompilerTool"
@@ -145,11 +142,10 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="strmbase.lib winmm.lib msvcrt.lib comctl32.lib libRtvcDirectShow.lib"
+				AdditionalDependencies="STRMBASE.lib Msvcrt.lib comctl32.lib Winmm.lib odbc32.lib odbccp32.lib libRtvcImage.lib libRtvcDirectShow.lib"
 				OutputFile="$(BuildDir)\Release\$(ProjectName).dll"
 				LinkIncremental="1"
-				IgnoreAllDefaultLibraries="false"
-				ModuleDefinitionFile="YuvSource.def"
+				ModuleDefinitionFile="PicInPicFilter.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
@@ -182,6 +178,14 @@
 		</Configuration>
 	</Configurations>
 	<References>
+		<ProjectReference
+			ReferencedProjectIdentifier="{382B7FFF-3C67-4370-8D39-2FB7FD1693E1}"
+			RelativePathToProject=".\RtvcLib\DirectShow\DirectShow.vcproj"
+		/>
+		<ProjectReference
+			ReferencedProjectIdentifier="{00930375-8B79-4D36-9B1F-E45D3EAC51A0}"
+			RelativePathToProject=".\RtvcLib\Image\Image.vcproj"
+		/>
 	</References>
 	<Files>
 		<Filter
@@ -190,15 +194,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\DLLSetup.cpp"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\DLLSetup.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvSource.cpp"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\PicInPicFilter.cpp"
 				>
 			</File>
 			<File
-				RelativePath=".\YuvSource.def"
+				RelativePath=".\PicInPicFilter.def"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\stdafx.cpp"
 				>
 			</File>
 		</Filter>
@@ -208,15 +216,15 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\resource.h"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\PicInPicFilter.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvProperties.h"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\PicInPicProperties.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvSource.h"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\stdafx.h"
 				>
 			</File>
 		</Filter>
@@ -226,7 +234,7 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\YuvSource\YuvSource.rc"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\PicInPicFilter.rc"
 				>
 			</File>
 		</Filter>
