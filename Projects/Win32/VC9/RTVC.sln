@@ -46,6 +46,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoMixingFilter", "Direct
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RotateFilter", "DirectShowFilters\RotateFilter\RotateFilter.vcproj", "{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PicInPicFilter", "DirectShowFilters\PicInPIcFilter\PicInPicFilter.vcproj", "{05A99009-23E7-47A0-844C-700D37D36F33}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YuvSource", "DirectShowFilters\YuvSource\YuvSource.vcproj", "{39469123-3EB7-45F3-A15B-3854DFD2C2EB}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -104,6 +108,14 @@ Global
 		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Debug|Win32.Build.0 = Debug|Win32
 		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Release|Win32.ActiveCfg = Release|Win32
 		{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}.Release|Win32.Build.0 = Release|Win32
+		{05A99009-23E7-47A0-844C-700D37D36F33}.Debug|Win32.ActiveCfg = Debug|Win32
+		{05A99009-23E7-47A0-844C-700D37D36F33}.Debug|Win32.Build.0 = Debug|Win32
+		{05A99009-23E7-47A0-844C-700D37D36F33}.Release|Win32.ActiveCfg = Release|Win32
+		{05A99009-23E7-47A0-844C-700D37D36F33}.Release|Win32.Build.0 = Release|Win32
+		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Debug|Win32.Build.0 = Debug|Win32
+		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Release|Win32.ActiveCfg = Release|Win32
+		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
