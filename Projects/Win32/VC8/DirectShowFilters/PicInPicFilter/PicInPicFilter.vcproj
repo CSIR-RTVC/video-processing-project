@@ -225,10 +225,6 @@
 				>
 			</File>
 			<File
-				RelativePath=".\resource.h"
-				>
-			</File>
-			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\stdafx.h"
 				>
 			</File>
@@ -239,7 +235,11 @@
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
 			<File
-				RelativePath=".\PicInPicFilter.rc"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\PicInPicFilter.rc"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\PicInPicFilter\resource.h"
 				>
 			</File>
 		</Filter>
