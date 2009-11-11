@@ -96,10 +96,42 @@ public:
 	@param pBsw/r	: Stream reference to use.
 	@return				: No. of bits consumed.
 	*/
-	int RleEncode(IContextAwareRunLevelCodec* rlc, IBitStreamWriter* pBsw) {	rlc->Encode((void *)_pBlk, (void *)pBsw); 
-																																						_numCoeffs = rlc->GetParameter(rlc->NUM_TOT_COEFF_ID); } 
-	int RleDecode(IContextAwareRunLevelCodec* rlc, IBitStreamReader* pBsr) {  rlc->Decode((void *)pBsr, (void *)_pBlk); 
-																																						_numCoeffs = rlc->GetParameter(rlc->NUM_TOT_COEFF_ID); } 
+	int RleEncode(IContextAwareRunLevelCodec* rlc, IBitStreamWriter* pBsw) {	int numBits = rlc->Encode((void *)_pBlk, (void *)pBsw); 
+																																						_numCoeffs = rlc->GetParameter(rlc->NUM_TOT_COEFF_ID);
+																																						return(numBits); } 
+	int RleDecode(IContextAwareRunLevelCodec* rlc, IBitStreamReader* pBsr) {  int numBits = rlc->Decode((void *)pBsr, (void *)_pBlk); 
+																																						_numCoeffs = rlc->GetParameter(rlc->NUM_TOT_COEFF_ID); 
+																																						return(numBits); }
+	/** Is the block all zeros.
+	Included is the setting of the _coded flag to indicate the
+	existence of non-zero values.
+	@return : 1 = all zeros, 0 = non-zeros exist.
+	*/
+	int IsZero(void)
+	{
+		for(int i = 0; i < _length; i++)
+		{
+			if(_pBlk[i] != 0)
+			{
+				_coded = 1;
+				return(0);	///< Early exit.
+			}//end if _pBlk...
+		}//end for i...
+		_coded = 0;
+		return(1);
+	}//end IsZero.
+
+/// Interface implementation.
+public:
+	/** Get the number of neighbourhood coeffs
+	Assume that all the neighbourhood references above and left have
+	been pre-defined before calling this method. Find the average if
+	both neighbours exist or return the count for either if the other 
+	does not exist.
+	@param pBlk		: Block to operate on.
+	@return				: Number of neighbourhood coeffs.
+	*/
+	static int GetNumNeighbourCoeffs(BlockH264* pBlk);
 
 /// Member access.
 public:
@@ -114,6 +146,10 @@ public:
 	int							GetHeight(void)										{ return(_height); }
 	void						SetNumCoeffs(int numCoeffs)				{ _numCoeffs = numCoeffs; }
 	int							GetNumCoeffs(void)								{ return(_numCoeffs); }
+	void						SetColour(int colour)							{ _colour = colour; }
+	int							GetColour(void)										{ return(_colour); }
+	void						SetDcFlag(int dc)									{ _dcFlag = dc; }
+	int							IsDc(void)												{ return(_dcFlag); }
 
 	void						Copy(void* buff);
 	void						CopyRow(int row, void* buff);
@@ -133,18 +169,26 @@ public:
 	BlockH264* _blkAbove;
 	BlockH264* _blkLeft;
 
+/// Block constants.
+public:
+	static const int LUM		= 0;	///< Used for _colour values.
+	static const int CB			= 1;
+	static const int CR			= 2;
+
 /// Private data block members.
 protected:
 	/// Code/no code flag. Inverse of the Macroblock level skip flag, but for this block 
-	/// only. Is used to help determine the MB type.
+	/// only. Is used to help determine the MB type and coded block pattern.
 	int							_coded;
 	/// The block variables.
 	short*					_pBlk;
 	int							_width;
 	int							_height;
 	int							_length;		///< = _width * _height.
+	int							_colour;		///< = {LUM, CB, CR}
+	int							_dcFlag;		///< Indicates that the block holds DC components only.
 	/// Status or temp storage variables.
-	int							_numCoeffs;	///< Temp holder for tot no. of coeffs after an encode or decode.
+	int							_numCoeffs;	///< Temp holder for tot no. of coeffs after an RleEncode or RleDecode.
 	/// The block overlay for block functions.
 	OverlayMem2Dv2* _blk;
   

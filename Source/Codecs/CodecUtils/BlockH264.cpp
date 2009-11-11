@@ -66,6 +66,8 @@ BlockH264::BlockH264(void)
 	_width			= 4;	///< Default to a 4x4 block.
 	_height			= 4;
 	_length			= 16;
+	_colour			= LUM;
+	_dcFlag			= 1;
 
 	/// Location aware members.
 	_offX				= 0;		///< Block coord offset from top left of macroblock.
@@ -104,7 +106,7 @@ BlockH264::BlockH264(int width, int height)
 	_blkAbove		= NULL;
 	_blkLeft		= NULL;
 
-	/// The widthxheight block mem.
+	/// The width x height block mem.
 	_pBlk = NULL;
 	_pBlk = new short[_length];
 
@@ -165,6 +167,28 @@ void BlockH264::InverseQuantise(IInverseTransform* pQ, int q)
 	pQ->InverseTransform(_pBlk);			///< Do the inverse quant. 
 	pQ->SetMode(mode);								///< Restore previous mode.
 }//end InverseQuantise.
+
+/** Get the number of neighbourhood coeffs
+Assume that all the neighbourhood references above and left have
+been pre-defined before calling this method. Find the average if
+both neighbours exist or return the count for either if the other 
+does not exist.
+@param pBlk		: Block to operate on.
+@return				: Number of neighbourhood coeffs.
+*/
+int BlockH264::GetNumNeighbourCoeffs(BlockH264* pBlk)
+{
+	int neighCoeffs = 0;
+
+	if(pBlk->_blkAbove != NULL)
+		neighCoeffs += (pBlk->_blkAbove)->GetNumCoeffs();
+	if(pBlk->_blkLeft != NULL)
+		neighCoeffs += (pBlk->_blkLeft)->GetNumCoeffs();
+	if((pBlk->_blkAbove != NULL)&&(pBlk->_blkLeft != NULL))
+		neighCoeffs = (neighCoeffs + 1)/2;
+
+	return(neighCoeffs);
+}//end GetNumNeighbourCoeffs.
 
 /*
 ---------------------------------------------------------------------------
