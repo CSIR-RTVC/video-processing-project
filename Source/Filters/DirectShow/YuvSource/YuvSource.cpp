@@ -46,6 +46,8 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
     &MEDIASUBTYPE_NULL      // Minor type
 };
 
+DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
+0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
 
 /**********************************************
  *
@@ -84,7 +86,7 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
     pvi->AvgTimePerFrame = m_rtFrameLength;
 
 	pvi->bmiHeader.biBitCount = 12;
-	pvi->bmiHeader.biCompression = MAKEFOURCC('Y', 'V', '1', '2');;
+	pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');;
 
 	pvi->bmiHeader.biClrImportant = 0;
 	pvi->bmiHeader.biClrUsed = 0;
@@ -107,7 +109,7 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
     pMediaType->SetFormatType(&FORMAT_VideoInfo);
     pMediaType->SetTemporalCompression(FALSE);
 
-	pMediaType->SetSubtype(&MEDIASUBTYPE_YV12);
+	pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
 
 	pMediaType->SetSampleSize( m_pYuvFilter->m_iFrameSize );
     return S_OK;
@@ -183,6 +185,9 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
 		
 		BYTE* pSource = m_pYuvFilter->m_szYuvFile + ( m_iCurrentFrame * m_pYuvFilter->m_iFrameSize );
 
+		int nSizeY = m_pYuvFilter->m_iFrameSize >> 1;
+		nSizeY = m_pYuvFilter->m_iFrameSize/2;
+		int nSizeUV = nSizeY >> 1;
 		memcpy( pData, pSource, m_pYuvFilter->m_iFrameSize );
 
 		// Set the timestamps that will govern playback frame rate.
@@ -283,6 +288,7 @@ STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE
 		// TODO: move to property page
 		//m_iFrameSize = m_iFileSize/m_iNoFrames;
 
+		recalculate();
 		return S_OK;
 	}
 	else
