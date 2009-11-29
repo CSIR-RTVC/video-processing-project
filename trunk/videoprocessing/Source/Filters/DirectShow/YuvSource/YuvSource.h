@@ -154,8 +154,9 @@ private:
     YuvSourceFilter(IUnknown *pUnk, HRESULT *phr);
     ~YuvSourceFilter();
 
-	bool parseDimensions(const std::string& sDimensions);
+	bool setDimensions(const std::string& sDimensions);
 	void recalculate();
+	bool readFrame();
 
     YuvOutputPin *m_pPin;
 
@@ -169,8 +170,10 @@ private:
 
 	std::string m_sFile;
 
-	unsigned char* m_szYuvFile;
+	unsigned char* m_pYuvBuffer;
 	int m_iFileSize;
+	int m_iRead;
+	std::ifstream m_in1;
 };
 
 
