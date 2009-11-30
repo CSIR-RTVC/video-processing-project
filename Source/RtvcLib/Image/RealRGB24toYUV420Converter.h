@@ -49,15 +49,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class RealRGB24toYUV420Converter: public RGBtoYUV420Converter
 {
 public:
-	// Construction and destruction.
-	RealRGB24toYUV420Converter(void) { }
-	RealRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) { }
-	virtual ~RealRGB24toYUV420Converter(void) {}
+    /// Construction and destruction.
+    RealRGB24toYUV420Converter(void) { }
+    RealRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) { }
+    RealRGB24toYUV420Converter(int width, int height, int chrOff): RGBtoYUV420Converter(width,height, chrOff) { }
+    virtual ~RealRGB24toYUV420Converter(void) {}
 
-	// Interface.
-	void Convert(void* pRgb, void* pY, void* pU, void* pV);
+    /// Interface.
+    void Convert(void* pRgb, void* pY, void* pU, void* pV);
 
-};//end _REALRGB24TOYUV420CONVERTER_H.
+protected:
+
+};//end _REALRGB24TOYUV420CONVERTERIMPL2_H.
 
 
 #endif
