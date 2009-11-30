@@ -62,8 +62,9 @@ class RGBtoYUV420Converter
 {
 public:
 	// Construction and destruction.
-	RGBtoYUV420Converter(void) {_width = 0; _height = 0; }
-	RGBtoYUV420Converter(int width, int height) {_width = width; _height = height;}
+	RGBtoYUV420Converter(void) {_width = 0; _height = 0; _chrOff = 0; }
+	RGBtoYUV420Converter(int width, int height) {_width = width; _height = height; _chrOff = 0;}
+    RGBtoYUV420Converter(int width, int height, int chrOff){_width = width; _height = height; _chrOff = chrOff; }
 	virtual ~RGBtoYUV420Converter(void) {}
 
 	// Interface.
@@ -74,12 +75,16 @@ public:
 	int	GetHeight(void)		{ return(_height); }
 
 	void	SetDimensions(int width, int height)	{_width = width; _height = height;}
+    
+    yuvType getChrominanceOffset() const { return _chrOff; }
+    void setChrominanceOffset(yuvType val) { _chrOff = val; }
 
 protected:
 	// Members.
 	int	_width;
 	int	_height;
-
+    /// Offset added to the chr values. Typically = 128 to shift all values to positive.
+    yuvType _chrOff;
 };//end RGBtoYUV420Converter.
 
 #endif	// _RGBTOYUV420CONVERTER_H
