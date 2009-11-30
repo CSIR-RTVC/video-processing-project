@@ -128,8 +128,10 @@ public:
 		AddOutputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24, &FORMAT_VideoInfo);
 	}
 
+	STDMETHODIMP SetParameter( const char* type, const char* value);
 private:
-
+	bool parameterChangeAffectsOutput( const char* szParam );
+	void reconfigure();
 	/// Pointers to our last received Media Sample
 	BYTE* m_pSampleBuffers[2];
 	// Sizes
