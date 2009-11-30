@@ -66,7 +66,7 @@ of the main image.
 @param pImg			: Packed RGB 8888 format main base image.
 @return					: none.
 */
-void PicInPicRGB32Impl::Insert(void* pSubImg, void* pImg)
+void PicInPicRGB32Impl::DoInsert(void* pSubImg, void* pImg)
 {
 	unsigned char*	pSrc		= (unsigned char*)pSubImg;
 	unsigned char*	pDst		= (unsigned char*)pImg + 4*((_yPos*_width) + _xPos);
@@ -80,3 +80,17 @@ void PicInPicRGB32Impl::Insert(void* pSubImg, void* pImg)
 
 }//end Insert.
 
+/** Insert the sub image into the main image with a border.
+Write the sub image into the main image at the top-left location of
+(_xPos,_yPos). Only write _writeWidth and _writeHeight pixels of the
+sub image. These dimensions have been set to stay within the edges
+of the main image.
+@param pSubImg	: Packed RGB 8888 format smaller sub image.
+@param pImg			: Packed RGB 8888 format main base image.
+@return					: none.
+*/
+void PicInPicRGB32Impl::DoInsertWithBorder( void* pSubImg, void* pImg )
+{
+    // TODO: Just calling standard insert for now
+    DoInsert(pSubImg, pImg);
+}

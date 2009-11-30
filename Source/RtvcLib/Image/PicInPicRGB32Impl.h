@@ -59,9 +59,10 @@ public:
 	PicInPicRGB32Impl(int width, int height, int subWidth, int subHeight, int xPos, int yPos): PicInPicBase(width,height,subWidth,subHeight,xPos,yPos) { }
 	virtual ~PicInPicRGB32Impl(void) {}
 
-	// Interface.
-	void Insert(void* pSubImg, void* pImg);
-
+protected:
+    // Interface.
+    void DoInsert(void* pSubImg, void* pImg);
+    void DoInsertWithBorder(void* pSubImg, void* pImg);
 };//end _PICINPICRGB32IMPL_H.
 
 
