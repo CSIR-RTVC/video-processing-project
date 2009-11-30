@@ -39,6 +39,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //Color converters
 #include <Image/RealYUV420toRGB24Converter.h>
 
+DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
+0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
+
 YUV420toRGBFilter::YUV420toRGBFilter()
 : CCustomBaseFilter(NAME("CSIR RTVC YUV420P 2 RGB Converter"), 0, CLSID_YUV420toRGBColorConverter),
 m_pConverter(NULL),
@@ -47,6 +50,7 @@ m_nSizeUV(0)
 	//Call the initialise input method to load all acceptable input types for this filter
 	InitialiseInputTypes();
 	m_pConverter = new RealYUV420toRGB24Converter(m_nInWidth, m_nInHeight);
+    initParameters();
 }
 
 YUV420toRGBFilter::~YUV420toRGBFilter()
@@ -72,6 +76,7 @@ CUnknown * WINAPI YUV420toRGBFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pH
 void YUV420toRGBFilter::InitialiseInputTypes()
 {
 	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_YUV420P, &FORMAT_VideoInfo);
+	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_I420,	  &FORMAT_VideoInfo);
 }
 
 
@@ -117,6 +122,17 @@ HRESULT YUV420toRGBFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 			// So we need to recalculate the size in RGB 24
 			pbmi->biSizeImage = m_nInPixels * BYTES_PER_PIXEL_RGB24;
 		}
+		// It's a 12bit YUV source
+		else if (pbmi->biBitCount == 12)
+		{
+			pbmi->biBitCount = 24;
+			// We still need to set the size of the out image: the original image might have been scaled
+			// So we need to recalculate the size in RGB 24
+			pbmi->biSizeImage = m_nInPixels * BYTES_PER_PIXEL_RGB24;
+		}
+		pMediaType->SetSampleSize( pbmi->biSizeImage );
+		// adapt compression in case necessary
+		pbmi->biCompression = BI_RGB;
 		//Reset the media subtype
 		// Change the output format from MEDIASUBTYPE_YUV420P to RGB24
 		pMediaType->SetSubtype(&MEDIASUBTYPE_RGB24);
@@ -167,17 +183,20 @@ HRESULT YUV420toRGBFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
 DWORD YUV420toRGBFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 {
 	int nRet = 0;
+
 	if (m_pConverter)
 	{
 		yuvType* pYUV = NULL;
 		pYUV = (yuvType*)pBufferIn;
 		if (pYUV)
 		{
+			int iYuvSize = sizeof(yuvType);
 			//set the Y, U and V pointers to point to the correct positions within the byte array
 			yuvType* pY = pYUV;
 			yuvType* pU = pYUV + m_nInPixels;
 			yuvType* pV = pYUV + m_nInPixels + m_nSizeUV;
 			//Convert
+			m_pConverter->SetRotate(0);
 			m_pConverter->Convert((void*)pY, (void*)pU, (void*)pV, (void*)pBufferOut);
 			DbgLog((LOG_TRACE, 0, TEXT("Converted from YUV420 to RGB Directly")));
 			//RGB24 stores 3 Bytes per pixel
@@ -200,6 +219,29 @@ HRESULT YUV420toRGBFilter::CheckTransform( const CMediaType *mtIn, const CMediaT
 	if (mtOut->subtype != MEDIASUBTYPE_RGB24)
 	{
 		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+	else
+	{
+		// TEST
+		VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)mtOut->pbFormat;
+		if (pVih)
+		{
+			//Now we need to calculate the size of the output image
+			BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+			int iNewStride = pBi->biWidth;
+			// TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
+			/*if (iNewStride != m_nOutWidth)
+			{
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}*/
+			int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
+			int iNewHeight = pBi->biHeight;
+			if (iNewHeight < 0)
+			{
+				// REJECT INVERTED PICTURES
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+		}
 	}
 	if (mtOut->formattype != FORMAT_VideoInfo)
 	{
