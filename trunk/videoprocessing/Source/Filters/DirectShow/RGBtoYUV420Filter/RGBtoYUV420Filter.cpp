@@ -39,6 +39,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Color converters
 #include <Image/RealRGB24toYUV420Converter.h>
 #include <Image/RealRGB32toYUV420Converter.h>
+//#include <Image/RealRGB32toYUV420Converter.h>
+
+DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
+0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
 
 RGBtoYUV420Filter::RGBtoYUV420Filter()
 : CCustomBaseFilter(NAME("CSIR RTVC RGB 2 YUV420P Converter"), 0, CLSID_RGBtoYUV420ColorConverter),
@@ -47,6 +51,8 @@ m_nSizeYUV(0)
 {
 	//Call the initialise input method to load all acceptable input types for this filter
 	InitialiseInputTypes();
+    // Init parameters
+    initParameters();
 }
 
 RGBtoYUV420Filter::~RGBtoYUV420Filter()
@@ -93,7 +99,7 @@ HRESULT RGBtoYUV420Filter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
 			}
 			if (pmt->subtype == MEDIASUBTYPE_RGB24)
 			{
-				m_pConverter = new RealRGB24toYUV420Converter(m_nInWidth, m_nInHeight);
+				m_pConverter = new RealRGB24toYUV420Converter(m_nInWidth, m_nInHeight, m_nChrominanceOffset);
 			}
 			else if (pmt->subtype == MEDIASUBTYPE_RGB32)
 			{
@@ -121,8 +127,15 @@ HRESULT RGBtoYUV420Filter::GetMediaType( int iPosition, CMediaType *pMediaType )
 		}
 		// Change the output format to MEDIASUBTYPE_YUV420P 
 		pMediaType->SetType(&MEDIATYPE_Video);
-		pMediaType->SetSubtype(&MEDIASUBTYPE_YUV420P);
+		//pMediaType->SetSubtype(&MEDIASUBTYPE_YUV420P);
+		pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
 		pMediaType->SetFormatType(&FORMAT_VideoInfo);
+		// Get bitmap info header and modify
+
+		VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->Format();
+		pvi->bmiHeader.biBitCount = 12;
+		pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');;
+
 		return S_OK;
 	}
 	return VFW_S_NO_MORE_ITEMS;
@@ -212,14 +225,66 @@ HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaT
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 	// Adding advert media type to this method
-	if (mtOut->subtype != MEDIASUBTYPE_YUV420P)
+	if ((mtOut->subtype != MEDIASUBTYPE_YUV420P) && (mtOut->subtype != MEDIASUBTYPE_I420) )
 	{
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
+	else
+	{
+		//// TEST
+		VIDEOINFOHEADER *pVih1 = (VIDEOINFOHEADER*)mtIn->pbFormat;
+		VIDEOINFOHEADER *pVih2 = (VIDEOINFOHEADER*)mtOut->pbFormat;
+
+		if ( pVih1 && pVih2 )
+		{
+			BITMAPINFOHEADER* pBi1 = &(pVih1->bmiHeader);
+			BITMAPINFOHEADER* pBi2 = &(pVih2->bmiHeader);
+
+			if (pBi1->biWidth != pBi2->biWidth )
+			{
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+
+			if (pBi1->biHeight!= pBi2->biHeight )
+			{
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+		}
+		////Now we need to calculate the size of the output image
+		//BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+		//int iNewStride = pBi->biWidth;
+		//// TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
+		///*if (iNewStride != m_nOutWidth)
+		//{
+		//	return VFW_E_TYPE_NOT_ACCEPTED;
+		//}*/
+		//int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
+		//int iNewHeight = pBi->biHeight;
+		//if (iNewHeight < 0)
+		//{
+		//	// REJECT INVERTED PICTURES
+		//	return VFW_E_TYPE_NOT_ACCEPTED;
+		//}
+	}
+
 	if (mtOut->formattype != FORMAT_VideoInfo)
 	{
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 	// Everything is good.
 	return S_OK;
+}
+
+STDMETHODIMP RGBtoYUV420Filter::SetParameter( const char* type, const char* value )
+{
+    if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
+    {
+        if (m_pConverter)
+            m_pConverter->setChrominanceOffset(m_nChrominanceOffset);
+        return S_OK;
+    }
+    else
+    {
+        return E_FAIL;
+    }
 }

@@ -36,12 +36,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // CSIR includes
 #include <DirectShow/CustomBaseFilter.h>
 
+// Parameters
+#define CHROMINANCE_OFFSET "chrominanceoffset"
+
 // GUID
 
 // {FF539CF3-CB7A-4121-92C2-5A3EB8E7FE5E}
 static const GUID CLSID_YUV420toRGBColorConverter = 
 { 0xff539cf3, 0xcb7a, 0x4121, { 0x92, 0xc2, 0x5a, 0x3e, 0xb8, 0xe7, 0xfe, 0x5e } };
 
+// {B1F14AD0-B641-4fc1-A3B6-692A8B2FC67D}
+static const GUID CLSID_YUVtoRGB420Properties = 
+{ 0xb1f14ad0, 0xb641, 0x4fc1, { 0xa3, 0xb6, 0x69, 0x2a, 0x8b, 0x2f, 0xc6, 0x7d } };
 
 // Forward declarations
 class YUV420toRGBConverter;
@@ -50,9 +56,12 @@ class YUV420toRGBConverter;
  * \ingroup DirectShowFilters
  * This Filter converts the YUV420 Planar media back into RGB24 media.
  */
-class YUV420toRGBFilter : public CCustomBaseFilter
+class YUV420toRGBFilter :   public CCustomBaseFilter,
+                            public ISpecifyPropertyPages
 {
 public:
+    DECLARE_IUNKNOWN
+
 	/// Constructor
 	YUV420toRGBFilter();
 	/// Destructor
@@ -94,7 +103,36 @@ public:
 	virtual void InitialiseInputTypes();
 
 	/// Overridden from CSettingsInterface
-	virtual void initParameters(){;}
+	virtual void initParameters()
+    {
+        addParameter(CHROMINANCE_OFFSET, &m_nChrominanceOffset, 128);
+    }
+
+    STDMETHODIMP GetPages(CAUUID *pPages)
+    {
+        if (pPages == NULL) return E_POINTER;
+        pPages->cElems = 1;
+        pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+        if (pPages->pElems == NULL) 
+        {
+            return E_OUTOFMEMORY;
+        }
+        pPages->pElems[0] = CLSID_YUVtoRGB420Properties;
+        return S_OK;
+    }
+
+    STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv)
+    {
+        if (riid == IID_ISpecifyPropertyPages)
+        {
+            return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+        }
+        else
+        {
+            // Call the parent class.
+            return CCustomBaseFilter::NonDelegatingQueryInterface(riid, ppv);
+        }
+    }
 protected:
 	
 
@@ -110,4 +148,6 @@ private:
 	YUV420toRGBConverter* m_pConverter;
 	// Size of YUV image
 	int m_nSizeUV;
+    // Chrominance offset
+    int m_nChrominanceOffset;
 };

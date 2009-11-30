@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "stdafx.h"
 
 #include "RGBtoYUV420Filter.h"
+#include "RGB2YUVProperties.h"
 
 //////////////////////////////////////////////////////////////////////////
 //###############################  Standard Filter DLL Code ###############################
@@ -50,7 +51,7 @@ AMOVIESETUP_FILTER FilterInfo =
 };
 
 
-CFactoryTemplate g_Templates[1] = 
+CFactoryTemplate g_Templates[2] = 
 {
 	{ 
 		g_wszName,							// Name
@@ -58,7 +59,14 @@ CFactoryTemplate g_Templates[1] =
 		RGBtoYUV420Filter::CreateInstance,	// Method to create an instance of MyComponent
 		NULL,								// Initialization function
 		&FilterInfo							// Set-up information (for filters)
-	}
+	},
+    // This entry is for the property page.
+    { 
+        L"RGB2YUV Properties",
+        &CLSID_RGBtoYUV420Properties,
+        RGB2YUVProperties::CreateInstance, 
+        NULL, NULL
+    }
 };
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   
 
