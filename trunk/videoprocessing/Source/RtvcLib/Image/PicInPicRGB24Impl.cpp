@@ -67,17 +67,65 @@ of the main image.
 @param pImg			: Packed RGB 888 format main base image.
 @return					: none.
 */
-void PicInPicRGB24Impl::Insert(void* pSubImg, void* pImg)
+
+void PicInPicRGB24Impl::DoInsert( void* pSubImg, void* pImg )
 {
-	unsigned char*	pSrc		= (unsigned char*)pSubImg;
-	unsigned char*	pDst		= (unsigned char*)pImg + 3*((_yPos*_width) + _xPos);
+    unsigned char*	pSrc		= (unsigned char*)pSubImg;
+    unsigned char*	pDst		= (unsigned char*)pImg + 3*((_yPos*_width) + _xPos);
 
-	for(int y = 0; y < _writeHeight; y++)
-	{
-		memcpy((void *)pDst, (const void *)pSrc, 3*_writeWidth);	// Whole row at a time.
-		pDst += (3*_width);	// Next row.
-		pSrc += (3*_subWidth);
-	}//end for y...
+    for(int y = 0; y < _writeHeight; y++)
+    {
+        memcpy((void *)pDst, (const void *)pSrc, 3*_writeWidth);	// Whole row at a time.
+        pDst += (3*_width);	// Next row.
+        pSrc += (3*_subWidth);
+    }//end for y...
+}//end DoInsert.
 
-}//end Insert.
+/** Insert the sub image into the main image with a border.
+Write the sub image into the main image at the top-left location of
+(_xPos,_yPos). Only write _writeWidth and _writeHeight pixels of the
+sub image. These dimensions have been set to stay within the edges
+of the main image.
+@param pSubImg	: Packed RGB 888 format smaller sub image.
+@param pImg			: Packed RGB 888 format main base image.
+@return					: none.
+*/
+void PicInPicRGB24Impl::DoInsertWithBorder( void* pSubImg, void* pImg )
+{
+    unsigned char*	pSrc		= (unsigned char*)pSubImg;
+    unsigned char*	pDst		= (unsigned char*)pImg + 3*((_yPos*_width) + _xPos);
 
+    const int iBorderWidth = 5;
+    for(int y = 0; y < _writeHeight; y++)
+    {
+        if ( y < iBorderWidth || y >= _writeHeight - iBorderWidth)
+        {
+            for ( int iBorderX = 0; iBorderX < (3 *_writeWidth); iBorderX += 3)
+            {
+                pDst[iBorderX    ] = 0;
+                pDst[iBorderX + 1] = 255;
+                pDst[iBorderX + 2] = 0;
+            }
+            //memset(pDst, 255, 3*_writeWidth);
+            pDst += (3*_width);	// Next row.
+            pSrc += (3*_subWidth);
+        }
+        else
+        {
+            memcpy((void *)pDst, (const void *)pSrc, 3*_writeWidth);	// Whole row at a time.
+            // Make border
+            for ( int iBorderX = 0; iBorderX < (3 * iBorderWidth); iBorderX += 3)
+            {
+                pDst[iBorderX    ] = 0;
+                pDst[iBorderX + 1] = 255;
+                pDst[iBorderX + 2] = 0;
+                pDst[ (3 * _writeWidth - 3) - iBorderX	   ] = 0;
+                pDst[ (3 * _writeWidth - 3) - iBorderX + 1 ] = 255;
+                pDst[ (3 * _writeWidth - 3) - iBorderX + 2 ] = 0;
+            }
+
+            pDst += (3*_width);	// Next row.
+            pSrc += (3*_subWidth);
+        }
+    }//end for y...
+}//end DoInsertWithBorder.
