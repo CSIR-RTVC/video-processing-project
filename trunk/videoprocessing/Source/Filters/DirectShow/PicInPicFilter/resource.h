@@ -15,6 +15,7 @@
 #define IDC_EDIT_SUBPICTURE_OFFSET_X    1009
 #define IDC_SPIN5                       1010
 #define IDC_EDIT_OFFSET_Y               1011
+#define IDC_EDIT_SUBPICTURE_OFFSET_Y    1011
 #define IDC_SPIN6                       1012
 #define IDC_CMB_POSITION                1013
 #define IDC_CHECK1                      1014
