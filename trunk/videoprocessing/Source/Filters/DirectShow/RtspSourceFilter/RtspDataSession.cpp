@@ -1,6 +1,6 @@
 /** @file
 
-MODULE				: RtspDataSession
+MODULE				: RtspSession
 
 FILE NAME			: RtspDataSession.cpp
 
@@ -41,53 +41,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "RtvcRtpSink.h"
 #include "RtpPacketManager.h"
 
-RtspDataSession::RtspDataSession(RtpPacketManager* pRtpPacketManager)
-:m_pRtpPacketManager(pRtpPacketManager),
+RtspSession::RtspSession(RtpPacketManager* pRtpPacketManager)
+	:m_pScheduler(NULL),
+	m_pEnv(NULL),
+	m_pRtpPacketManager(pRtpPacketManager),
 	m_pRtspClient(NULL),
 	m_pSession(NULL),
 	m_bStreamUsingTCP(true),
 	m_watchVariable(0),
 	m_sLastError("")
-{;}
-
-bool RtspDataSession::startRetrievingData(const std::string sUrl, int nTimeOut)
 {
-	const char* szUrl = sUrl.c_str();
-
-	// Setup environment
-	TaskScheduler* pScheduler = BasicTaskScheduler::createNew();
-	UsageEnvironment* pEnv = BasicUsageEnvironment::createNew(*pScheduler);
-
-	bool bSuccess = true;
-
-	do
-	{
-		// Create client
-		m_pRtspClient = RTSPClient::createNew(*pEnv);
-
-		if (!RtspHelper::createMediaSession(sUrl, m_pRtspClient, &m_pSession, m_sLastError))
-		{
-			bSuccess = false;
-			break;
-		}
-		
-		bSuccess = playStreams(pEnv, m_pSession);
-		break;
-	}while (true);
-
-	// Cleanup RTSP Media session
-	RtspHelper::shutdownMediaSession(m_pRtspClient, m_pSession);
-	return bSuccess;
+    // Setup environment
+    m_pScheduler = BasicTaskScheduler::createNew();
+    m_pEnv = BasicUsageEnvironment::createNew(*m_pScheduler);
 }
 
-void RtspDataSession::shutdown()
+RtspSession::~RtspSession()
 {
-	// Cleanup RTSP Media session
-	RtspHelper::shutdownMediaSession(m_pRtspClient, m_pSession);
+    // Cleanup RTSP Media session
+    if (m_pRtspClient || m_pSession)
+		RtspHelper::shutdownMediaSession(m_pRtspClient, m_pSession);
+
+    m_pEnv->reclaim();
+    delete m_pScheduler;
 }
 
-bool RtspDataSession::playStreams(UsageEnvironment* pEnv, MediaSession* pSession)
+bool RtspSession::playMediaSession( int nTimeOut )
 {
+	if (!m_pSession) return false;
+
+    return playStreams(m_pEnv, m_pSession);
+}
+
+void RtspSession::teardownMediaSession()
+{
+	if (m_pRtspClient || m_pSession)
+	// Cleanup RTSP Media session
+		RtspHelper::shutdownMediaSession(m_pRtspClient, m_pSession);
+	m_pRtspClient = NULL;
+	m_pSession = NULL;
+}
+
+bool RtspSession::playStreams(UsageEnvironment* pEnv, MediaSession* pSession)
+{
+	if (!pSession || !m_pRtspClient) return false;
+
 	// Setup and play the streams 
 	if (!RtspHelper::createRtpSources(pEnv, pSession))
 	{
@@ -120,7 +118,7 @@ bool RtspDataSession::playStreams(UsageEnvironment* pEnv, MediaSession* pSession
 	return true;
 }
 
-bool RtspDataSession::createReceivers(MediaSession* pSession)
+bool RtspSession::createReceivers(MediaSession* pSession)
 {
 	// Create and start media sinks for each subsession:
 	bool madeProgress = False;
@@ -149,10 +147,18 @@ bool RtspDataSession::createReceivers(MediaSession* pSession)
 		// for this subsession:
 		if (pSubsession->rtcpInstance() != NULL) 
 		{
-			pSubsession->rtcpInstance()->setByeHandler(&RtspDataSession::subsessionByeHandler, this/*subsession*/);
+			pSubsession->rtcpInstance()->setByeHandler(&RtspSession::subsessionByeHandler, this/*subsession*/);
 		}
 		madeProgress = True;
 	}
 	return madeProgress;
 }
 
+bool RtspSession::setupMediaSession( const std::string& sUrl )
+{
+	// Create client
+	if (!m_pRtspClient)
+		m_pRtspClient = RTSPClient::createNew(*m_pEnv);
+
+    return RtspHelper::createMediaSession(sUrl, m_pRtspClient, &m_pSession, m_sLastError);
+}

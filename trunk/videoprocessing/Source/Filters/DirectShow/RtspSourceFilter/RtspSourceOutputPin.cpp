@@ -259,6 +259,11 @@ void RtspSourceOutputPin::initialiseMediaType(MediaSubsession* pSubsession, HRES
 				*phr = VFW_E_INVALIDSUBTYPE;
 			}	
 		}
+		else
+		{
+			// TODO: cater for video
+			*phr = VFW_E_INVALIDMEDIATYPE;
+		}
 	}
 	else
 	{

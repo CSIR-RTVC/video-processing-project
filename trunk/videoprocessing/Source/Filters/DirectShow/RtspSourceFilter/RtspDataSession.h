@@ -1,6 +1,6 @@
 /** @file
 
-MODULE				: RtspDataSession
+MODULE				: RtspSession
 
 FILE NAME			: RtspDataSession.h
 
@@ -48,22 +48,33 @@ class RtpPacketManager;
 * LiveMedia data session
 * Receives RTP packets and forwards these to the DirectShow pipeline
 */
-class RtspDataSession
+class RtspSession
 {
 public:
 	/// Constructor
-	RtspDataSession(RtpPacketManager* pRtpPacketManager);
+	RtspSession(RtpPacketManager* pRtpPacketManager);
+
+    ~RtspSession();
 
 	bool streamUsingTCP() const { return m_bStreamUsingTCP; }
 	void streamUsingTCP(bool val) { m_bStreamUsingTCP = val; }
 
+    MediaSession* getSession() const { return m_pSession; }
+
+	/// 
+	bool setupMediaSession( const std::string& sUrl );
+
 	/// This method sets up the RTSP/RTP connections and starts the liveMedia event loop that retrieves data
-	bool startRetrievingData(const std::string sUrl, int nTimeOut = -1);
+	bool playMediaSession( int nTimeOut = -1 );
 
 	/// Call this method to end the life media event loop
 	void setWatchVariable()
 	{
 		m_watchVariable = 1;
+	}
+	void resetWatchVariable()
+	{
+		m_watchVariable = 0;
 	}
 
 	std::string getLastError()
@@ -72,13 +83,13 @@ public:
 	}
 
 	/// Shutdown RTSP session cleanly
-	void shutdown();
+	void teardownMediaSession();
 
 	/// Bye Handler
 	static void subsessionByeHandler(void* clientData) 
 	{
-		RtspDataSession* pSnifferSession = (RtspDataSession*) clientData;
-		pSnifferSession->shutdown();
+		RtspSession* pSnifferSession = (RtspSession*) clientData;
+		pSnifferSession->teardownMediaSession();
 	}
 
 private:
@@ -95,14 +106,17 @@ private:
 	/// Currently only H263 streams need to be played back so that we can extract the width and the height from the raw data stream
 	bool needToPlayStreams(MediaSession* pSubsession);
 	
-	// Packet Manager
-	RtpPacketManager* m_pRtpPacketManager;
+	TaskScheduler* m_pScheduler;
+	UsageEnvironment* m_pEnv;
 
 	/// Rtsp client
 	RTSPClient* m_pRtspClient;
 
 	/// MediaSession
 	MediaSession* m_pSession;
+    
+    // Packet Manager
+	RtpPacketManager* m_pRtpPacketManager;
 
 	/// TCP
 	bool m_bStreamUsingTCP;

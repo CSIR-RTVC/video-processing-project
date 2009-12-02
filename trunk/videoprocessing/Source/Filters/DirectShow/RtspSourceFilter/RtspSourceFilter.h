@@ -52,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // Forward
 class RtspSourceOutputPin;
-class RtspDataSession;
+class RtspSession;
 class MediaSubsession;
 
 // Filter name strings
@@ -172,6 +172,9 @@ private:
 	/// Stores streaming state
 	bool m_bStreaming;
 
+    /// 
+    bool m_bMediaSessionSetupComplete;
+
 	/// Handle to let the filter know that the RTSP thread has finished
 	/// The Stop method waits for a signal that the liveMedia event loop has ended before it proceeds
 	HANDLE m_hLiveMediaStopEvent;
@@ -184,5 +187,5 @@ private:
 	RtpPacketManager m_rtpPacketManager;
 	
 	/// Rtsp Session
-	RtspDataSession* m_pRtspDataSession;
+	RtspSession* m_pRtspSession;
 };
