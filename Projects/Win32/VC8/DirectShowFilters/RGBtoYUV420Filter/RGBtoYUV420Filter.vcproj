@@ -43,7 +43,7 @@
 				Name="VCCLCompilerTool"
 				Optimization="0"
 				AdditionalIncludeDirectories=""
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;RGBTOYUV420FILTER_EXPORTS;_BUILD_FOR_SHORT"
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;RGBTOYUV420FILTER_EXPORTS;_BUILD_FOR_SHORT_NO"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
@@ -64,7 +64,7 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
-				AdditionalDependencies="Strmbasd.lib Msvcrtd.lib Winmm.lib libRtvcImageD.lib libRtvcDirectShowD.lib"
+				AdditionalDependencies="Strmbasd.lib Msvcrtd.lib Winmm.lib comctl32.lib libRtvcImageD.lib libRtvcDirectShowD.lib"
 				OutputFile="$(BuildDir)\Debug\$(ProjectName)d.dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile="RGBtoYUV420Filter.def"
@@ -143,7 +143,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="STRMBASE.lib Msvcrt.lib Winmm.lib odbc32.lib odbccp32.lib libRtvcImage.lib libRtvcDirectShow.lib"
+				AdditionalDependencies="STRMBASE.lib Msvcrt.lib Winmm.lib comctl32.lib odbc32.lib odbccp32.lib libRtvcImage.lib libRtvcDirectShow.lib"
 				OutputFile="$(BuildDir)\Release\$(ProjectName).dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="RGBtoYUV420Filter.def"
@@ -218,6 +218,14 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RGBtoYUV420Filter\resource.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RGBtoYUV420Filter\RGB2YUVProperties.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RGBtoYUV420Filter\RGBtoYUV420Filter.h"
 				>
 			</File>
@@ -231,6 +239,10 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RGBtoYUV420Filter\RGBtoYUV420Filter.rc"
+				>
+			</File>
 		</Filter>
 	</Files>
 	<Globals>
