@@ -58,3 +58,9 @@ const double BYTES_PER_PIXEL_YUV420P = 1.5;
 #define ORIENTATION			"orientation"
 
 #define ROTATION_MODE		"rotationmode"
+
+#define SUB_PICTURE_POSITION	"position"
+#define SUB_PIC_WIDTH			"subpicwidth"
+#define SUB_PIC_HEIGHT			"subpicheight"
+#define OFFSET_X				"offsetx"
+#define OFFSET_Y				"offsety"
