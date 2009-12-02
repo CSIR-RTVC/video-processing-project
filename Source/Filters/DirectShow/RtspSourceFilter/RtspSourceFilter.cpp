@@ -47,16 +47,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <RTSPClient.hh>
 
 #include "RtspDataSession.h"
-#include "RtspSnifferSession.h"
 
 #include <Shared/StringUtil.h>
 
 RtspSourceFilter::RtspSourceFilter( IUnknown* pUnk, HRESULT* phr )
-: CSource(NAME("RTVC Live Media RTSP Source Filter"), pUnk, CLSID_RTVC_RtspAudioSourceFilter),
-m_tStreamTimeOffset(0),
-m_dStreamTimeOffset(0.0),
-m_pRtspDataSession(NULL),
-m_hLiveMediaStopEvent(NULL)
+	: CSource(NAME("RTVC Live Media RTSP Source Filter"), pUnk, CLSID_RTVC_RtspAudioSourceFilter),
+	m_bStreamUsingTCP(false),
+	m_bStreaming(false),
+    m_bMediaSessionSetupComplete(false),
+	m_tStreamTimeOffset(0),
+	m_dStreamTimeOffset(0.0),
+	m_hLiveMediaStopEvent(NULL),
+	m_pRtspSession(new RtspSession(&m_rtpPacketManager))
 {
 	// Init CSettingsInterface
 	initParameters();
@@ -65,6 +67,10 @@ m_hLiveMediaStopEvent(NULL)
 
 RtspSourceFilter::~RtspSourceFilter(void)
 {
+    //m_pRtspSession->teardownMediaSession();
+    delete m_pRtspSession;
+    m_pRtspSession = NULL;
+
 	for (int i = 0; i < m_vOutputPins.size();i++)
 	{
 		delete m_vOutputPins[i];
@@ -109,33 +115,30 @@ STDMETHODIMP RtspSourceFilter::NonDelegatingQueryInterface( REFIID riid, void **
 
 STDMETHODIMP RtspSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt )
 {
-
+    HRESULT hr;
 	// Store the URL
 	m_sUrl = StringUtil::wideToStl(lpwszFileName);
 
-	// Sniff the current media parameters such as width and height of the video
-	RtspSnifferSession rtspSnifferSession;
-
-	bool bSuccess = rtspSnifferSession.getMediaSessionInformation(m_sUrl);
-	if (bSuccess)
+	if ( m_pRtspSession->setupMediaSession( m_sUrl ) )
 	{
-		HRESULT hr = S_OK;
-		std::vector<MediaSubsession*> vSubsessions = rtspSnifferSession.getMediaSubsessions();
-		// Iterate over all subsessions and create an output pin if possible
-		for (std::vector<MediaSubsession*>::iterator it = vSubsessions.begin(); it!= vSubsessions.end(); ++it)
+        m_bMediaSessionSetupComplete = true;
+		MediaSubsession* pSubsession = NULL;
+		MediaSubsessionIterator it(*m_pRtspSession->getSession());
+		while ((pSubsession = it.next()) != NULL)
 		{
-			createOutputPin(*it, &hr);
+			createOutputPin(pSubsession, &hr);
 			if (FAILED(hr))
 			{
-				break;
+				return hr;
 			}
 		}
-		return hr;
+		// At this point we could start the scheduler and call WaitForSingleObject or WaitForMultipleObjects
+		// Until we receive the I-Frame allowing us to configure the media types correctly
+		return S_OK;
 	}
 	else
 	{
-		std::string sError = rtspSnifferSession.getLastError();
-		SetLastError(sError.c_str(), true);
+		SetLastError(m_pRtspSession->getLastError(), true);
 		return E_FAIL;
 	}
 }
@@ -257,8 +260,9 @@ STDMETHODIMP RtspSourceFilter::Stop()
 	CAutoLock cAutoLock(&m_stateLock);
 	// Update streaming state
 	m_bStreaming = false;
+    m_bMediaSessionSetupComplete = false;
 	// This will cause the liveMedia loop to exit
-	m_pRtspDataSession->setWatchVariable();
+	m_pRtspSession->setWatchVariable();
 
 	// Wait for the liveMedia eventloop to finish
 	DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
@@ -269,12 +273,13 @@ STDMETHODIMP RtspSourceFilter::Pause()
 {
 	CAutoLock cAutoLock(&m_stateLock);
 	StartRtspServerThreadIfNotStarted();
+    // TODO: could WaitForSingleObject here to see if Rtsp was successful?
+
 	return CSource::Pause();
 }
 
 /// Forward declaration for thread method
 static DWORD WINAPI LiveRTSPServerThreadFunc(LPVOID pvParam);
-
 
 void RtspSourceFilter::StartRtspServerThreadIfNotStarted()
 {
@@ -282,6 +287,7 @@ void RtspSourceFilter::StartRtspServerThreadIfNotStarted()
 	if (!m_bStreaming)
 	{
 		m_bStreaming = true;
+		m_pRtspSession->resetWatchVariable();
 
 		if (m_hLiveMediaStopEvent == NULL)
 		{
@@ -309,15 +315,32 @@ static DWORD WINAPI LiveRTSPServerThreadFunc(LPVOID pvParam)
 
 void RtspSourceFilter::StartRtspSession()
 {
-	ASSERT(m_pRtspDataSession == NULL);
+	//ASSERT(m_pRtspSession == NULL);
 	// Encapsulating RTSP code into RtspClientSession class 
 	// Create RTSP Client Session object
-	m_pRtspDataSession = new RtspDataSession(&m_rtpPacketManager);
-	m_pRtspDataSession->streamUsingTCP(m_bStreamUsingTCP);
+    bool bSetupComplete = true;
+	if (!m_bMediaSessionSetupComplete)
+    {
+        bSetupComplete = m_pRtspSession->setupMediaSession(m_sUrl);
+        m_bMediaSessionSetupComplete = true;
+    }
+
+    if (!bSetupComplete)
+    {
+        // TODO: Need to notify main thread of failure
+    }
+
+	m_pRtspSession->streamUsingTCP(m_bStreamUsingTCP);
 	// Start the liveMedia thread: this method does not return until the liveMedia watch variable is set in the STOP method
-	m_pRtspDataSession->startRetrievingData(m_sUrl);
-	delete m_pRtspDataSession;
-	m_pRtspDataSession = NULL;
+	if (!m_pRtspSession->playMediaSession())
+    {
+        // Signal error?
+        SetLastError(m_pRtspSession->getLastError(), true);
+        // Could notify main thread here to either continue or abort Pause operation
+    }
+    // Shutdown media session
+    m_pRtspSession->teardownMediaSession();
+
 	for (int i = 0; i < m_vOutputPins.size(); ++i)
 	{
 		m_vOutputPins[i]->Reset();
