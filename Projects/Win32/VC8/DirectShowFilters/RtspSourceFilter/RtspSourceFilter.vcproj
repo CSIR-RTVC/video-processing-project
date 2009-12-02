@@ -270,10 +270,6 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspSnifferSession.h"
-					>
-				</File>
-				<File
 					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtvcRtpSink.h"
 					>
 				</File>
@@ -283,10 +279,6 @@
 				>
 				<File
 					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspDataSession.cpp"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspSnifferSession.cpp"
 					>
 				</File>
 			</Filter>
