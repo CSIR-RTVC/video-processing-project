@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <strsafe.h>
 
+#include <fstream>
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
 
