@@ -125,7 +125,7 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="2"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;RGBTOYUV420FILTER_EXPORTS;_BUILD_FOR_SHORT"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;RGBTOYUV420FILTER_EXPORTS;_BUILD_FOR_SHORT_NO"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
