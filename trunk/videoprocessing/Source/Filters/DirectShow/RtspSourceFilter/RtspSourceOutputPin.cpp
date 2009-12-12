@@ -46,6 +46,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // RTVC
 #include <Shared/MediaSample.h>
 
+// {726D6173-0000-0010-8000-00AA00389B71}
+DEFINE_GUID(MEDIASUBTYPE_AMR, 
+			0x726d6173, 0x000, 0x0010, 0x80, 0x00, 0x0, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+
 RtspSourceOutputPin::RtspSourceOutputPin( HRESULT* phr, RtspSourceFilter* pFilter, MediaSubsession* pMediaSubsession, int nID )
 : CSourceStream(NAME("Audio Source Filter Output Pin"), phr, pFilter, L"Out"),
 	m_pFilter(pFilter), // Parent filter
@@ -189,6 +193,56 @@ void RtspSourceOutputPin::initialiseMediaType(MediaSubsession* pSubsession, HRES
 				//m_pMediaType->SetSampleSize(1);
 				m_pMediaType->SetSampleSize(4);
 			}
+
+			else if (strcmp(szCodec, "AMR")==0)
+			{
+				//m_pMediaType->SetType(&MEDIATYPE_Stream);
+				//m_pMediaType->SetFormatType(&GUID_NULL);
+				//m_pMediaType->SetSubtype(&GUID_NULL);
+				
+				m_pMediaType->SetType(&MEDIATYPE_Audio);
+				// For PCM
+				m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
+				m_pMediaType->SetSubtype(&MEDIASUBTYPE_AMR);
+				// 16-bit audio
+				m_nBitsPerSample = 0;
+				// Get sample rate
+				m_nSamplesPerSecond = pSubsession->rtpTimestampFrequency();
+
+				// Get channels
+				m_nChannels = pSubsession->numChannels();
+
+				m_nBytesPerSecond = m_nSamplesPerSecond * (m_nBitsPerSample >> 3) * m_nChannels;
+
+				WAVEFORMATEX *pWavHeader = (WAVEFORMATEX*) m_pMediaType->AllocFormatBuffer(sizeof(WAVEFORMATEX));
+				if (pWavHeader == 0)
+					*phr = (E_OUTOFMEMORY);
+
+				// Initialize the video info header
+				ZeroMemory(pWavHeader, m_mt.cbFormat);   
+
+				pWavHeader->wFormatTag = 0;
+				pWavHeader->nChannels = m_nChannels;
+				pWavHeader->nSamplesPerSec = m_nSamplesPerSecond;
+				pWavHeader->wBitsPerSample = m_nBitsPerSample;
+
+				// From MSDN: http://msdn.microsoft.com/en-us/library/ms713497(VS.85).aspx
+				// Block alignment, in bytes. The block alignment is the minimum atomic unit of data for the wFormatTag format type. If wFormatTag is WAVE_FORMAT_PCM or WAVE_FORMAT_EXTENSIBLE, nBlockAlign must be equal to the product of nChannels and wBitsPerSample divided by 8 (bits per byte).
+				//OLD pWavHeader->nBlockAlign = 1;
+				pWavHeader->nBlockAlign = m_nChannels * (m_nBitsPerSample >> 3);
+				pWavHeader->nBlockAlign = 1;
+
+				// From MSDN: Required average data-transfer rate, in bytes per second, for the format tag. If wFormatTag is WAVE_FORMAT_PCM, nAvgBytesPerSec should be equal to the product of nSamplesPerSec and nBlockAlign. For non-PCM formats, this member must be computed according to the manufacturer's specification of the format tag. 
+				// OLD pWavHeader->nAvgBytesPerSec = m_nChannels*m_nSamplesPerSecond;
+				pWavHeader->nAvgBytesPerSec =  m_nSamplesPerSecond * pWavHeader->nBlockAlign;
+
+				pWavHeader->cbSize = 0;
+
+				m_pMediaType->SetTemporalCompression(FALSE);
+				// From using graph studio to look at the pins media types
+				//m_pMediaType->SetSampleSize(1);
+				m_pMediaType->SetSampleSize(1024);
+			}
 			// This section caters for MP3 audio but does NOT work yet
 			////else if (strcmp(szCodec, "MPA")==0)
 			////{
@@ -319,9 +373,18 @@ HRESULT RtspSourceOutputPin::DecideBufferSize( IMemAllocator* pAlloc, ALLOCATOR_
 	{
 		// Audio buffer size
 		//Buffer size calculation for PCM
-		pRequest->cbBuffer = m_nSamplesPerSecond * m_nChannels * (m_nBitsPerSample >> 3);
+		if (m_nBitsPerSample > 0)
+			pRequest->cbBuffer = m_nSamplesPerSecond * m_nChannels * (m_nBitsPerSample >> 3);
+		else
+		{
+			pRequest->cbBuffer		= 4 * 1024;
+			pRequest->cBuffers		= 3;
+			pRequest->cbAlign		= 2;		
+			pRequest->cbPrefix		= 0;
+		}
 		// Not sure what buffer size to use for MP3
 		//pRequest->cbBuffer = 200000;
+
 	}
 
 	ALLOCATOR_PROPERTIES Actual;
