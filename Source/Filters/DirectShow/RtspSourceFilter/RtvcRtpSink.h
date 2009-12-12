@@ -48,6 +48,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // LiveMedia
 #include "MediaSink.hh"
 #include <RTPSource.hh>
+#include <AMRAudioSource.hh>
 
 // RTVC
 #include <Shared/MediaSample.h>
@@ -112,10 +113,36 @@ protected:
 	{
 		// Check if stream has been synced using RTCP: to do this we need to get hold of the RTPSource object
 		RTPSource* pRtpSource = (RTPSource*)fSource;
+
+		//AMRAudioRTPSource* pAmrRtpSource = dynamic_cast<AMRAudioRTPSource*>(fSource);
+		//if (pAmrRtpSource)
+		//{
+		//	/*bSynced = pAmrDeinterleaver->*/
+		//	u_int8_t uiHeader = pAmrRtpSource->;
+		//	int t = 0;
+		//}
+
+		AMRAudioSource* pAmrSource = dynamic_cast<AMRAudioSource*>(fSource);
+		if (pAmrSource)
+		{
+			u_int8_t uiHeader = pAmrSource->lastFrameHeader();
+			double dStartTime = presentationTime.tv_sec + (presentationTime.tv_usec / 1000000.0);
+			BYTE* pByte = new BYTE[dataSize + 1];
+			pByte[0] = uiHeader;
+			memcpy(pByte + 1, data, dataSize);
+			// Implicit Template Declaration
+			m_pSampleHandler->processMediaSample(m_nSourceID, pByte, dataSize + 1, dStartTime, false);
+			delete[] pByte;
+			int t = 0;
+            return;
+		}
+
+		//pRtpSource = (RTPSource*)fInputSource;
 		// Convert presentation time to double
 		double dStartTime = presentationTime.tv_sec + (presentationTime.tv_usec / 1000000.0);
 		// Implicit Template Declaration
-		m_pSampleHandler->processMediaSample(m_nSourceID, data, dataSize, dStartTime, pRtpSource->hasBeenSynchronizedUsingRTCP());
+		//m_pSampleHandler->processMediaSample(m_nSourceID, data, dataSize, dStartTime, pRtpSource->hasBeenSynchronizedUsingRTCP());
+		m_pSampleHandler->processMediaSample(m_nSourceID, data, dataSize, dStartTime, false);
 	}
 
 private:
