@@ -244,67 +244,69 @@ void RtspSourceOutputPin::initialiseMediaType(MediaSubsession* pSubsession, HRES
 				m_pMediaType->SetSampleSize(1024);
 			}
 			// This section caters for MP3 audio but does NOT work yet
-			////else if (strcmp(szCodec, "MPA")==0)
-			////{
-			////	// MP3-bit audio
-			////	//MSDN
-			////	m_pMediaType->SetType(&MEDIATYPE_Audio);
-			////	// For MP3
-			////	m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
-			////	m_pMediaType->subtype = FOURCCMap(WAVE_FORMAT_MPEGLAYER3);
+			else if (strcmp(szCodec, "MPA")==0)
+			{
+				// MP3-bit audio
+				//MSDN
+				m_pMediaType->SetType(&MEDIATYPE_Audio);
+				// For MP3
+				m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
+				m_pMediaType->subtype = FOURCCMap(WAVE_FORMAT_MPEGLAYER3);
 
-			////	m_nSamplesPerSecond = pSubsession->rtpTimestampFrequency();
-			////	// Get channels
-			////	m_nChannels = pSubsession->numChannels();
-			////	
-			////	MPEGLAYER3WAVEFORMAT mp3WaveFormat;
-			////	ZeroMemory(&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
-			////	mp3WaveFormat.wID = MPEGLAYER3_ID_MPEG;
-			////	mp3WaveFormat.fdwFlags =  MPEGLAYER3_FLAG_PADDING_OFF;
-			////	mp3WaveFormat.nFramesPerBlock = 1;
-			////	mp3WaveFormat.nBlockSize = 960;
-			////	mp3WaveFormat.nCodecDelay = 0;
+				m_nSamplesPerSecond = pSubsession->rtpTimestampFrequency();
+				// Get channels
+				m_nChannels = pSubsession->numChannels();
+				
+				MPEGLAYER3WAVEFORMAT mp3WaveFormat;
+				ZeroMemory(&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
+				mp3WaveFormat.wID = MPEGLAYER3_ID_MPEG;
+				mp3WaveFormat.fdwFlags =  MPEGLAYER3_FLAG_PADDING_ISO;
+				mp3WaveFormat.nFramesPerBlock = 1;
+				mp3WaveFormat.nBlockSize = 1;
+				mp3WaveFormat.nCodecDelay = 0;
 
-			////	WAVEFORMATEX* waveFormat = &mp3WaveFormat.wfx;
-			////	waveFormat->cbSize = MPEGLAYER3_WFX_EXTRA_BYTES;
-			////	waveFormat->nAvgBytesPerSec = 40000;
-			////	waveFormat->nBlockAlign = 0;
-			////	waveFormat->nChannels = 2;
-			////	waveFormat->nSamplesPerSec = 48000;
-			////	waveFormat->wBitsPerSample = 0;
-			////	waveFormat->wFormatTag = 85;
+				WAVEFORMATEX* waveFormat = &mp3WaveFormat.wfx;
+				waveFormat->cbSize = MPEGLAYER3_WFX_EXTRA_BYTES;
+				waveFormat->nAvgBytesPerSec = 24000;
+				waveFormat->nAvgBytesPerSec = 0;
+				waveFormat->nBlockAlign = 0;
+				waveFormat->nChannels = 2;
+				waveFormat->nSamplesPerSec = 44100;
+				//waveFormat->nSamplesPerSec = 0;
+				waveFormat->wBitsPerSample = 0;
+				waveFormat->wFormatTag = 85;
 
-			////	// Apply format
-			////	m_pMediaType->SetFormat((BYTE*)&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
-			////	m_pMediaType->bFixedSizeSamples = FALSE;
-			////	m_pMediaType->bTemporalCompression = FALSE;
+				// Apply format
+				m_pMediaType->SetFormat((BYTE*)&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
+				m_pMediaType->bFixedSizeSamples = TRUE;
+				m_pMediaType->bTemporalCompression = FALSE;
 
 
-			////	//pmt->subtype = FOURCCMap(WAVE_FORMAT_MPEGLAYER3);
-			////	//MPEGLAYER3WAVEFORMAT mp3WaveFormat;
-			////	//ZeroMemory(&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
-			////	//mp3WaveFormat.wID = MPEGLAYER3_ID_MPEG;
-			////	//mp3WaveFormat.fdwFlags =  MPEGLAYER3_FLAG_PADDING_OFF;
-			////	//mp3WaveFormat.nFramesPerBlock = 1;
-			////	//mp3WaveFormat.nBlockSize = 417;
-			////	//mp3WaveFormat.nCodecDelay = 1393;
+				//pmt->subtype = FOURCCMap(WAVE_FORMAT_MPEGLAYER3);
+				//MPEGLAYER3WAVEFORMAT mp3WaveFormat;
+				//ZeroMemory(&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
+				//mp3WaveFormat.wID = MPEGLAYER3_ID_MPEG;
+				//mp3WaveFormat.fdwFlags =  MPEGLAYER3_FLAG_PADDING_OFF;
+				//mp3WaveFormat.nFramesPerBlock = 1;
+				//mp3WaveFormat.nBlockSize = 417;
+				//mp3WaveFormat.nCodecDelay = 1393;
 
-			////	//WAVEFORMATEX* waveFormat = &mp3WaveFormat.wfx;
-			////	//waveFormat->cbSize = MPEGLAYER3_WFX_EXTRA_BYTES;
-			////	//waveFormat->nAvgBytesPerSec = 16000;
-			////	//waveFormat->nBlockAlign = 1;
-			////	//waveFormat->nChannels = 2;
-			////	//waveFormat->nSamplesPerSec = 22050;
-			////	//waveFormat->wBitsPerSample = 0;
-			////	//waveFormat->wFormatTag = 85;
+				//WAVEFORMATEX* waveFormat = &mp3WaveFormat.wfx;
+				//waveFormat->cbSize = MPEGLAYER3_WFX_EXTRA_BYTES;
+				//waveFormat->nAvgBytesPerSec = 16000;
+				//waveFormat->nBlockAlign = 1;
+				//waveFormat->nChannels = 2;
+				//waveFormat->nSamplesPerSec = 22050;
+				//waveFormat->wBitsPerSample = 0;
+				//waveFormat->wFormatTag = 85;
 
-			////	//// Apply format
-			////	//pmt->SetFormatType(&FORMAT_WaveFormatEx);
-			////	//pmt->SetFormat((BYTE*)&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
+				//// Apply format
+				//pmt->SetFormatType(&FORMAT_WaveFormatEx);
+				//pmt->SetFormat((BYTE*)&mp3WaveFormat, sizeof(MPEGLAYER3WAVEFORMAT));
 
-			////	//pmt->bFixedSizeSamples = FALSE;
-			////	//pmt->bTemporalCompression = FALSE;
-			////}
+				//pmt->bFixedSizeSamples = FALSE;
+				//pmt->bTemporalCompression = FALSE;
+			}
 
 			else
 			{
