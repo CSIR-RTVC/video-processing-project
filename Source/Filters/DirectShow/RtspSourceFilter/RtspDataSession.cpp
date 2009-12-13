@@ -162,3 +162,9 @@ bool RtspSession::setupMediaSession( const std::string& sUrl )
 
     return RtspHelper::createMediaSession(sUrl, m_pRtspClient, &m_pSession, m_sLastError);
 }
+
+void RtspSession::endSession()
+{
+	m_pRtpPacketManager->eof(true);
+	setWatchVariable();
+}
