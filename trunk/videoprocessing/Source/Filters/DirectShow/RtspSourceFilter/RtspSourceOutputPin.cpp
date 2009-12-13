@@ -570,6 +570,8 @@ HRESULT RtspSourceOutputPin::DoBufferProcessingLoop( void )
 			}
 			else
 			{
+				//if (m_pFilter->m_rtpPacketManager.eof())
+				//return S_FALSE;
 				Sleep(10);
 			}
 		}

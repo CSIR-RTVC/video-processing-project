@@ -67,6 +67,7 @@ public:
 	/// This method sets up the RTSP/RTP connections and starts the liveMedia event loop that retrieves data
 	bool playMediaSession( int nTimeOut = -1 );
 
+	void endSession();
 	/// Call this method to end the life media event loop
 	void setWatchVariable()
 	{
@@ -88,8 +89,9 @@ public:
 	/// Bye Handler
 	static void subsessionByeHandler(void* clientData) 
 	{
-		RtspSession* pSnifferSession = (RtspSession*) clientData;
-		pSnifferSession->teardownMediaSession();
+		RtspSession* pSession = (RtspSession*) clientData;
+		pSession->endSession();
+		//pSession->teardownMediaSession();
 	}
 
 private:

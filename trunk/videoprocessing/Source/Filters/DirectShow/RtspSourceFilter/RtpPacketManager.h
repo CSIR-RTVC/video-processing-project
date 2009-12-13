@@ -45,7 +45,8 @@ class RtpPacketManager
 {
 public:
 
-	RtpPacketManager(){;}
+	RtpPacketManager()
+		:m_bEof(false){}
 
 	~RtpPacketManager()
 	{
@@ -111,6 +112,11 @@ public:
 		return false;
 	}
 
+	bool eof() const { return m_bEof; }
+	void eof(bool val) { m_bEof = val; }
+
 private:
+
+	bool m_bEof;
 	std::map<int, RtpDataQueue*> m_dataQueues;
 };
