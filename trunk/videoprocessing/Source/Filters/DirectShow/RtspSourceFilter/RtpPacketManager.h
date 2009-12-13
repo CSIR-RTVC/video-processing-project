@@ -115,6 +115,14 @@ public:
 	bool eof() const { return m_bEof; }
 	void eof(bool val) { m_bEof = val; }
 
+	void clear()
+	{
+		// Empty up all queues
+		for (std::map<int, RtpDataQueue*>::iterator it = m_dataQueues.begin(); it != m_dataQueues.end(); it++)
+		{
+			it->second->clear();
+		}
+	}
 private:
 
 	bool m_bEof;

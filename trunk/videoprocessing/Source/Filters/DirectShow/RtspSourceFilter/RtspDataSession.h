@@ -68,6 +68,12 @@ public:
 	bool playMediaSession( int nTimeOut = -1 );
 
 	void endSession();
+
+	void reset()
+	{
+		resetWatchVariable();
+	}
+
 	/// Call this method to end the life media event loop
 	void setWatchVariable()
 	{
