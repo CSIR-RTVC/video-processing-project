@@ -95,6 +95,14 @@ public:
 		return !m_qSamples.empty();
 	}
 
+	void clear()
+	{
+		CAutoLock lock(&m_lock); 
+		while (!m_qSamples.empty())
+		{
+			m_qSamples.pop();
+		}
+	}
 private:
 	bool m_bHasBeenSyncedUsingRtcp;
 

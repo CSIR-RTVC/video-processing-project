@@ -287,7 +287,10 @@ void RtspSourceFilter::StartRtspServerThreadIfNotStarted()
 	if (!m_bStreaming)
 	{
 		m_bStreaming = true;
-		m_pRtspSession->resetWatchVariable();
+		m_rtpPacketManager.clear();
+		m_rtpPacketManager.eof(false);
+		//m_pRtspSession->resetWatchVariable();
+		m_pRtspSession->reset();
 
 		if (m_hLiveMediaStopEvent == NULL)
 		{
@@ -298,6 +301,10 @@ void RtspSourceFilter::StartRtspServerThreadIfNotStarted()
 			FALSE,              // initial state is nonsignaled
 			TEXT("LiveMediaEventLoop")  // object name
 			);
+		}
+		else
+		{
+			ResetEvent(m_hLiveMediaStopEvent);
 		}
 
 		DWORD dwThreadID = 0;
