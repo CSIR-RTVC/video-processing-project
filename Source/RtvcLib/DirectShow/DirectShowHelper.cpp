@@ -409,3 +409,53 @@ HRESULT CDirectShowHelper::GetPin( IBaseFilter *pFilter, PIN_DIRECTION PinDir, I
 	pEnum->Release();
 	return E_FAIL;
 }
+
+HRESULT CDirectShowHelper::AddGraphToRot( IUnknown *pUnkGraph, DWORD *pdwRegister )
+{
+	IMoniker * pMoniker;
+	IRunningObjectTable *pROT;
+	WCHAR wsz[128];
+	HRESULT hr;
+
+	if (FAILED(GetRunningObjectTable(0, &pROT)))
+		return E_FAIL;
+
+	wsprintfW(wsz, L"FilterGraph %08x pid %08x", (DWORD_PTR)pUnkGraph, GetCurrentProcessId());
+	wsprintfW(wsz, L"FilterGraph %08x pid %08x", (DWORD_PTR)pUnkGraph, GetCurrentProcessId());
+
+	hr = CreateItemMoniker(L"!", wsz, &pMoniker);
+	if (SUCCEEDED(hr))
+	{
+		hr = pROT->Register(0, pUnkGraph, pMoniker, pdwRegister);
+		pMoniker->Release();
+	}
+
+	pROT->Release();
+	return hr;
+}
+
+void CDirectShowHelper::RemoveGraphFromRot( DWORD pdwRegister )
+{
+	IRunningObjectTable *pROT;
+
+	if (SUCCEEDED(GetRunningObjectTable(0, &pROT)))
+	{
+		pROT->Revoke(pdwRegister);
+		pROT->Release();
+	}
+}
+
+HRESULT CDirectShowHelper::Render( IGraphBuilder *pGraph, IBaseFilter *pFilter )
+{
+	IPin* pOutputPin = NULL;
+	HRESULT hr = CDirectShowHelper::GetPin( pFilter, PINDIR_OUTPUT, &pOutputPin );
+	if (SUCCEEDED(hr))
+	{
+		hr = pGraph->Render(pOutputPin);
+		return hr;
+	}
+	else
+	{
+		return hr;
+	}
+}
