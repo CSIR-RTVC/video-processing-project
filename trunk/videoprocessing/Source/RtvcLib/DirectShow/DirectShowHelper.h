@@ -106,4 +106,10 @@ public:
 
 	/// Helper method to retrieve pin from filter.
 	static HRESULT GetPin(IBaseFilter *pFilter, PIN_DIRECTION PinDir, IPin **ppPin);
+
+	static HRESULT AddGraphToRot(IUnknown *pUnkGraph, DWORD *pdwRegister);
+
+	static void RemoveGraphFromRot(DWORD pdwRegister);
+
+	static HRESULT Render(IGraphBuilder *pGraph, IBaseFilter *pFilter);
 };
