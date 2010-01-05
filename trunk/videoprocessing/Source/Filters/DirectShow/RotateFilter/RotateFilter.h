@@ -152,6 +152,9 @@ private:
 	/// 1 = 90 deg Clockwise
 	/// 2 = 180 deg Clockwise
 	/// 3 = 270 deg Clockwise
+	/// 4 = Upside down
+	/// 5 = Mirror
+	/// 6 = Flip diagonally
 	int m_nRotation; 
 	int m_nOutWidth;
 	int m_nOutHeight;
