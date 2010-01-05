@@ -71,29 +71,6 @@ bool PicRotateRGBBase::Rotate( void* pInImg, void* pOutImg )
 				}
 				// Copy pixels in same column to their destinations
 			}
-
-			//for (int i = 0; i < m_nHeight; ++i)
-			//{
-			//	for (int j = 0; j < m_nWidth; ++j, pSrc += nBytesPerPixel)
-			//	{
-			//		int nRow = i + 1;// Transform to index base 1
-			//		int nCol = j + 1;// Transform to index base 1
-			//		// Calc array index of RGB values
-			//		//int nIndex = ((nRow - 1) * nCol) + nCol;
-			//		//--nIndex; // Transform to index Base 0
-			//		//// Copy RGB value to new position
-			//		//pSrc = (BYTE*)pInImg + nIndex;
-
-			//		// Calculate destination 
-			//		// - transform mxn to nxm
-			//		int nNewRow = (m_nWidth - j);//Index Base 1
-			//		int nNewCol = nRow;//Index Base 1
-			//		int nNewIndex = ((nNewRow - 1) * m_nHeight) + nNewCol;// Base 1
-			//		--nNewIndex;// Base 0
-			//		pDest = (BYTE*)pOutImg + (nNewIndex*nBytesPerPixel);
-			//		memcpy(pDest, pSrc, nBytesPerPixel);
-			//	}
-			//}
 			return true;
 		}
 	case ROTATE_180_DEGREES_CLOCKWISE:
@@ -110,6 +87,53 @@ bool PicRotateRGBBase::Rotate( void* pInImg, void* pOutImg )
 		}
 
 	case ROTATE_270_DEGREES_CLOCKWISE:
+		{
+			int iTargetRowLength = m_nHeight * nBytesPerPixel;
+			BYTE* pSrc = (BYTE*)pInImg;
+			BYTE* pDest = (BYTE*)pOutImg + iTargetRowLength - nBytesPerPixel;
+
+			for ( int y = 0; y < m_nHeight; y++ )
+			{
+				BYTE* pDestPixel = pDest;
+				for (int x = 0; x < m_nWidth; ++x, pSrc += nBytesPerPixel, pDestPixel += iTargetRowLength)
+				{
+					memcpy(pDestPixel, pSrc, nBytesPerPixel);
+				}
+				pDest -= nBytesPerPixel;
+			}
+			return true;
+		}
+	case ROTATE_FLIP_VERTICAL:
+		{
+			// Code to flip image
+			int nRowLength = m_nWidth * nBytesPerPixel;
+			BYTE* pSrc = (BYTE*)pInImg;
+			//BYTE* pDest = (BYTE*)pOutImg + ((m_nHeight * nRowLength ) - nRowLength);
+			BYTE* pDest = (BYTE*)pOutImg + ((m_nHeight - 1) * nRowLength);
+			for (int i = 0; i < m_nHeight; ++i, pSrc += nRowLength, pDest -= nRowLength)
+			{
+				memcpy(pDest, pSrc, nRowLength);
+			}
+			return true;
+		}
+	case ROTATE_FLIP_HORIZONTAL:
+		{
+			int iRowLength = m_nWidth * nBytesPerPixel;
+			BYTE* pSrc = (BYTE*)pInImg;
+			BYTE* pDest = (BYTE*)pOutImg + iRowLength - nBytesPerPixel;
+
+            for ( int y = 0; y < m_nHeight; y++ )
+            {
+				BYTE* pDestPixel = pDest;
+                for ( int x = 0; x < m_nWidth; x++, pSrc += nBytesPerPixel, pDestPixel-=nBytesPerPixel )
+                {
+					memcpy(pDestPixel, pSrc, nBytesPerPixel);
+                }
+				pDest += iRowLength;
+            }
+			return true;
+		}
+	case ROTATE_FLIP_DIAGONALLY:
 		{
 			BYTE* pSrc = (BYTE*)pInImg;
 			BYTE* pDest = NULL;
@@ -131,24 +155,6 @@ bool PicRotateRGBBase::Rotate( void* pInImg, void* pOutImg )
 				// Copy pixels in same column to their destinations
 			}
 			return true;
-		}
-	case ROTATE_FLIP_VERTICAL:
-		{
-			// Code to flip image
-			int nRowLength = m_nWidth * nBytesPerPixel;
-			BYTE* pSrc = (BYTE*)pInImg;
-			//BYTE* pDest = (BYTE*)pOutImg + ((m_nHeight * nRowLength ) - nRowLength);
-			BYTE* pDest = (BYTE*)pOutImg + ((m_nHeight - 1) * nRowLength);
-			for (int i = 0; i < m_nHeight; ++i, pSrc += nRowLength, pDest -= nRowLength)
-			{
-				memcpy(pDest, pSrc, nRowLength);
-			}
-			return true;
-		}
-	case ROTATE_FLIP_HORIZONTAL:
-		{
-			//TODO
-			return false;
 		}
 	default:
 		{
