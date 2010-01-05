@@ -15,55 +15,73 @@
     {
         "Entry"
         {
-        "MsmKey" = "8:_429FE2959FD24464B0107DEDD7EA479E"
+        "MsmKey" = "8:_3AC9BA0A00BA4406851D4FF6CBB4609C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4A78C58DD1CA4CD8983181F4A1B99F5F"
+        "MsmKey" = "8:_479FE6B24132433E8FA6B4F2EC0BE022"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_4F7D3FC561164937A4505278956EBD4D"
+        "MsmKey" = "8:_514D7113EF9E427BAA7126105EFEE0AB"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_548C8749139B445DAD748B9037C9020E"
+        "MsmKey" = "8:_52E71D832FD440C6B3C3B21CCC7DC38C"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_5AAB9405C8094C639D42CA5518A87CD4"
+        "MsmKey" = "8:_5A5AD4FEB6B8465386E3DE94AA7776C8"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_836B1A16C82B46C98C81F2C1E9B44C31"
+        "MsmKey" = "8:_5AC84FC807184F568DD598D995FB4C0E"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_C3570899C26F4C11A363BEF11CE89CC9"
+        "MsmKey" = "8:_685D1F2903AC49FA93BB7B26E2F04CA9"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_CF65A46C00D94005BED0827AECBAF96A"
+        "MsmKey" = "8:_6D4A805070E046E29EA58304A9E7E116"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
         "Entry"
         {
-        "MsmKey" = "8:_EDE89588B31E40C580FE8367B21E48F9"
+        "MsmKey" = "8:_7215C5DD54CE45CBB24B5E7C1E6FFDD0"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_98633C67A952411AB9ECC9F60813D0C3"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_A670112220054C84A7652D19BBC955B8"
+        "OwnerKey" = "8:_UNDEFINED"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
+        "MsmKey" = "8:_BB93B34334294ABCBCA4E3AF3A25CEC1"
         "OwnerKey" = "8:_UNDEFINED"
         "MsmSig" = "8:_UNDEFINED"
         }
@@ -85,6 +103,27 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Net.Framework.3.5"
+                    {
+                    "Name" = "8:.NET Framework 3.5"
+                    "ProductCode" = "8:Microsoft.Net.Framework.3.5"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Windows.Installer.3.1"
+                    {
+                    "Name" = "8:Windows Installer 3.1"
+                    "ProductCode" = "8:Microsoft.Windows.Installer.3.1"
+                    }
+                }
+            }
         }
         "Release"
         {
@@ -101,6 +140,27 @@
         "PrivateKeyFile" = "8:"
         "TimeStampServer" = "8:"
         "InstallerBootstrapper" = "3:2"
+            "BootstrapperCfg:{63ACBE69-63AA-4F98-B2B6-99F9E24495F2}"
+            {
+            "Enabled" = "11:TRUE"
+            "PromptEnabled" = "11:TRUE"
+            "PrerequisitesLocation" = "2:1"
+            "Url" = "8:"
+            "ComponentsUrl" = "8:"
+                "Items"
+                {
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Net.Framework.3.5"
+                    {
+                    "Name" = "8:.NET Framework 3.5"
+                    "ProductCode" = "8:Microsoft.Net.Framework.3.5"
+                    }
+                    "{EDC2488A-8267-493A-A98E-7D9C3B36CDF3}:Microsoft.Windows.Installer.3.1"
+                    {
+                    "Name" = "8:Windows Installer 3.1"
+                    "ProductCode" = "8:Microsoft.Windows.Installer.3.1"
+                    }
+                }
+            }
         }
     }
     "Deployable"
@@ -122,9 +182,9 @@
         }
         "File"
         {
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_429FE2959FD24464B0107DEDD7EA479E"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_3AC9BA0A00BA4406851D4FF6CBB4609C"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\Tee.dll"
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\Tee.dll"
             "TargetName" = "8:Tee.dll"
             "Tag" = "8:"
             "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
@@ -142,69 +202,9 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4A78C58DD1CA4CD8983181F4A1B99F5F"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_479FE6B24132433E8FA6B4F2EC0BE022"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\YUV420ToRGBFilter.dll"
-            "TargetName" = "8:YUV420ToRGBFilter.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:4"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_4F7D3FC561164937A4505278956EBD4D"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\RtspSourceFilter.dll"
-            "TargetName" = "8:RtspSourceFilter.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:4"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_548C8749139B445DAD748B9037C9020E"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\ScaleFilter.dll"
-            "TargetName" = "8:ScaleFilter.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:4"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5AAB9405C8094C639D42CA5518A87CD4"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\RotateFilter.dll"
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\RotateFilter.dll"
             "TargetName" = "8:RotateFilter.dll"
             "Tag" = "8:"
             "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
@@ -222,49 +222,9 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_836B1A16C82B46C98C81F2C1E9B44C31"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_514D7113EF9E427BAA7126105EFEE0AB"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\CropFilter.dll"
-            "TargetName" = "8:CropFilter.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:4"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_C3570899C26F4C11A363BEF11CE89CC9"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\VideoMixingFilter.dll"
-            "TargetName" = "8:VideoMixingFilter.dll"
-            "Tag" = "8:"
-            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
-            "Condition" = "8:"
-            "Transitive" = "11:FALSE"
-            "Vital" = "11:TRUE"
-            "ReadOnly" = "11:FALSE"
-            "Hidden" = "11:FALSE"
-            "System" = "11:FALSE"
-            "Permanent" = "11:FALSE"
-            "SharedLegacy" = "11:FALSE"
-            "PackageAs" = "3:1"
-            "Register" = "3:4"
-            "Exclude" = "11:FALSE"
-            "IsDependency" = "11:FALSE"
-            "IsolateTo" = "8:"
-            }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_CF65A46C00D94005BED0827AECBAF96A"
-            {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\TimestampLoggerFilter.dll"
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\TimestampLoggerFilter.dll"
             "TargetName" = "8:TimestampLoggerFilter.dll"
             "Tag" = "8:"
             "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
@@ -282,10 +242,150 @@
             "IsDependency" = "11:FALSE"
             "IsolateTo" = "8:"
             }
-            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_EDE89588B31E40C580FE8367B21E48F9"
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_52E71D832FD440C6B3C3B21CCC7DC38C"
             {
-            "SourcePath" = "8:..\\..\\..\\..\\build\\vc8\\release\\RGBtoYUV420Filter.dll"
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\VideoMixingFilter.dll"
+            "TargetName" = "8:VideoMixingFilter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5A5AD4FEB6B8465386E3DE94AA7776C8"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\YUV420ToRGBFilter.dll"
+            "TargetName" = "8:YUV420ToRGBFilter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_5AC84FC807184F568DD598D995FB4C0E"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\RGBtoYUV420Filter.dll"
             "TargetName" = "8:RGBtoYUV420Filter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_685D1F2903AC49FA93BB7B26E2F04CA9"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\RtspSourceFilter.dll"
+            "TargetName" = "8:RtspSourceFilter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_6D4A805070E046E29EA58304A9E7E116"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\CropFilter.dll"
+            "TargetName" = "8:CropFilter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_7215C5DD54CE45CBB24B5E7C1E6FFDD0"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\PicInPicFilter.dll"
+            "TargetName" = "8:PicInPicFilter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_98633C67A952411AB9ECC9F60813D0C3"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\ScaleFilter.dll"
+            "TargetName" = "8:ScaleFilter.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:4"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:FALSE"
+            "IsolateTo" = "8:"
+            }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_A670112220054C84A7652D19BBC955B8"
+            {
+            "SourcePath" = "8:..\\..\\..\\..\\build\\VC9\\Release\\YuvSource.dll"
+            "TargetName" = "8:YuvSource.dll"
             "Tag" = "8:"
             "Folder" = "8:_CAFF4961DEF6476A9902273AF07C9CA2"
             "Condition" = "8:"
@@ -358,14 +458,14 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:DirectShow Filters"
-        "ProductCode" = "8:{9E7D45E7-3048-467B-81A3-59480943C015}"
-        "PackageCode" = "8:{50991349-41E3-483D-8122-8A3C1B5DC6B5}"
+        "ProductCode" = "8:{2535DF34-2B1B-4059-8B2E-F5ED7A1721B6}"
+        "PackageCode" = "8:{9255F744-A7D9-4F1C-B06D-7A2793C14081}"
         "UpgradeCode" = "8:{A4F6C822-3E41-4D98-8C7F-77DEBEFD6080}"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:TRUE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.1.0"
         "Manufacturer" = "8:CSIR"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
@@ -918,6 +1018,20 @@
         }
         "MergeModule"
         {
+            "{CEE29DC0-9FBA-4B99-8D47-5BC643D9B626}:_BB93B34334294ABCBCA4E3AF3A25CEC1"
+            {
+            "UseDynamicProperties" = "11:TRUE"
+            "IsDependency" = "11:FALSE"
+            "SourcePath" = "8:C:\\Program Files (x86)\\Common Files\\Merge Modules\\Microsoft_VC90_CRT_x86.msm"
+                "Properties"
+                {
+                }
+            "LanguageId" = "3:0"
+            "Exclude" = "11:FALSE"
+            "Folder" = "8:"
+            "Feature" = "8:"
+            "IsolateTo" = "8:"
+            }
         }
         "ProjectOutput"
         {
