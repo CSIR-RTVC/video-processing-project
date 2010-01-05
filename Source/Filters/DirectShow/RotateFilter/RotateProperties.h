@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #define BUFFER_SIZE 256
 
-const int RADIO_BUTTON_IDS[] = {IDC_RADIO1, IDC_RADIO2, IDC_RADIO3, IDC_RADIO4, IDC_RADIO5, IDC_RADIO6};
+const int RADIO_BUTTON_IDS[] = {IDC_RADIO1, IDC_RADIO2, IDC_RADIO3, IDC_RADIO4, IDC_RADIO5, IDC_RADIO6, IDC_RADIO7};
 
 /**
  * \ingroup DirectShowFilters
@@ -62,8 +62,8 @@ public:
 		return pNewObject;
 	}
 
-	RotateProperties::RotateProperties(IUnknown *pUnk) : 
-		FilterPropertiesBase(NAME("Rotate Properties"), pUnk, IDD_ROTATE_DIALOG, IDS_ROTATE_CAPTION)
+	RotateProperties::RotateProperties(IUnknown *pUnk) 
+		: FilterPropertiesBase(NAME("Rotate Properties"), pUnk, IDD_ROTATE_DIALOG, IDS_ROTATE_CAPTION)
 	{;}
 
 	HRESULT ReadSettings()
@@ -91,7 +91,7 @@ public:
 
 	HRESULT OnApplyChanges(void)
 	{
-		for (int i = 0; i < 6; ++i)
+		for (int i = 0; i < 7; ++i)
 		{
 			int nRadioID = RADIO_BUTTON_IDS[i];
 			int iCheck = SendMessage( GetDlgItem(m_Dlg, nRadioID),	(UINT) BM_GETCHECK,	0, 0);
