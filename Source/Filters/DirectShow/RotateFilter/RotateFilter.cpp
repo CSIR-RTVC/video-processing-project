@@ -145,6 +145,7 @@ HRESULT RotateFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 			}
 		case ROTATE_90_DEGREES_CLOCKWISE:
 		case ROTATE_270_DEGREES_CLOCKWISE:
+		case ROTATE_FLIP_DIAGONALLY:
 			{
 				m_nOutWidth = m_nInHeight;
 				m_nOutHeight = m_nInWidth;
@@ -222,10 +223,53 @@ HRESULT RotateFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *
 	if (mtIn->subtype == MEDIASUBTYPE_RGB24)
 		if (mtOut->subtype != MEDIASUBTYPE_RGB24)
 			return VFW_E_TYPE_NOT_ACCEPTED;
+		else
+		{
+			VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)mtOut->pbFormat;
+			//Now we need to calculate the size of the output image
+			BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+			int iNewStride = pBi->biWidth;
+			// TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
+			if (iNewStride != m_nOutWidth)
+			{
+				//m_nStrideRenderer = iNewStride;
+				// FOR NOW JUST REJECT THE TYPE AND LET THE COLOR CONVERTER HANDLE IT
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+			int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
+			int iNewHeight = pBi->biHeight;
+			if (iNewHeight < 0)
+			{
+				// REJECT INVERTED PICTURES
+				return VFW_E_TYPE_NOT_ACCEPTED;
+			}
+		}
 
-	if (mtIn->subtype == MEDIASUBTYPE_RGB32)
-		if (mtOut->subtype != MEDIASUBTYPE_RGB32)
+	if (mtOut->subtype == MEDIASUBTYPE_RGB32)
+	{
+		VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)mtOut->pbFormat;
+		//Now we need to calculate the size of the output image
+		BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+		int iNewStride = pBi->biWidth;
+		// TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
+		if (iNewStride != m_nOutWidth)
+		{
+			//m_nStrideRenderer = iNewStride;
+			// FOR NOW JUST REJECT THE TYPE AND LET THE COLOR CONVERTER HANDLE IT
 			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+		int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
+		int iNewHeight = pBi->biHeight;
+		if (iNewHeight < 0)
+		{
+			// REJECT INVERTED PICTURES
+			return VFW_E_TYPE_NOT_ACCEPTED;
+		}
+	}
+
+// 	if (mtIn->subtype == MEDIASUBTYPE_RGB32)
+// 		if (mtOut->subtype != MEDIASUBTYPE_RGB32)
+// 			return VFW_E_TYPE_NOT_ACCEPTED;
 
 	if (mtOut->formattype != FORMAT_VideoInfo)
 	{
@@ -279,10 +323,24 @@ DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 			memcpy(pTo, pFrom, nBytesPerLine);
 			pFrom += nBytesPerLine;
 			pTo += nBytesPerLine;
-			for (size_t j = 0; j < m_nPadding; j++)
+
+			if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24)
 			{
-				*pTo = 0;
-				pTo++;
+				for (size_t j = 0; j < m_nPadding; j++)
+				{
+					//*pTo = 0;
+					//pTo++;
+				}
+			}
+			else if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB32)
+			{
+				// TESTING SO FAR HAS SHOWN THAT NO PADDING IS NECCESSARY FOR RGB32???
+				//int nPadding = 0;//(m_nStrideRenderer - m_nOutWidth)*4;
+ 			//	for (size_t j = 0; j < nPadding; j++)
+ 			//	{
+ 			//		*pTo = 0;
+ 			//		pTo++;
+ 			//	}
 			}
 		}
 		nTotalSize = (m_nOutWidth + m_nPadding) * m_nOutHeight * m_nBytesPerPixel;
@@ -297,7 +355,19 @@ DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 
 void RotateFilter::RecalculateFilterParameters()
 {
-	m_nStride =  (m_nOutWidth * (m_nBitCount / 8) + 3) & ~3;
-	m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
+// 	m_nStride =  (m_nOutWidth * (m_nBitCount / 8) + 3) & ~3;
+// 	m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
+
+	if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24)
+	{
+		m_nStride =  (m_nOutWidth * (m_nBitCount / 8) + 3) & ~3;
+		m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
+	}
+	else if(m_nBytesPerPixel == BYTES_PER_PIXEL_RGB32)
+	{
+		m_nStride =  (m_nOutWidth * (m_nBitCount >> 3));
+		m_nPadding = 32 - (m_nStride%32);
+		//m_nStride += m_nStride % 32;
+	}
 }
 
