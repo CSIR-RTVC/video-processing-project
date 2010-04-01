@@ -121,8 +121,6 @@ STDMETHODIMP TimestampLoggerFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDI
 
 HRESULT TimestampLoggerFilter::Run( REFERENCE_TIME tStart )
 {
-	// Reset vector
-	m_vTimeInfo.clear();
 	return CTransInPlaceFilter::Run(tStart);
 }
 
@@ -139,6 +137,10 @@ HRESULT TimestampLoggerFilter::Stop( void )
 		m_outStream.flush();
 		m_outStream.close();
 	}
+
+  // Reset vector
+  m_vTimeInfo.clear();
+
 	return CTransInPlaceFilter::Stop();
 }
 
