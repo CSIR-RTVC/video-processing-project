@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 MediaSample::MediaSample( BYTE* pData, int nSize, double dStartTime, bool bIsSyncPoint)
 	: m_nSize(nSize),
 	m_dStartTime(dStartTime),
-	m_bIsSynchronisationPoint(bIsSyncPoint)
+	m_bMarker(bIsSyncPoint)
 {
 	// Copy the data
 	m_pData = new BYTE[nSize + 1];
@@ -50,7 +50,7 @@ MediaSample::MediaSample( const MediaSample& rSample )
 {
 	m_nSize = rSample.m_nSize;
 	m_dStartTime = rSample.m_dStartTime;
-	m_bIsSynchronisationPoint = rSample.m_bIsSynchronisationPoint;
+	m_bMarker = rSample.m_bMarker;
 	m_pData = new BYTE[m_nSize + 1];
 	m_pData[m_nSize] = '\0';
 	memcpy(m_pData, rSample.m_pData, m_nSize);
@@ -77,7 +77,7 @@ MediaSample& MediaSample::operator=( const MediaSample& rSample )
 
 	m_nSize = rSample.m_nSize;
 	m_dStartTime = rSample.m_dStartTime;
-	m_bIsSynchronisationPoint = rSample.m_bIsSynchronisationPoint;
+	m_bMarker = rSample.m_bMarker;
 	memcpy(m_pData, rSample.m_pData, m_nSize);
 	return *this;
 }
