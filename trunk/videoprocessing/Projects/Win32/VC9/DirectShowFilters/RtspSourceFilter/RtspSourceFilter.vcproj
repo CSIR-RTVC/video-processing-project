@@ -48,7 +48,7 @@
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				UsePrecompiledHeader="0"
+				UsePrecompiledHeader="2"
 				WarningLevel="3"
 				Detect64BitPortabilityProblems="false"
 				DebugInformationFormat="4"
@@ -194,7 +194,35 @@
 				>
 			</File>
 			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\GlobalDefs.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\MediaPacketManager.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\MediaPacketQueue.cpp"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\MediaParameterExtractor.cpp"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\RtvcLib\Shared\MediaSample.cpp"
+				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="0"
+					/>
+				</FileConfiguration>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspClientSessionManager.cpp"
 				>
 			</File>
 			<File
@@ -212,6 +240,14 @@
 			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\stdafx.cpp"
 				>
+				<FileConfiguration
+					Name="Debug|Win32"
+					>
+					<Tool
+						Name="VCCLCompilerTool"
+						UsePrecompiledHeader="1"
+					/>
+				</FileConfiguration>
 			</File>
 		</Filter>
 		<Filter
@@ -220,15 +256,27 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\GlobalDefs.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\MediaPacketManager.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\MediaPacketQueue.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\MediaParameterExtractor.h"
+				>
+			</File>
+			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\resource.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtpDataQueue.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtpPacketManager.h"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspClientSessionManager.h"
 				>
 			</File>
 			<File
@@ -241,6 +289,10 @@
 			</File>
 			<File
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspSourceOutputPin.h"
+				>
+			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtvcRtpSink.h"
 				>
 			</File>
 			<File
@@ -257,34 +309,6 @@
 				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspSourceFilter.rc"
 				>
 			</File>
-		</Filter>
-		<Filter
-			Name="LiveMedia"
-			>
-			<Filter
-				Name="Header Files"
-				>
-				<File
-					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspDataSession.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspHelper.h"
-					>
-				</File>
-				<File
-					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtvcRtpSink.h"
-					>
-				</File>
-			</Filter>
-			<Filter
-				Name="Source Files"
-				>
-				<File
-					RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\RtspDataSession.cpp"
-					>
-				</File>
-			</Filter>
 		</Filter>
 		<File
 			RelativePath="..\..\..\..\..\Source\Filters\DirectShow\RtspSourceFilter\ReadMe.txt"
