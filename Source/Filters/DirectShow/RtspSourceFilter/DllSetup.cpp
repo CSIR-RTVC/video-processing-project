@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,13 +33,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "stdafx.h"
 
-// DirectShow includes
-#pragma warning(push)     // disable for this header only
-#pragma warning(disable:4312) 
-// DirectShow
-#include <Streams.h>
-#pragma warning(pop)      // restore original warning level
-
 #include "RtspSourceFilter.h"
 #include "RtspSourceOutputPin.h"
 #include "RtspProperties.h"
@@ -52,7 +45,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // AMOVIESETUP_FILTER altogether, so that the filter is not available for 
 // intelligent connect. Instead, use the CLSID to create the filter or just 
 // use 'new' in your application.
-
 
 // Filter setup data
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
@@ -76,7 +68,7 @@ const AMOVIESETUP_PIN sudOutputPinBitmapSet =
 
 const AMOVIESETUP_FILTER sudAdvertSource=
 {
-	&CLSID_RTVC_RtspAudioSourceFilter,	// Filter CLSID
+	&CLSID_RTVC_RtspOsSourceFilter,	// Filter CLSID
 	g_wszFilterName,					// String name
 	MERIT_DO_NOT_USE,					// Filter merit
 	1,									// Number pins
@@ -93,7 +85,7 @@ CFactoryTemplate g_Templates[] =
 {
 	{ 
 		g_wszFilterName,					// Name
-		&CLSID_RTVC_RtspAudioSourceFilter,  // CLSID
+		&CLSID_RTVC_RtspOsSourceFilter,  // CLSID
 		RtspSourceFilter::CreateInstance,	// Method to create an instance of MyComponent
 		NULL,								// Initialization function
 		&sudAdvertSource					// Set-up information (for filters)

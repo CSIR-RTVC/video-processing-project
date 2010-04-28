@@ -4,12 +4,13 @@ MODULE				: RtspSourceFilter
 
 FILE NAME			: RtspSourceFilter.h
 
-DESCRIPTION			: RTSP source filter which currently only supports PCM audio format. This project has been included to demonstrate
-					how DirectShow and the liveMedia RTSP RTP library can be combined.
+DESCRIPTION			: RTSP source filter which currently supports PCM (8/16 bit), AMR-NB, and MP3 audio format. 
+                  This project has been included to demonstrate how DirectShow and the liveMedia RTSP RTP 
+                  library can be combined.
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -34,19 +35,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-// DirectShow includes
-#pragma warning(push)     // disable for this header only
-#pragma warning(disable:4312) 
-// DirectShow
-#include <Streams.h>
-#pragma warning(pop)      // restore original warning level
-
-// STL includes
-#include <string>
-#include <vector>
-
 // RTVC includes
-#include "RtpPacketManager.h"
+#include "MediaPacketManager.h"
+#include "RtspClientSessionManager.h"
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
 
@@ -56,12 +47,12 @@ class RtspSession;
 class MediaSubsession;
 
 // Filter name strings
-#define g_wszFilterName    L"CSIR RTVC RTSP Source Filter(Audio)"
+#define g_wszFilterName    L"CSIR OS RTVC RTSP Source Filter"
 
 #define STREAM_USING_TCP	"streamusingtcp"
 
 // {CF5878AC-78F0-4544-83B9-A940E20D9690}
-static const GUID CLSID_RTVC_RtspAudioSourceFilter = 
+static const GUID CLSID_RTVC_RtspOsSourceFilter = 
 { 0xcf5878ac, 0x78f0, 0x4544, { 0x83, 0xb9, 0xa9, 0x40, 0xe2, 0xd, 0x96, 0x90 } };
 
 // {3955BE86-A1E9-4fa3-8654-623D73DD2F29}
@@ -73,11 +64,11 @@ static const GUID CLSID_RtspProperties =
  * RTSP Source filter that receives PCM audio data from an RTSP server using the LGPL liveMedia streaming library.
  * The liveMedia library can be obtained at http://www.live555.com
  */
-class RtspSourceFilter :	public CSource,				/* Source Filter */
-							public CSettingsInterface,	/* Rtvc Settings Interface */
-							public CStatusInterface,	/* Rtvc Status Interface */
-							public IFileSourceFilter,	/* To facilitate loading of URL */
-							public IAMFilterMiscFlags,	/* For Live Source purposes */
+class RtspSourceFilter :	public CSource,     /* Source Filter */
+							public CSettingsInterface,      /* Rtvc Settings Interface */
+							public CStatusInterface,        /* Rtvc Status Interface */
+							public IFileSourceFilter,       /* To facilitate loading of URL */
+							public IAMFilterMiscFlags,      /* For Live Source purposes */
 							public ISpecifyPropertyPages
 {
 	///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
@@ -104,6 +95,9 @@ public:
 	/// From IFileSourceFilter
 	STDMETHODIMP GetCurFile(LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt);
 
+  /// Starts the liveMedia RTSP session
+  void startRtspSession();
+
 	/// From IAMFilterMiscFlags
 	virtual ULONG STDMETHODCALLTYPE GetMiscFlags()
 	{
@@ -125,17 +119,7 @@ public:
 	/// From CBaseFilter TO PREVENT THE VIDEO RENDERER FROM BLOCKING: READ http://msdn2.microsoft.com/en-us/library/ms783675(VS.85).aspx
 	STDMETHODIMP GetState( DWORD dwMilliSecsTimeout, FILTER_STATE *State	);
 
-	/// This method starts an RTSP session in a new thread provided one hasn't been started already. In that case this method does nothing
-	void StartRtspServerThreadIfNotStarted();
-	/// Starts an RTSP session. This is just a helper method which is called from the thread spawned by StartRtspServerThreadIfNotStarted
-	void StartRtspSession();
-
-	/// Creates an output pin based on the passed in MediaSubsession and adds it to the vector of output pins
-	/// @param[in] pSubsession a liveMedia MediaSubsession that has been obtained using RTSP and contains information such as media type, subtype- etc.
-	/// @param[out] pHr Set this value to S_OK before passing pHr into this method. If the method fails, the error code will be returned in this out parameter.
-	/// @remark Currently creates pins for 8/16 bit PCM audio and the RTVC H263 video media formats
-	void createOutputPin(MediaSubsession *pSubsession, HRESULT* phr);
-
+	/// For property page
 	STDMETHODIMP GetPages(CAUUID *pPages)
 	{
 		if (pPages == NULL) return E_POINTER;
@@ -154,9 +138,28 @@ private:
 	RtspSourceFilter(IUnknown* pUnk, HRESULT* phr);
 	virtual ~RtspSourceFilter(void);
 
-	/// Notifies the filter of the start time offset.
-	/// The filter will set this offset on all output pins.
-	void notifyFilterAboutOffset(double dOffset);
+  /// Ends the liveMedia session
+  void stopLiveMediaSession();
+  /// Creates the output pins based on the passed in MediaSubsession info
+  /// @param[out] pHr Set this value to S_OK before passing pHr into this method. If the method fails, the error code will be returned in this out parameter.
+  STDMETHODIMP createOutputPins();
+  /// Creates an output pin based on the passed in MediaSubsession and adds it to the vector of output pins
+  /// @param[in] pSubsession a liveMedia MediaSubsession that has been obtained using RTSP and contains information such as media type, subtype- etc.
+  /// @param[out] pHr Set this value to S_OK before passing pHr into this method. If the method fails, the error code will be returned in this out parameter.
+  /// @remark Currently creates pins for 8/16 bit PCM audio and the RTVC H263 video media formats
+  void createOutputPin(MediaSubsession *pSubsession, const StringMap_t& rParams, HRESULT* phr);
+
+  /// Notifies the filter of the start time offset.
+  /// The filter will set this offset on all output pins.
+  void setInitialOffset(double dOffset);
+  void setSynchronisedOffset(double val);
+  void resetOffsets()
+  {
+    m_dInitialOffset = -1.0;
+    m_dSynchronisedOffset = -1.0;
+    m_dInitialStreamTimeOffset = 0.0;
+    m_dSynchronisedStreamTimeOffset = 0.0;
+  }
 
 	/// vector of output pins
 	std::vector<RtspSourceOutputPin*> m_vOutputPins;
@@ -169,23 +172,23 @@ private:
 	/// Stores whether this filter should connect using TCP or UDP
 	bool m_bStreamUsingTCP;
 
-	/// Stores streaming state
-	bool m_bStreaming;
+  /// Handle to let the filter know that the RTSP thread has finished
+  /// The Stop method waits for a signal that the liveMedia event loop has ended before it proceeds
+  HANDLE m_hLiveMediaStopEvent;
 
-    /// 
-    bool m_bMediaSessionSetupComplete;
+  /// Live555 Thread Handle
+  HANDLE m_hLiveMediaThreadHandle;
+  DWORD m_dwThreadID;
 
-	/// Handle to let the filter know that the RTSP thread has finished
-	/// The Stop method waits for a signal that the liveMedia event loop has ended before it proceeds
-	HANDLE m_hLiveMediaStopEvent;
+  /// Offsets
+  double m_dInitialOffset;
+  double m_dInitialStreamTimeOffset;
+  double m_dSynchronisedOffset;
+  double m_dSynchronisedStreamTimeOffset;
 
-	/// Stream time offset
-	REFERENCE_TIME m_tStreamTimeOffset;
-	double m_dStreamTimeOffset;
+  /// Media Packet Manager
+  MediaPacketManager m_mediaPacketManager;
 
-	// RTP Packet Manager
-	RtpPacketManager m_rtpPacketManager;
-	
-	/// Rtsp Session
-	RtspSession* m_pRtspSession;
+  /// RTSP Session Manager
+  RtspClientSessionManager m_rtspSessionManager;
 };

@@ -1,11 +1,11 @@
 /** @file
 
-MODULE				: RtspSourceOutputPin
+MODULE				: RtspSourceFilter
 
-FILE NAME			: stdafx.h
+FILE NAME			: GlobalDefs.cpp
 
-DESCRIPTION			: Precompiled header 
-
+DESCRIPTION			: General defines used in project
+					  
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2010, CSIR
@@ -31,36 +31,9 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 */
-#pragma once
-
-#include <Windows.h>
-//#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
-#include <stdio.h>
-#include <tchar.h>
-
-// DirectShow includes
-#pragma warning(push)     // disable for this header only
-#pragma warning(disable:4312) 
-// DirectShow
-#include <Streams.h>
-#pragma warning(pop)      // restore original warning level
-
-// STL includes
-#include <algorithm>
-#include <cassert>
-#include <deque>
-#include <iostream>
-#include <map>
-#include <sstream>
-#include <string>
-#include <vector>
-
-// LiveMedia
-#include <BasicUsageEnvironment.hh>
-#include <GroupsockHelper.hh>
-#include <liveMedia.hh>
-#include <MediaSink.hh>
-#include <RTSPClient.hh>
-#include <RTPSource.hh>
-
+#include "stdafx.h"
 #include "GlobalDefs.h"
+
+const std::string VIDEO_WIDTH = "width";
+const std::string VIDEO_HEIGHT = "height";
+const std::string SAMPLING_RATE = "samplingrate";
