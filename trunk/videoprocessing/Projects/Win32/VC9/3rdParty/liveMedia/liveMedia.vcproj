@@ -144,7 +144,7 @@
 			Name="BasicUsageEnvironment"
 			>
 			<Filter
-				Name="Include"
+				Name="Header Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\BasicUsageEnvironment\include\BasicHashTable.hh"
@@ -172,7 +172,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Source"
+				Name="Source Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\BasicUsageEnvironment\BasicHashTable.cpp"
@@ -204,7 +204,7 @@
 			Name="UsageEnvironment"
 			>
 			<Filter
-				Name="Include"
+				Name="Header Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\UsageEnvironment\include\Boolean.hh"
@@ -228,7 +228,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Source"
+				Name="Source Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\UsageEnvironment\HashTable.cpp"
@@ -248,7 +248,7 @@
 			Name="groupsock"
 			>
 			<Filter
-				Name="Include"
+				Name="Header Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\groupsock\include\GroupEId.hh"
@@ -288,7 +288,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Source"
+				Name="Source Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\groupsock\GroupEId.cpp"
@@ -324,7 +324,7 @@
 			Name="liveMedia"
 			>
 			<Filter
-				Name="Include"
+				Name="Header Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\liveMedia\include\AC3AudioRTPSink.hh"
@@ -412,6 +412,22 @@
 				</File>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\liveMedia\include\DigestAuthentication.hh"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoFileServerMediaSubsession.hh"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoRTPSink.hh"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoRTPSource.hh"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoStreamFramer.hh"
 					>
 				</File>
 				<File
@@ -780,7 +796,7 @@
 				</File>
 			</Filter>
 			<Filter
-				Name="Source"
+				Name="Source Files"
 				>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\liveMedia\AC3AudioRTPSink.cpp"
@@ -876,6 +892,22 @@
 				</File>
 				<File
 					RelativePath="$(LIVEMEDIAROOT)\liveMedia\DigestAuthentication.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoFileServerMediaSubsession.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoRTPSink.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoRTPSource.cpp"
+					>
+				</File>
+				<File
+					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoStreamFramer.cpp"
 					>
 				</File>
 				<File
