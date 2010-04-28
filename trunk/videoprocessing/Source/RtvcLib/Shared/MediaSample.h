@@ -57,37 +57,13 @@ public:
 	int getSize() const {return m_nSize;}
 	double StartTime() const { return m_dStartTime; }
 
-	bool isSynchronisationPoint() const { return m_bIsSynchronisationPoint; }
-	void setSynchronisationPoint(bool val) { m_bIsSynchronisationPoint = val; }
+  bool isMarkerSet() const { return m_bMarker; }
+  void setMarker(bool val) { m_bMarker = val; }
 private:
 	MediaSample(BYTE* pData, int nSize, double dStartTime, bool bIsSyncPoint);
 	
 	BYTE* m_pData;
 	int m_nSize;
 	double m_dStartTime;
-	bool m_bIsSynchronisationPoint;
-};
-
-
-// Thin wrapper class
-class MediaSampleEx : public MediaSample
-{
-public:
-	MediaSampleEx(const std::string& sSessionID, const std::string& sSubsessionID, const MediaSample* pSample, const std::string& sMediaType)
-		:MediaSample(*pSample),
-		m_sSessionName(sSessionID), 
-		m_sSubsessionName(sSubsessionID),
-		m_sMediaType(sMediaType)
-	{;}
-
-	~MediaSampleEx() {}
-
-	std::string SessionID() { return m_sSessionName;}
-	std::string SubsessionID() { return m_sSubsessionName;}
-	std::string MediaType() { return m_sMediaType;}
-
-private:
-	std::string m_sSessionName;
-	std::string m_sSubsessionName;
-	std::string m_sMediaType;
+	bool m_bMarker;
 };
