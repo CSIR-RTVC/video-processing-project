@@ -1,14 +1,15 @@
 /** @file
 
-MODULE				: RtvcRtpSink
+MODULE				: RtspSourceOutputPin
 
 FILE NAME			: RtvcRtpSink.h
 
-DESCRIPTION			: 
+DESCRIPTION			: Class for liveMedia integration
+                  Processes incoming samples received by the LiveMedia library
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,130 +34,126 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-// DirectShow includes
-#pragma warning(push)     // disable for this header only
-#pragma warning(disable:4312) 
-// DirectShow
-#include <Streams.h>
-#pragma warning(pop)      // restore original warning level
-
-#include <Windows.h>
-
-// STL
-#include <iostream>
-
-// LiveMedia
-#include "MediaSink.hh"
-#include <RTPSource.hh>
-#include <AMRAudioSource.hh>
-
 // RTVC
+#include "MediaPacketManager.h"
 #include <Shared/MediaSample.h>
 
-/**
-* LiveMedia extension - Base RTP Sink for received media. This class is the interface between the liveMedia RTP library 
-* and our DirectShow media queue. It receive raw media data from the RTP Source and adds it to the media queue. 
-*/
-
-template<class T>
 class RtvcRtpSink : public MediaSink
 {
 public:
-	/// Constructor
-	RtvcRtpSink(UsageEnvironment& env, int nSourceID, unsigned bufferSize, T* pSampleHandler)
-		: MediaSink(env),
-		m_pSampleHandler(pSampleHandler),
-		m_bHasBeenSyncedUsingRtcp(false),
-		m_nSourceID(nSourceID)
-	{
-		// Create memory buffer
-		fBuffer = new unsigned char[bufferSize];
-		fBufferSize = bufferSize;
-	}
+  /// Constructor
+  RtvcRtpSink(UsageEnvironment& env, unsigned uiSourceID, RtspClientSessionManager& rSessionManager, MediaSubsession* pSubsession, unsigned uiBufferSize)
+    : MediaSink(env),
+    m_uiSourceID(uiSourceID),
+    m_rSessionManager(rSessionManager),
+    m_rMediaPacketManager(rSessionManager.getMediaPacketManager()),
+    m_pSubsession(pSubsession),
+    m_pRtpSource(pSubsession->rtpSource()),
+    m_pAmrSource(NULL),
+    m_uiBufferSize(uiBufferSize),
+    m_pBuffer(new unsigned char[uiBufferSize]),
+    m_bFirstPacketDelivered(false)
+  {
+  }
 
-	/// Destructor
-	virtual ~RtvcRtpSink( void )
-	{
-		// Free memory
-		delete[] fBuffer;
-	}
-	
+  /// Destructor
+  virtual ~RtvcRtpSink()
+  {
+    // Free memory
+    delete[] m_pBuffer;
+  }
+
+  MediaSubsession* getSubsession() const { return m_pSubsession; }
+
+  static void endSubsession(void* clientData)
+  {
+    RtvcRtpSink* pSink = (RtvcRtpSink*)clientData;
+    pSink->doEndSubsession();
+  }
+
+  void doEndSubsession()
+  {
+    m_rSessionManager.subsessionAfterPlaying(this);
+  }
+
 protected:
-	/// LiveMedia method
-	static void afterGettingFrame( void* clientData, unsigned frameSize, unsigned numTruncatedBytes, struct timeval presentationTime, unsigned durationInMicroseconds )
-	{
-		RtvcRtpSink* sink = (RtvcRtpSink*)clientData;
-		sink->afterGettingFrame1(frameSize, presentationTime);
-	}
+  /// LiveMedia method
+  static void afterGettingFrame( void* clientData, unsigned frameSize, unsigned numTruncatedBytes, struct timeval presentationTime, unsigned durationInMicroseconds )
+  {
+    RtvcRtpSink* sink = (RtvcRtpSink*)clientData;
+    sink->afterGettingFrame1(frameSize, presentationTime);
+  }
 
-	/// LiveMedia method
-	virtual void afterGettingFrame1( unsigned frameSize, struct timeval presentationTime )
-	{
-		processData(fBuffer, frameSize, presentationTime);
-		// Then try getting the next frame:
-		continuePlaying();
-	}
+  /// LiveMedia method
+  virtual void afterGettingFrame1( unsigned frameSize, struct timeval presentationTime )
+  {
+    processData(m_pBuffer, frameSize, presentationTime);
+    // Then try getting the next frame:
+    continuePlaying();
+  }
 
-	/// LiveMedia method
-	virtual Boolean continuePlaying()
-	{
-		if (fSource == NULL) return False;
+  /// LiveMedia method
+  virtual Boolean continuePlaying()
+  {
+    if (fSource == NULL) return False;
 
-		fSource->getNextFrame(fBuffer, fBufferSize,
-			afterGettingFrame, this,
-			onSourceClosure, this);
+    fSource->getNextFrame(m_pBuffer, m_uiBufferSize,
+      afterGettingFrame, this,
+      onSourceClosure, this);
 
-		return True;
-	}
+    return True;
+  }
 
-	void processData( unsigned char* data, unsigned dataSize, struct timeval presentationTime )
-	{
-		// Check if stream has been synced using RTCP: to do this we need to get hold of the RTPSource object
-		RTPSource* pRtpSource = (RTPSource*)fSource;
 
-		//AMRAudioRTPSource* pAmrRtpSource = dynamic_cast<AMRAudioRTPSource*>(fSource);
-		//if (pAmrRtpSource)
-		//{
-		//	/*bSynced = pAmrDeinterleaver->*/
-		//	u_int8_t uiHeader = pAmrRtpSource->;
-		//	int t = 0;
-		//}
-
-		AMRAudioSource* pAmrSource = dynamic_cast<AMRAudioSource*>(fSource);
-		if (pAmrSource)
-		{
-			u_int8_t uiHeader = pAmrSource->lastFrameHeader();
-			double dStartTime = presentationTime.tv_sec + (presentationTime.tv_usec / 1000000.0);
-			BYTE* pByte = new BYTE[dataSize + 1];
-			pByte[0] = uiHeader;
-			memcpy(pByte + 1, data, dataSize);
-			// Implicit Template Declaration
-			m_pSampleHandler->processMediaSample(m_nSourceID, pByte, dataSize + 1, dStartTime, false);
-			delete[] pByte;
-			int t = 0;
-            return;
-		}
-
-		//pRtpSource = (RTPSource*)fInputSource;
-		// Convert presentation time to double
-		double dStartTime = presentationTime.tv_sec + (presentationTime.tv_usec / 1000000.0);
-		// Implicit Template Declaration
-		//m_pSampleHandler->processMediaSample(m_nSourceID, data, dataSize, dStartTime, pRtpSource->hasBeenSynchronizedUsingRTCP());
-		m_pSampleHandler->processMediaSample(m_nSourceID, data, dataSize, dStartTime, false);
-	}
+  void processData( unsigned char* data, unsigned dataSize, struct timeval presentationTime )
+  {
+    if (m_bFirstPacketDelivered)
+    {
+      if (m_pAmrSource)
+      {
+        u_int8_t uiHeader = m_pAmrSource->lastFrameHeader();
+        double dStartTime = presentationTime.tv_sec + (presentationTime.tv_usec / 1000000.0);
+        BYTE* pByte = new BYTE[dataSize + 1];
+        pByte[0] = uiHeader;
+        memcpy(pByte + 1, data, dataSize);
+        bool bSynced = (m_pRtpSource) ? !!m_pRtpSource->hasBeenSynchronizedUsingRTCP() : false;
+        m_rMediaPacketManager.addMediaPacket(m_uiSourceID, pByte, dataSize + 1, dStartTime, bSynced);
+        delete[] pByte;
+      }
+      else
+      {
+        // Convert presentation time to double
+        double dStartTime = presentationTime.tv_sec + (presentationTime.tv_usec / 1000000.0);
+        bool bSynced = (m_pRtpSource) ? !!m_pRtpSource->hasBeenSynchronizedUsingRTCP() : false;
+        m_rMediaPacketManager.addMediaPacket(m_uiSourceID, data, dataSize, dStartTime, bSynced);
+      }
+    }
+    else
+    {
+      m_bFirstPacketDelivered = true;
+      // Take dynamic cast hit only the first time
+      m_pAmrSource = dynamic_cast<AMRAudioSource*>(fSource);
+      processData(data, dataSize, presentationTime);
+    }
+  }
 
 private:
-	/// The handler that processes the media samples
-	T* m_pSampleHandler;
-
-	/// Buffer for the media sample raw data
-	unsigned char* fBuffer;
-	/// Buffer size
-	unsigned fBufferSize;
-
-	/// This member gets set when the first RTCP synced sample is received
-	bool m_bHasBeenSyncedUsingRtcp;
-
-	/// ID of the sink which is the "source" of the output pin
-	int m_nSourceID;
+  /// ID of the sink which is the "source" of the output pin
+  unsigned m_uiSourceID;
+  /// Session manager
+  RtspClientSessionManager& m_rSessionManager;
+  /// The handler that processes the media samples
+  MediaPacketManager& m_rMediaPacketManager;
+  /// Subsession
+  MediaSubsession* m_pSubsession;
+  /// RTP source
+  RTPSource* m_pRtpSource;
+  /// AMR source
+  AMRAudioSource* m_pAmrSource;
+  /// Buffer size
+  unsigned m_uiBufferSize;
+  /// Buffer for the media sample raw data
+  unsigned char* m_pBuffer;
+  /// Flag for first packet delivered
+  bool m_bFirstPacketDelivered;
 };

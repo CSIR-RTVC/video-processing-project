@@ -4,11 +4,11 @@ MODULE				: RtspProperties
 
 FILE NAME			: RtspProperties.h
 
-DESCRIPTION			: Properties dialog for Rtsp PCM Source Filter
+DESCRIPTION			: Properties dialog for RTSP Source Filter
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:

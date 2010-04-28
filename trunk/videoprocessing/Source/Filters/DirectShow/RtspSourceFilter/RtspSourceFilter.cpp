@@ -4,11 +4,11 @@ MODULE				: RtspSourceFilter
 
 FILE NAME			: RtspSourceFilter.cpp
 
-DESCRIPTION			: 
+DESCRIPTION			: DirectShow RTSP source filter
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,43 +33,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "stdafx.h"
 
-// STL
-#include <iostream>
-
 // RTVC
 #include "RtspSourceFilter.h"
 #include "RtspSourceOutputPin.h"
 
-// LiveMedia
-#include <liveMedia.hh>
-#include <BasicUsageEnvironment.hh>
-#include <GroupsockHelper.hh>
-#include <RTSPClient.hh>
-
-#include "RtspDataSession.h"
-
 #include <Shared/StringUtil.h>
 
+const unsigned TIMEOUT_MILLISECONDS = 3000;
+
 RtspSourceFilter::RtspSourceFilter( IUnknown* pUnk, HRESULT* phr )
-	: CSource(NAME("RTVC Live Media RTSP Source Filter"), pUnk, CLSID_RTVC_RtspAudioSourceFilter),
+	: CSource(NAME("RTVC Live Media RTSP Source Filter"), pUnk, CLSID_RTVC_RtspOsSourceFilter),
 	m_bStreamUsingTCP(false),
-	m_bStreaming(false),
-    m_bMediaSessionSetupComplete(false),
-	m_tStreamTimeOffset(0),
-	m_dStreamTimeOffset(0.0),
-	m_hLiveMediaStopEvent(NULL),
-	m_pRtspSession(new RtspSession(&m_rtpPacketManager))
+  m_dInitialOffset(-1.0),
+  m_dInitialStreamTimeOffset(0.0),
+  m_dSynchronisedOffset(-1.0),
+  m_dSynchronisedStreamTimeOffset(0.0),
+  m_hLiveMediaStopEvent(NULL),
+  m_hLiveMediaThreadHandle(NULL),
+  m_dwThreadID(0),
+  m_rtspSessionManager(m_mediaPacketManager)
 {
 	// Init CSettingsInterface
 	initParameters();
-	m_bStreaming = false;
+	
+  // Create Live Media Event loop handle - this will be used to notify the main thread that the live Media RTSP thread has finished
+  m_hLiveMediaStopEvent = CreateEvent(
+    NULL,                       // default security attributes
+    FALSE,                      // auto-reset event
+    FALSE,                      // initial state is nonsignaled
+    TEXT("LiveMediaStopEvent")  // object name
+    );
 }
 
 RtspSourceFilter::~RtspSourceFilter(void)
 {
-    //m_pRtspSession->teardownMediaSession();
-    delete m_pRtspSession;
-    m_pRtspSession = NULL;
+  if (m_hLiveMediaThreadHandle)
+  {
+    stopLiveMediaSession();
+  }
 
 	for (int i = 0; i < m_vOutputPins.size();i++)
 	{
@@ -80,12 +81,12 @@ RtspSourceFilter::~RtspSourceFilter(void)
 
 CUnknown *WINAPI RtspSourceFilter::CreateInstance( IUnknown* pUnk, HRESULT* phr )
 {
-	RtspSourceFilter* pAdvertSource = new RtspSourceFilter(pUnk, phr);
-	if (!pAdvertSource)
+	RtspSourceFilter* pSource = new RtspSourceFilter(pUnk, phr);
+	if (!pSource)
 	{
 		*phr = E_OUTOFMEMORY;
 	}
-	return pAdvertSource;
+	return pSource;
 }
 
 STDMETHODIMP RtspSourceFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
@@ -112,35 +113,61 @@ STDMETHODIMP RtspSourceFilter::NonDelegatingQueryInterface( REFIID riid, void **
 	}
 }
 
+static DWORD WINAPI LiveMediaThread(LPVOID pvParam)
+{
+  RtspSourceFilter* pSourceFilter = (RtspSourceFilter*)pvParam;
+  pSourceFilter->startRtspSession();
+  return S_OK;
+}
+
+void RtspSourceFilter::startRtspSession()
+{
+  ResetEvent(m_hLiveMediaStopEvent);
+  m_mediaPacketManager.reset();
+  // Blocks until end of liveMedia eventloop
+  m_rtspSessionManager.startRtspSession(m_sUrl);
+  // Notify media packet manager of eof
+  m_mediaPacketManager.stop();
+  // The Stop method waits for this event
+  SetEvent(m_hLiveMediaStopEvent);
+}
 
 STDMETHODIMP RtspSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt )
 {
-    HRESULT hr;
-	// Store the URL
-	m_sUrl = StringUtil::wideToStl(lpwszFileName);
+  m_mediaPacketManager.resetTypeInfoCompleteEventHandle();
 
-	if ( m_pRtspSession->setupMediaSession( m_sUrl ) )
-	{
-        m_bMediaSessionSetupComplete = true;
-		MediaSubsession* pSubsession = NULL;
-		MediaSubsessionIterator it(*m_pRtspSession->getSession());
-		while ((pSubsession = it.next()) != NULL)
-		{
-			createOutputPin(pSubsession, &hr);
-			if (FAILED(hr))
-			{
-				return hr;
-			}
-		}
-		// At this point we could start the scheduler and call WaitForSingleObject or WaitForMultipleObjects
-		// Until we receive the I-Frame allowing us to configure the media types correctly
-		return S_OK;
-	}
-	else
-	{
-		SetLastError(m_pRtspSession->getLastError(), true);
-		return E_FAIL;
-	}
+  // Store the URL
+  m_sUrl = StringUtil::wideToStl(lpwszFileName);
+  m_rtspSessionManager.setStreamUsingTcp(m_bStreamUsingTCP);
+
+  // Create a new thread for the RTSP liveMedia event loop
+  m_hLiveMediaThreadHandle = CreateThread(0, 0, LiveMediaThread, (void*)this, 0, &m_dwThreadID);
+#if 1
+  DWORD dwResult = WaitForSingleObject(m_mediaPacketManager.getTypeInfoCompleteEventHandle(), TIMEOUT_MILLISECONDS);
+#else
+  // FOR DEBUGGING AMR
+  DWORD dwResult = WaitForSingleObject(m_mediaPacketManager.getTypeInfoCompleteEventHandle(), INFINITE);
+#endif
+
+  if (dwResult == WAIT_OBJECT_0)
+  {
+    HRESULT hr = createOutputPins();
+    if (FAILED(hr))
+    {
+      // stop livemedia event loop
+      m_rtspSessionManager.endLiveMediaEventLoop();
+    }
+    return hr;
+  }
+  else
+  {
+    // stop livemedia event loop
+    m_rtspSessionManager.endLiveMediaEventLoop();
+    std::ostringstream ostr;
+    ostr << "Failed to obtain complete media type info" << m_rtspSessionManager.getLastError();
+    SetLastError(ostr.str().c_str(), true);
+    return E_FAIL;
+  }
 }
 
 STDMETHODIMP RtspSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt )
@@ -193,11 +220,30 @@ STDMETHODIMP RtspSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYP
 	return NOERROR;
 }
 
-void RtspSourceFilter::createOutputPin(MediaSubsession *pSubsession, HRESULT* pHr)
+STDMETHODIMP RtspSourceFilter::createOutputPins()
+{
+  HRESULT hr = S_OK;
+  // Proceed with building pipeline
+  MediaSubsession* pSubsession = NULL;
+  MediaSubsessionIterator it(*m_rtspSessionManager.getMediaSession());
+
+  while ((pSubsession = it.next()) != NULL)
+  {
+    StringMap_t& rParams = m_mediaPacketManager.getParameterMap(pSubsession);
+    createOutputPin(pSubsession, rParams, &hr);
+    if (FAILED(hr))
+    {
+      return hr;
+    }
+  }
+  return hr;
+}
+
+void RtspSourceFilter::createOutputPin(MediaSubsession *pSubsession, const StringMap_t& rParams, HRESULT* pHr)
 {
 	// Create the output pin using the size of the output pin vector as an ID
 	// This ID will be used by the pins buffer processing loop to query the packet manager for packets
-	RtspSourceOutputPin* pPin = new RtspSourceOutputPin(pHr, this, pSubsession, m_vOutputPins.size());
+	RtspSourceOutputPin* pPin = new RtspSourceOutputPin(pHr, this, pSubsession, rParams, m_vOutputPins.size());
 	// Add to list
 	m_vOutputPins.push_back(pPin);
 	// Refresh enumerator
@@ -257,137 +303,92 @@ STDMETHODIMP RtspSourceFilter::FindPin( LPCWSTR Id, IPin **ppPin )
 
 STDMETHODIMP RtspSourceFilter::Stop()
 {
-	CAutoLock cAutoLock(&m_stateLock);
-	// Update streaming state
-	m_bStreaming = false;
-    m_bMediaSessionSetupComplete = false;
-	// This will cause the liveMedia loop to exit
-	m_pRtspSession->setWatchVariable();
-
-	// Wait for the liveMedia eventloop to finish
-	DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
-	return CSource::Stop();
+  CAutoLock cAutoLock(&m_stateLock);
+  stopLiveMediaSession();
+  // Notify media packet manager of eof: happend at the end of the media session
+  m_mediaPacketManager.stop();
+  resetOffsets();
+  return CSource::Stop();
 }
 
 STDMETHODIMP RtspSourceFilter::Pause()
 {
-	CAutoLock cAutoLock(&m_stateLock);
-	StartRtspServerThreadIfNotStarted();
-    // TODO: could WaitForSingleObject here to see if Rtsp was successful?
-
-	return CSource::Pause();
-}
-
-/// Forward declaration for thread method
-static DWORD WINAPI LiveRTSPServerThreadFunc(LPVOID pvParam);
-
-void RtspSourceFilter::StartRtspServerThreadIfNotStarted()
-{
-	CAutoLock cAutoLock(&m_stateLock);
-	if (!m_bStreaming)
-	{
-		m_bStreaming = true;
-		m_rtpPacketManager.clear();
-		m_rtpPacketManager.eof(false);
-		//m_pRtspSession->resetWatchVariable();
-		m_pRtspSession->reset();
-
-		if (m_hLiveMediaStopEvent == NULL)
-		{
-			// Create Live Media Event loop handle - this will be used to notify the main thread that the live Media RTSP thread has finished
-			m_hLiveMediaStopEvent = CreateEvent(
-			NULL,               // default security attributes
-			FALSE,              // auto-reset event
-			FALSE,              // initial state is nonsignaled
-			TEXT("LiveMediaEventLoop")  // object name
-			);
-		}
-		else
-		{
-			ResetEvent(m_hLiveMediaStopEvent);
-		}
-
-		DWORD dwThreadID = 0;
-		// Create a new thread for the RTSP liveMedia event loop
-		HANDLE hThread = CreateThread(0, 0, LiveRTSPServerThreadFunc, (void*)this, 0, &dwThreadID);
-	}
-}
-
-static DWORD WINAPI LiveRTSPServerThreadFunc(LPVOID pvParam)
-{
-	RtspSourceFilter* pSourceFilter = (RtspSourceFilter*)pvParam;
-	pSourceFilter->StartRtspSession();
-	return S_OK;
-}
-
-void RtspSourceFilter::StartRtspSession()
-{
-	//ASSERT(m_pRtspSession == NULL);
-	// Encapsulating RTSP code into RtspClientSession class 
-	// Create RTSP Client Session object
-    bool bSetupComplete = true;
-	if (!m_bMediaSessionSetupComplete)
-    {
-        bSetupComplete = m_pRtspSession->setupMediaSession(m_sUrl);
-        m_bMediaSessionSetupComplete = true;
-    }
-
-    if (!bSetupComplete)
-    {
-        // TODO: Need to notify main thread of failure
-    }
-
-	m_pRtspSession->streamUsingTCP(m_bStreamUsingTCP);
-	// Start the liveMedia thread: this method does not return until the liveMedia watch variable is set in the STOP method
-	if (!m_pRtspSession->playMediaSession())
-    {
-        // Signal error?
-        SetLastError(m_pRtspSession->getLastError(), true);
-        // Could notify main thread here to either continue or abort Pause operation
-    }
-    // Shutdown media session
-    m_pRtspSession->teardownMediaSession();
-
-	for (int i = 0; i < m_vOutputPins.size(); ++i)
-	{
-		m_vOutputPins[i]->Reset();
-	}
-	// The Stop method waits for this event
-	SetEvent(m_hLiveMediaStopEvent);
+  CAutoLock cAutoLock(&m_stateLock);
+  if ( m_hLiveMediaThreadHandle == NULL )
+  {
+    m_rtspSessionManager.setStreamUsingTcp(m_bStreamUsingTCP);
+    // Create a new thread for the RTSP liveMedia event loop
+    m_hLiveMediaThreadHandle = CreateThread(0, 0, LiveMediaThread, (void*)this, 0, &m_dwThreadID);
+  }
+  return CSource::Pause();
 }
 
 STDMETHODIMP RtspSourceFilter::GetState( DWORD dwMilliSecsTimeout, FILTER_STATE *pState )
 {
-	// Edit: 24/09/2008
-	// From http://msdn.microsoft.com/en-us/library/ms787518(VS.85).aspx
-	CheckPointer(pState, E_POINTER);
-	*pState = m_State;
-	if (m_State == State_Paused)
-		return VFW_S_CANT_CUE;
-	else
-		return S_OK;
+  // Edit: 24/09/2008
+  // From http://msdn.microsoft.com/en-us/library/ms787518(VS.85).aspx
+  CheckPointer(pState, E_POINTER);
+  *pState = m_State;
+  if (m_State == State_Paused)
+  {
+    if (!m_mediaPacketManager.isBufferingComplete())
+    {
+      // try and emit buffering signal: not sure what effect this will have
+      if (m_pMediaEventSink)
+        m_pMediaEventSink->Notify(EC_BUFFERING_DATA, TRUE, 0);
+      return VFW_S_STATE_INTERMEDIATE;
+    }
+    else
+    {
+      if (m_pMediaEventSink)
+        m_pMediaEventSink->Notify(EC_BUFFERING_DATA, FALSE, 0);
+      m_mediaPacketManager.setReady(true);
+      return VFW_S_CANT_CUE;
+    }
+  }
+  else
+    return S_OK;
 }
 
-void RtspSourceFilter::notifyFilterAboutOffset( double dOffset)
+void RtspSourceFilter::stopLiveMediaSession()
 {
-	CAutoLock cAutoLock(&m_stateLock);
+  m_rtspSessionManager.endLiveMediaEventLoop();
+  // Wait for the liveMedia eventloop to finish
+  DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
+  m_hLiveMediaThreadHandle = NULL;
+}
 
-	// Get the current stream time to make sure that we always generate samples that have a starting time in the future
-	// Otherwise the samples might be late by the time they reach the renderer
+void RtspSourceFilter::setInitialOffset( double dOffset )
+{
+  CAutoLock cAutoLock(&m_stateLock);
+  if (m_dInitialOffset == -1.0)
+  {
+    m_dInitialOffset = dOffset;
+    // Get the current stream time to make sure that we always generate samples that have a starting time in the future
+    // Otherwise the samples might be late by the time they reach the renderer
 
-	// Add stream time + 50ms as further offset to make sure sample is rendered at the correct time
- 	// Get the current stream time
- 	CRefTime streamTime;
- 	StreamTime(streamTime);
- 	// Add a tiny offset to put us into the future
- 	m_tStreamTimeOffset = streamTime.GetUnits() + 500000;
- 	// Convert to double
- 	m_dStreamTimeOffset = m_tStreamTimeOffset / 10000000.0;
+    // Add stream time + 50ms as further offset to make sure sample is rendered at the correct time
+    // Get the current stream time
+    CRefTime streamTime;
+    StreamTime(streamTime);
+    // Add a tiny offset to put us into the future
+    REFERENCE_TIME tStreamTimeOffset = streamTime.GetUnits() + 500000;
+    // Convert to double
+    m_dInitialStreamTimeOffset = tStreamTimeOffset / 10000000.0;
+  }
+}
 
-	//TOREVISE: add the streamtime offset here: it hasn't been added yet!!!
-	// Iterate over all pins and set the offset
-	for (int i = 0; i < m_vOutputPins.size(); i++)
-	{
-		m_vOutputPins[i]->setOffset(dOffset);
-	}
+void RtspSourceFilter::setSynchronisedOffset( double dOffset )
+{
+  CAutoLock cAutoLock(&m_stateLock);
+  if (m_dSynchronisedOffset == -1.0)
+  {
+    m_dSynchronisedOffset = dOffset;
+    CRefTime streamTime;
+    StreamTime(streamTime);
+    // Add a tiny offset to put us into the future
+    REFERENCE_TIME tStreamTimeOffset = streamTime.GetUnits() + 500000;
+    // Convert to double
+    m_dSynchronisedStreamTimeOffset = tStreamTimeOffset / 10000000.0;
+  }
 }

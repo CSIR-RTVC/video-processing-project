@@ -1,14 +1,14 @@
 /** @file
 
-MODULE				: RtpDataQueue
+MODULE				: RtspSourceFilter
 
-FILE NAME			: RtpDataQueue.h
+FILE NAME			: MediaPacketQueue.h
 
-DESCRIPTION			: 
+DESCRIPTION			: Packet queue used to transfer media samples between liveMedia and DirectShow
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,79 +33,62 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-// STL
-#include <queue>
-
 // RTVC
 #include <Shared/MediaSample.h>
 
-/// Data queue that synchronises adding data and removing data between different threads
-class RtpDataQueue
+class MediaPacketManager;
+
+static bool isSynced(MediaSample* pSample) 
+{
+  return pSample->isMarkerSet();
+}
+
+/// Data queue that synchronizes adding data and removing data between different threads
+class MediaPacketQueue
 {
 public:
+  typedef std::deque<MediaSample*> MediaSampleQueue_t;
 
-	RtpDataQueue()
-		:m_bHasBeenSyncedUsingRtcp(false)
-	{;}
+  MediaPacketQueue(MediaPacketManager& rPacketManager);
 
-	~RtpDataQueue()
-	{
-		CAutoLock lock(&m_lock); 
-		while ( !m_qSamples.empty() )
-		{
-			MediaSample* pSample = m_qSamples.front();
-			m_qSamples.pop();
-			delete pSample;
-		}
-	}
+  ~MediaPacketQueue();
 
-	void addMediaSample(unsigned char* data, unsigned dataSize, double dStartTime, bool bHasBeenRtcpSynchronised)
-	{
-		CAutoLock lock(&m_lock); 
-		if (!m_bHasBeenSyncedUsingRtcp)
-		{
-			if (bHasBeenRtcpSynchronised)
-			{
-				m_bHasBeenSyncedUsingRtcp = true;
-				// Create a marked sample
-				MediaSample* pMediaSample = MediaSample::createMediaSample(data, dataSize, dStartTime, true);
-				m_qSamples.push(pMediaSample);
-			}
-		}
-		// Else add a normal sample to the queue
-		MediaSample* pMediaSample = MediaSample::createMediaSample(data, dataSize, dStartTime /*, false*/);
-		m_qSamples.push(pMediaSample);
-	}
+  size_t size() const 
+  {
+    return m_qSamples.size();
+  }
 
-	MediaSample* getNextSample()
-	{
-		CAutoLock lock(&m_lock); 
-		if (!m_qSamples.empty())
-		{
-			MediaSample* pSample = m_qSamples.front();
-			m_qSamples.pop();
-			return pSample;
-		}
-		return NULL;
-	}
+  bool hasBeenSyncedUsingRtcp() const
+  {
+    return m_bFirstSyncedSample;
+  }
 
-	bool hasSamples()
-	{
-		CAutoLock lock(&m_lock); 
-		return !m_qSamples.empty();
-	}
+  // This is only an approximation!!!
+  double getMediaDurationInQueue() const;
+  
+  void addMediaSample(unsigned char* data, unsigned dataSize, double dStartTime, bool bHasBeenRtcpSynchronised);
 
-	void clear()
-	{
-		CAutoLock lock(&m_lock); 
-		while (!m_qSamples.empty())
-		{
-			m_qSamples.pop();
-		}
-	}
+  MediaSample* getNextSample();
+
+  MediaSample* peekNextSample();
+
+  bool hasSamples();
+
+  void clear();
+
 private:
-	bool m_bHasBeenSyncedUsingRtcp;
+  // Prohibit copying
+  MediaPacketQueue(const MediaPacketQueue&);
+  MediaPacketQueue operator=(const MediaPacketQueue&);
 
-	CCritSec m_lock;
-	std::queue<MediaSample*> m_qSamples;
+  double getStartTimeOffset() const;
+
+  MediaPacketManager& m_rPacketManager;
+
+  CRITICAL_SECTION m_critSec;
+
+  MediaSampleQueue_t m_qSamples;
+
+  bool m_bFirstSample;
+  bool m_bFirstSyncedSample;
 };

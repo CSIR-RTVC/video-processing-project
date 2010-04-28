@@ -5,11 +5,11 @@ MODULE				: RtspSourceOutputPin
 FILE NAME			: RtspSourceOutputPin.h
 
 DESCRIPTION			: Output pin for RtspSourceFilter
-					This pin currently caters for PCM output media types.
+					        This pin currently supports PCM, MP3 and AMR-NB media types.
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2010, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -34,19 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 
-#pragma warning(push)     // disable for this header only
-#pragma warning(disable:4312) 
-// DirectShow
-#include <Streams.h>
-#pragma warning(pop)      // restore original warning level
-// STL
-#include <string>
-#include <queue>
-
 // Forward
 class MediaSample;
 class RtspSourceFilter;
 class MediaSubsession;
+
+typedef std::map<std::string, std::string> StringMap_t;
 
 /**
  * \ingroup DirectShowFilters
@@ -54,7 +47,7 @@ class MediaSubsession;
  * This pin currently caters for PCM output media types.
  */
 class RtspSourceOutputPin : public CSourceStream,
-							public IAMPushSource
+                            public IAMPushSource
 {
 	///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
 	DECLARE_IUNKNOWN; // Need this for the IAMPushSource interface
@@ -62,7 +55,7 @@ class RtspSourceOutputPin : public CSourceStream,
 	friend class RtspSourceFilter;
 public:
 	/// Constructor
-	RtspSourceOutputPin(HRESULT* pHr, RtspSourceFilter* pFilter, MediaSubsession* pMediaSubsession, int nID);
+	RtspSourceOutputPin(HRESULT* pHr, RtspSourceFilter* pFilter, MediaSubsession* pMediaSubsession, const StringMap_t& rParams, int nID);
 
 	/// Destructor
 	virtual ~RtspSourceOutputPin(void);
@@ -106,16 +99,7 @@ public:
 		*prtLatency = 45000000; return S_OK;
 	}
 
-	/// Resets all members so that we can stream repeatedly
-	void Reset();
-
-	/// Sets the start time offset of the filter: this offset gets subtracted from the starting time of each media sample
-	/// This has to happen since the samples we receive will not be Zero-based. 
-	void setOffset(double dOffset);
-
 protected:
-
-	void initialiseMediaType(MediaSubsession* pMediaSubsession, HRESULT* phr);
 
 	///Override CSourceStream methods
 	virtual HRESULT GetMediaType(CMediaType* pMediaType);
@@ -130,6 +114,12 @@ protected:
 	virtual HRESULT DoBufferProcessingLoop(void);    // the loop executed whilst running
 	
 private:
+  void initialiseMediaType(MediaSubsession* pMediaSubsession, const StringMap_t& rParams, HRESULT* phr);
+  void copyMediaDataIntoSample( IMediaSample* pSample, MediaSample* pSampleData );
+  void setSampleTimestamps( IMediaSample* pSample, MediaSample* pSampleData );
+  void setSynchronisationMarker( IMediaSample* pSample, MediaSample* pSampleData );
+  void resetTimeStampOffsets();
+
 	/// Source filter
 	RtspSourceFilter* m_pFilter;
 	/// Protects our internal state
@@ -139,22 +129,17 @@ private:
 	CMediaType* m_pMediaType;
 
 	// Audio parameters
-	int m_nBitsPerSample;
-	int m_nChannels;
-	int m_nBytesPerSecond;
-	int m_nSamplesPerSecond;
+  int m_nBitsPerSample;
+  int m_nChannels;
+  int m_nBytesPerSecond;
+  int m_nSamplesPerSecond;
+  unsigned m_uiSamplingRate;
 
 	// ID
 	int m_nID;
 
-	/// Starting time offset: the time that the first sample arrived. This is used to offset further start times to 0 
-	bool m_bOffsetSet;
-	/// Whether the pin has received a synchronisation sample yet
-	bool m_bHasBeenSynced;
-
-	/// Stores the global base starting time
-	double m_dGlobalStartTime;
-	/// Local offset: this is used when one pin's starting time has been synchronised yet the other pins hasn't
-	/// As a result this pin should still use it's original offset until it too is synchronised
-	double m_dLocalStartTime;
+  // Synchronisation
+  bool m_bFirstSample;
+  bool m_bFirstSyncedSample;
+  double m_dStreamTimeOffset;
 };
