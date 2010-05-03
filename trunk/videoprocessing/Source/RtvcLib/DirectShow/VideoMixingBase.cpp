@@ -46,7 +46,10 @@ m_nOutputSize(0),
 m_tStartTime1(0),
 m_tStartTime2(0),
 m_tStopTime1(0),
-m_tStopTime2(0)
+m_tStopTime2(0),
+m_uiEndOfStreamCount(0),
+m_uiBeginFlushCount(0),
+m_uiEndFlushCount(0)
 {
 	//Hack virtual method of subclass can't be called from base class contructor, hence must be called in child contructor
 	Initialise();
@@ -279,10 +282,16 @@ STDMETHODIMP VideoMixingBase::Stop()
 	CAutoLock lck2(&m_csReceive);
 	m_vOutputPins[0]->Inactive();
 
-	// allow a class derived from CTransformFilter
+	// allow a class derived from VideoMixingBase
 	// to know about starting and stopping streaming
 	// complete the state transition
-	m_State = State_Stopped;
+  HRESULT hr = StopStreaming();
+  if (SUCCEEDED(hr)) {
+    // complete the state transition
+    m_State = State_Stopped;
+    //m_bEOSDelivered = FALSE;
+  }
+
 	return S_OK;
 }
 
@@ -327,12 +336,58 @@ STDMETHODIMP VideoMixingBase::Pause()
 		if (m_State == State_Stopped) {
 			// allow a class derived from CTransformFilter
 			// to know about starting and stopping streaming
-			//CAutoLock lck2(&m_csReceive);
-			//hr = StartStreaming();
+			CAutoLock lck2(&m_csReceive);
+			hr = StartStreaming();
 		}
 		if (SUCCEEDED(hr)) {
 			hr = CBaseFilter::Pause();
 		}
 	}
 	return hr;
+}
+
+STDMETHODIMP VideoMixingBase::EndOfStream( int nIndex )
+{
+  ++m_uiEndOfStreamCount;
+  // Check if we have received the same number of EndOfStream notifications
+  // as there are input pins.
+  if (m_uiEndOfStreamCount == 2)
+  {
+    m_vOutputPins[0]->DeliverEndOfStream();
+  }
+  return S_OK;
+}
+
+STDMETHODIMP VideoMixingBase::BeginFlush( int nIndex )
+{
+  ++m_uiBeginFlushCount;
+  if (m_uiBeginFlushCount == 2)
+  {
+    m_vOutputPins[0]->DeliverBeginFlush();
+  }
+  return S_OK;
+}
+
+STDMETHODIMP VideoMixingBase::EndFlush( int nIndex )
+{
+  ++m_uiEndFlushCount;
+  if (m_uiEndFlushCount == 2)
+  {
+    m_vOutputPins[0]->DeliverEndFlush();
+  }
+  return S_OK;
+}
+
+HRESULT VideoMixingBase::StartStreaming()
+{
+  // reset counters
+  m_uiEndOfStreamCount = 0;
+  m_uiBeginFlushCount = 0;
+  m_uiEndFlushCount = 0;
+  return NO_ERROR;
+}
+
+HRESULT VideoMixingBase::StopStreaming()
+{
+  return NO_ERROR;
 }
