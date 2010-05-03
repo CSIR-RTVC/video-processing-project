@@ -97,6 +97,15 @@ public:
 	virtual bool OnFullCreateMoreInputs()	{ return false; }
 	virtual bool OnFullCreateMoreOutputs()	{ return false; }
 
+  // you can also override these if you want to know about streaming
+  virtual HRESULT StartStreaming();
+  virtual HRESULT StopStreaming();
+
+  // Streaming calls delegated from input pins
+  virtual STDMETHODIMP EndOfStream(int nIndex);
+  virtual STDMETHODIMP BeginFlush(int nIndex);
+  virtual STDMETHODIMP EndFlush(int nIndex);
+  //virtual STDMETHODIMP NewSegment( REFERENCE_TIME tStart, REFERENCE_TIME tStop, double dRate, int nIndex);
 protected:
 	/// Constructor
 	VideoMixingBase(TCHAR *pObjectName, LPUNKNOWN lpUnk, CLSID clsid);
@@ -118,4 +127,8 @@ protected:
 
 	/// Stores bytes per needed to store pixel according to media type
 	double m_nBytesPerPixel;
+
+  unsigned m_uiEndOfStreamCount;
+  unsigned m_uiBeginFlushCount;
+  unsigned m_uiEndFlushCount;
 };

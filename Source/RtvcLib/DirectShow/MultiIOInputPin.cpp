@@ -109,6 +109,7 @@ STDMETHODIMP CMultiIOInputPin::EndOfStream()
 
 STDMETHODIMP CMultiIOInputPin::BeginFlush()
 {
+  // TODO: add check (virtual abstract method) here to see if filter has connected output?
 	HRESULT hr = CBaseInputPin::BeginFlush();
 	if (FAILED(hr))
 	{
