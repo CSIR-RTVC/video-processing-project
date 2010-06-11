@@ -80,25 +80,22 @@ public:
 				(LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
 				);
 		}
-		else
-		{
-			return E_FAIL;
-		}
 		return hr;
 	}
 
 	HRESULT OnApplyChanges(void)
 	{
+    HRESULT hr;
 		int iCheck = SendMessage( GetDlgItem(m_Dlg, IDC_CHECK_TCP),	(UINT) BM_GETCHECK,	0, 0);
 		if (iCheck == 0)
 		{
-			HRESULT hr = m_pSettingsInterface->SetParameter(STREAM_USING_TCP, "false");
+			hr = m_pSettingsInterface->SetParameter(STREAM_USING_TCP, "false");
 		}
 		else
 		{
-			HRESULT hr = m_pSettingsInterface->SetParameter(STREAM_USING_TCP, "true");
+			hr = m_pSettingsInterface->SetParameter(STREAM_USING_TCP, "true");
 		}
-		return S_OK;
+		return hr;
 	} 
 };
 
