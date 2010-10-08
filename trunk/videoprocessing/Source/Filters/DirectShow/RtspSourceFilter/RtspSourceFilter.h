@@ -146,7 +146,7 @@ private:
   /// Creates an output pin based on the passed in MediaSubsession and adds it to the vector of output pins
   /// @param[in] pSubsession a liveMedia MediaSubsession that has been obtained using RTSP and contains information such as media type, subtype- etc.
   /// @param[out] pHr Set this value to S_OK before passing pHr into this method. If the method fails, the error code will be returned in this out parameter.
-  /// @remark Currently creates pins for 8/16 bit PCM audio and the RTVC H263 video media formats
+  /// @remark Currently creates pins for 8/16 bit PCM audio video media formats
   void createOutputPin(MediaSubsession *pSubsession, const StringMap_t& rParams, HRESULT* phr);
 
   /// Notifies the filter of the start time offset.
