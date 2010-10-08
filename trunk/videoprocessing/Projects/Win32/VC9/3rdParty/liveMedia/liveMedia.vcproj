@@ -415,19 +415,19 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoFileServerMediaSubsession.hh"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\include\DVVideoFileServerMediaSubsession.hh"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoRTPSink.hh"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\include\DVVideoRTPSink.hh"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoRTPSource.hh"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\include\DVVideoRTPSource.hh"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\include\DVVideoStreamFramer.hh"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\include\DVVideoStreamFramer.hh"
 					>
 				</File>
 				<File
@@ -895,19 +895,19 @@
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoFileServerMediaSubsession.cpp"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\DVVideoFileServerMediaSubsession.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoRTPSink.cpp"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\DVVideoRTPSink.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoRTPSource.cpp"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\DVVideoRTPSource.cpp"
 					>
 				</File>
 				<File
-					RelativePath="..\..\..\..\..\..\RTVC\Source\3rdParty\LiveMedia\live\liveMedia\DVVideoStreamFramer.cpp"
+					RelativePath="$(LIVEMEDIAROOT)\liveMedia\DVVideoStreamFramer.cpp"
 					>
 				</File>
 				<File
