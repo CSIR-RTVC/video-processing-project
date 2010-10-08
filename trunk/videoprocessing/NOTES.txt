@@ -5,6 +5,6 @@ Use this project solely to see how the MultiIOBaseFilter base class works.
 Use the standard tee instead.
 
 The RTSP Audio Source filter project is still in the very early development stages.
-It uses the open source LGPL liveMedia library (available from www.live555.com) to handle the RTP/RTCP and RTSP communication.
-The filter has been tested with an RTSP server (also available from www.live555.com) streaming 8/16 bit PCM audio data.
-It is still beeing extended to handle other audio types such as mp3. This project demonstrates how DirectShow and RTP/RTCP and RTSP can be combined.
+It uses the open source LGPL liveMedia library (available from www.live555.com) to handle the RTP/RTCP and RTSP communication.The live555 library has now been added to the source repository
+in order to ensure version compatibility. The filter has been tested with an RTSP server (also available from www.live555.com) streaming 8/16 bit PCM, AMR and MP3 audio data.
+This project demonstrates how DirectShow and RTP/RTCP and RTSP can be combined.
