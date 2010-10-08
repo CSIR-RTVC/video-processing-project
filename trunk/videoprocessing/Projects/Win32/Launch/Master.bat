@@ -2,7 +2,7 @@
 
 @call User.bat
 
-#@call 3rdParty.bat
+@call 3rdParty.bat
 
 @echo Running Master.bat commands
 @echo Setting up System Specific Variables...
@@ -13,6 +13,9 @@
 @set VCInstallDir=%VisualStudioRoot%\VC
 @echo -- VCInstallDir set to %VCInstallDir%
 
+@echo Setting RTVC Roots relative
+@set RTVCRootDir=%cd%\..\..\..
+@echo -- RTVCRootDir set to %RTVCRootDir%
 
 @echo Setting Project Directories
 @set SolutionDir=%RTVCRootDir%\Projects\Win32\%VS_VERSION%
