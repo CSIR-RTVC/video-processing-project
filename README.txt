@@ -28,7 +28,7 @@ The RTSP source filter can be tested using the GraphEdit like GraphStudio tool w
 - Scale filter
 - RGB to YUV420 Planar color converter
 - YUV420 Planar to RGB color converter
-- 8/16 bit PCM RTSP/RTP Source filter
+- 8/16 bit PCM AMR MP3 RTSP/RTP Source filter
 
 GStreamer:
 N/A
