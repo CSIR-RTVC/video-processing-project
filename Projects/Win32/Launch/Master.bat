@@ -2,8 +2,6 @@
 
 @call User.bat
 
-@call 3rdParty.bat
-
 @echo Running Master.bat commands
 @echo Setting up System Specific Variables...
 
@@ -34,6 +32,17 @@
 @echo -- DebugBuildDir set to %DebugBuildDir%
 @set LibDir=%RTVCRootDir%\Lib\%VS_VERSION%
 @echo -- LibDir set to %LibDir%
+
+@echo Setting up 3rd party directories
+
+@set LIVEMEDIAROOT=%RTVCRootDir%\Source\3rdParty\LiveMedia\live
+@echo -- LIVEMEDIAROOT set to %LIVEMEDIAROOT%
+
+@echo Setting up 3rd Party INCLUDE...
+@set INCLUDE=%LIVEMEDIAROOT%\groupsock\include;%INCLUDE%
+@set INCLUDE=%LIVEMEDIAROOT%\BasicUsageEnvironment\include;%INCLUDE%
+@set INCLUDE=%LIVEMEDIAROOT%\liveMedia\include;%INCLUDE%
+@set INCLUDE=%LIVEMEDIAROOT%\UsageEnvironment\include;%INCLUDE%
 
 @set DevEnvDir=%VisualStudioRoot%\Common7\IDE
 
