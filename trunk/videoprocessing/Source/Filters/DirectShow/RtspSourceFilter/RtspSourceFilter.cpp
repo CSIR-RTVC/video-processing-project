@@ -70,13 +70,19 @@ RtspSourceFilter::~RtspSourceFilter(void)
   if (m_hLiveMediaThreadHandle)
   {
     stopLiveMediaSession();
+
+    CloseHandle(m_hLiveMediaThreadHandle);
+    m_hLiveMediaThreadHandle = NULL;
   }
 
-	for (int i = 0; i < m_vOutputPins.size();i++)
-	{
-		delete m_vOutputPins[i];
-		m_vOutputPins[i] = NULL;
-	}
+  CloseHandle(m_hLiveMediaStopEvent);
+  m_hLiveMediaStopEvent = NULL;
+
+  for (int i = 0; i < m_vOutputPins.size();i++)
+  {
+    delete m_vOutputPins[i];
+    m_vOutputPins[i] = NULL;
+  }
 }
 
 CUnknown *WINAPI RtspSourceFilter::CreateInstance( IUnknown* pUnk, HRESULT* phr )
@@ -190,7 +196,7 @@ STDMETHODIMP RtspSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYP
 			{
 				// copy media type
 				HRESULT hr = CopyMediaType(pmt, (AM_MEDIA_TYPE*) pMediaType);
-				if (hr = E_UNEXPECTED)
+				if (hr == E_UNEXPECTED)
 				{
 					return E_FAIL;
 				}
@@ -355,6 +361,7 @@ void RtspSourceFilter::stopLiveMediaSession()
   m_rtspSessionManager.endLiveMediaEventLoop();
   // Wait for the liveMedia eventloop to finish
   DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
+  CloseHandle(m_hLiveMediaThreadHandle);
   m_hLiveMediaThreadHandle = NULL;
 }
 

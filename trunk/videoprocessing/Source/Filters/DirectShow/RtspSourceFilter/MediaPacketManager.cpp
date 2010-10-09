@@ -63,6 +63,9 @@ MediaPacketManager::~MediaPacketManager()
 
   DeleteCriticalSection(&m_critSec);
   DeleteCriticalSection(&m_critSecOffset);
+
+  CloseHandle(m_hTypeInfoCompleteEvent);
+  m_hTypeInfoCompleteEvent = NULL;
 }
 
 bool MediaPacketManager::initialiseChannelFromMediaSubsession( unsigned uiID, MediaSubsession* pSubsession )
