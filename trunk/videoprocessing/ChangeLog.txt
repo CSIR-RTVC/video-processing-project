@@ -1,0 +1,7 @@
+2010/10/08
+- Checked in live555 source code to make sure that RtspSourceFilter is built with correct live555 version.
+- Simplified bat startup files
+2010/10/09
+Thanks to John Orr for the following fixes
+- Fixed leaked handles in RtspSourceFilter
+- Fixed incorrect assignment in RtspSourceFilter.cpp/RtspSourceFilter::GetCurFile()
