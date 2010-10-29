@@ -1,4 +1,4 @@
-LIBRARY	"RGBtoYUV420Filter"
+LIBRARY	"FramerateDisplayFilter"
 EXPORTS
             DllMain                 PRIVATE
             DllGetClassObject       PRIVATE
