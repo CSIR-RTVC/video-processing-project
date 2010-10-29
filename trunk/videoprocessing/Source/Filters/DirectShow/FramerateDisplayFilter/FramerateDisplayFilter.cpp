@@ -109,78 +109,104 @@ HRESULT FramerateDisplayFilter::Transform(IMediaSample *pSample)
     if (SUCCEEDED(hr))
     {
       REFERENCE_TIME tDiff = tStart - m_previousTimestamp;
-      m_qDurations.push_back(tDiff);
-      m_previousTimestamp = tStart;
+      // Make sure timestamps are increasing
+      if (tDiff > 0)
+      {
+        m_qDurations.push_back(tDiff);
+        m_previousTimestamp = tStart;
+
+        // limit the number of measurements
+        if (m_qDurations.size() > MAX_FRAMERATE_INTERVAL_SIZE)
+        {
+          m_qDurations.pop_front();
+        }
+      }
     }
   }
 
-  // limit the number of measurements
-  if (m_qDurations.size() > MAX_FRAMERATE_INTERVAL_SIZE)
+  if (!m_qDurations.empty())
   {
-    m_qDurations.pop_front();
+    // calc avg framerate
+    REFERENCE_TIME tAvg = std::accumulate(m_qDurations.begin(), m_qDurations.end(), 0) / m_qDurations.size();
+
+    // Avoid div by zero in cases where the timestamps are invalid
+    if (tAvg > 0)
+    {
+      double dAverageFramerate = static_cast<double>(UNITS/tAvg);
+      // Create a string.
+      std::string sFramerate = StringUtil::doubleToString(dAverageFramerate) + " fps";
+      wchar_t* wsFramerate = StringUtil::stlToWide(sFramerate);
+
+      // get image properties
+      AM_MEDIA_TYPE mt;
+      hr = InputPin()->ConnectionMediaType(&mt);
+      if (FAILED(hr))
+      {
+        return hr;
+      }
+
+      ASSERT(mt.formattype == FORMAT_VideoInfo);
+      BITMAPINFOHEADER *pbmi = HEADER(mt.pbFormat);
+
+      // Get image buffer
+      BYTE *pBuffer(NULL);
+      hr = pSample->GetPointer(&pBuffer);
+      if (FAILED(hr))
+      {
+        return hr;
+      }
+
+      BITMAPINFO bitmapInfo;
+      bitmapInfo.bmiHeader = *pbmi;
+
+      Bitmap bm(&bitmapInfo, (void*)pBuffer);
+      Graphics* pGraphics = Graphics::FromImage(&bm);
+
+      // Initialize font
+      Font myFont(L"Arial", 16);
+      RectF layoutRect(0.0f, 0.0f, 200.0f, 50.0f);
+      StringFormat format;
+      format.SetAlignment(StringAlignmentNear);
+      SolidBrush blackBrush(Color(255, 0, 0, 0));
+      SolidBrush greenBrush(Color(255, 0, 255, 0));
+
+      // Draw string
+      pGraphics->DrawString(
+        wsFramerate,
+        sFramerate.length(),
+        &myFont,
+        layoutRect,
+        &format,
+        &greenBrush);
+
+      delete[] wsFramerate;
+
+      // Do we need to delete it?
+      delete pGraphics;
+    }
   }
-
-  // calc avg framerate
-  REFERENCE_TIME tAvg = std::accumulate(m_qDurations.begin(), m_qDurations.end(), 0.0) / m_qDurations.size();
-  double dAverageFramerate = UNITS/tAvg;
-  // Create a string.
-  std::string sFramerate = StringUtil::doubleToString(dAverageFramerate) + " fps";
-  wchar_t* wsFramerate = StringUtil::stlToWide(sFramerate);
-
-  // get image properties
-  AM_MEDIA_TYPE mt;
-  hr = InputPin()->ConnectionMediaType(&mt);
-  if (FAILED(hr))
-  {
-    return hr;
-  }
-
-  ASSERT(mt.formattype == FORMAT_VideoInfo);
-  BITMAPINFOHEADER *pbmi = HEADER(mt.pbFormat);
-
-  // Get image buffer
-  BYTE *pBuffer(NULL);
-  hr = pSample->GetPointer(&pBuffer);
-  if (FAILED(hr))
-  {
-    return hr;
-  }
-
-  BITMAPINFO bitmapInfo;
-  bitmapInfo.bmiHeader = *pbmi;
-
-  Bitmap bm(&bitmapInfo, (void*)pBuffer);
-
-  Graphics* pGraphics = Graphics::FromImage(&bm);
-
-
-  // Initialize arguments.
-  Font myFont(L"Arial", 16);
-  RectF layoutRect(0.0f, 0.0f, 200.0f, 50.0f);
-  StringFormat format;
-  format.SetAlignment(StringAlignmentNear);
-  SolidBrush blackBrush(Color(255, 0, 0, 0));
-  SolidBrush greenBrush(Color(255, 0, 255, 0));
-
-  // Draw string
-  pGraphics->DrawString(
-    wsFramerate,
-    sFramerate.length(),
-    &myFont,
-    layoutRect,
-    &format,
-    &greenBrush);
-
-  delete[] wsFramerate;
-
-  // Do we need to delete it?
-  delete pGraphics;
+  
   return S_OK;
 }
 
 HRESULT FramerateDisplayFilter::CheckInputType(const CMediaType* mtIn)
 {
-  // TODO: only accept RGB!!!
+  // Check the major type.
+	if (mtIn->majortype != MEDIATYPE_Video)
+	{
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+
+	// Adding advert media type to this method
+	if ((mtIn->subtype != MEDIASUBTYPE_RGB24) && (mtIn->subtype != MEDIASUBTYPE_RGB32) )
+	{
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
+
+	if (mtIn->formattype != FORMAT_VideoInfo)
+	{
+		return VFW_E_TYPE_NOT_ACCEPTED;
+	}
   return S_OK;
 }
 
