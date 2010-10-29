@@ -100,14 +100,14 @@ public:
 #endif
 #endif
 
-  // TOREMOVE ONCE REDUNDANT
-  static std::string itos(int nNumber)
-  {
-    // Buffer size ten should be sufficient for integers
-    char szBuffer[10];
-    sprintf( szBuffer, "%d", nNumber );
-    return std::string(szBuffer);
-  }
+  //// TOREMOVE ONCE REDUNDANT
+  //static std::string itos(int nNumber)
+  //{
+  //  // Buffer size ten should be sufficient for integers
+  //  char szBuffer[10];
+  //  sprintf( szBuffer, "%d", nNumber );
+  //  return std::string(szBuffer);
+  //}
 
   // Converts "1", "true", "TRUE" to true and "0", "FALSE" and "false" to false
   static bool stringToBool(const std::string& sValue)
