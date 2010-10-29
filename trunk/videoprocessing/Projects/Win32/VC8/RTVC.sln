@@ -43,7 +43,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BaseClasses", "3rdParty\Bas
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "liveMedia", "3rdParty\liveMedia\liveMedia.vcproj", "{F11B43F2-53A3-4F0D-9D0E-52723E4E98BC}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PicInPicFilter", "DirectShowFilters\PicInPIcFilter\PicInPicFilter.vcproj", "{05A99009-23E7-47A0-844C-700D37D36F33}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PicInPicFilter", "DirectShowFilters\PicInPicFilter\PicInPicFilter.vcproj", "{05A99009-23E7-47A0-844C-700D37D36F33}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VideoMixingFilter", "DirectShowFilters\VideoMixingFilter\VideoMixingFilter.vcproj", "{35B95D64-36AA-45DF-AF32-8ABED588AECE}"
 EndProject
@@ -52,6 +52,8 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RotateFilter", "DirectShowFilters\RotateFilter\RotateFilter.vcproj", "{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YuvSource", "DirectShowFilters\YuvSource\YuvSource.vcproj", "{39469123-3EB7-45F3-A15B-3854DFD2C2EB}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FramerateDisplayFilter", "DirectShowFilters\FramerateDisplayFilter\FramerateDisplayFilter.vcproj", "{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -119,6 +121,10 @@ Global
 		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Debug|Win32.Build.0 = Debug|Win32
 		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Release|Win32.ActiveCfg = Release|Win32
 		{39469123-3EB7-45F3-A15B-3854DFD2C2EB}.Release|Win32.Build.0 = Release|Win32
+		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Debug|Win32.Build.0 = Debug|Win32
+		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Release|Win32.ActiveCfg = Release|Win32
+		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

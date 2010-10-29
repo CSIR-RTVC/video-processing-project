@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="Windows-1252"?>
 <VisualStudioProject
 	ProjectType="Visual C++"
-	Version="9.00"
-	Name="VideoMixingFilter"
-	ProjectGUID="{35B95D64-36AA-45DF-AF32-8ABED588AECE}"
-	RootNamespace="VideoMixingFilter"
+	Version="8.00"
+	Name="FramerateDisplayFilter"
+	ProjectGUID="{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}"
+	RootNamespace="FramerateDisplayFilter"
 	Keyword="Win32Proj"
-	TargetFrameworkVersion="131072"
 	>
 	<Platforms>
 		<Platform
@@ -43,14 +42,14 @@
 			<Tool
 				Name="VCCLCompilerTool"
 				Optimization="0"
-				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;VideoMixingFilter_EXPORTS;_CRT_SECURE_NO_DEPRECATE"
+				AdditionalIncludeDirectories=""
+				PreprocessorDefinitions="WIN32;_DEBUG;_WINDOWS;_USRDLL;FramerateDisplayFilter_EXPORTS;_BUILD_FOR_SHORT_NO"
 				MinimalRebuild="true"
 				BasicRuntimeChecks="3"
 				RuntimeLibrary="3"
-				TreatWChar_tAsBuiltInType="true"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="4"
 			/>
 			<Tool
@@ -65,14 +64,12 @@
 			<Tool
 				Name="VCLinkerTool"
 				AdditionalOptions="/NODEFAULTLIB:LIBCMTD"
-				AdditionalDependencies="Msvcrtd.lib Winmm.lib strmbasd.lib comctl32.lib libRtvcImageD.lib libRtvcDirectShowD.lib"
+				AdditionalDependencies="Strmbasd.lib Msvcrtd.lib Winmm.lib libRtvcImageD.lib libRtvcDirectShowD.lib gdiplus.lib"
 				OutputFile="$(BuildDir)\Debug\$(ProjectName)d.dll"
 				LinkIncremental="2"
-				ModuleDefinitionFile="VideoMixingFilter.def"
+				ModuleDefinitionFile="FramerateDisplayFilter.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -92,6 +89,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -124,11 +124,12 @@
 			/>
 			<Tool
 				Name="VCCLCompilerTool"
-				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;VideoMixingFilter_EXPORTS;_BUILD_FOR_SHORT_NO;_CRT_SECURE_NO_DEPRECATE"
+				Optimization="2"
+				PreprocessorDefinitions="WIN32;NDEBUG;_WINDOWS;_USRDLL;FramerateDisplayFilter_EXPORTS;_BUILD_FOR_SHORT_NO"
 				RuntimeLibrary="2"
 				UsePrecompiledHeader="0"
 				WarningLevel="3"
-				Detect64BitPortabilityProblems="false"
+				Detect64BitPortabilityProblems="true"
 				DebugInformationFormat="3"
 			/>
 			<Tool
@@ -142,16 +143,14 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="STRMBASE.lib Msvcrt.lib comctl32.lib Winmm.lib odbc32.lib odbccp32.lib libRtvcImage.lib libRtvcDirectShow.lib"
+				AdditionalDependencies="STRMBASE.lib Msvcrt.lib Winmm.lib odbc32.lib odbccp32.lib libRtvcImage.lib libRtvcDirectShow.lib gdiplus.lib"
 				OutputFile="$(BuildDir)\Release\$(ProjectName).dll"
 				LinkIncremental="1"
-				ModuleDefinitionFile="VideoMixingFilter.def"
+				ModuleDefinitionFile="FramerateDisplayFilter.def"
 				GenerateDebugInformation="true"
 				SubSystem="2"
 				OptimizeReferences="2"
 				EnableCOMDATFolding="2"
-				RandomizedBaseAddress="1"
-				DataExecutionPrevention="0"
 				TargetMachine="1"
 			/>
 			<Tool
@@ -171,6 +170,9 @@
 			/>
 			<Tool
 				Name="VCAppVerifierTool"
+			/>
+			<Tool
+				Name="VCWebDeploymentTool"
 			/>
 			<Tool
 				Name="VCPostBuildEventTool"
@@ -194,19 +196,19 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\DLLSetup.cpp"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\DLLSetup.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\stdafx.cpp"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayFilter.cpp"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\VideoMixingFilter.cpp"
+				RelativePath=".\FramerateDisplayFilter.def"
 				>
 			</File>
 			<File
-				RelativePath=".\VideoMixingFilter.def"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\stdafx.cpp"
 				>
 			</File>
 		</Filter>
@@ -216,19 +218,11 @@
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\resource.h"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayFilter.h"
 				>
 			</File>
 			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\stdafx.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\VideoMixingFilter.h"
-				>
-			</File>
-			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\VideoMixingProperties.h"
+				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\stdafx.h"
 				>
 			</File>
 		</Filter>
@@ -237,10 +231,6 @@
 			Filter="rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav"
 			UniqueIdentifier="{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}"
 			>
-			<File
-				RelativePath="..\..\..\..\..\Source\Filters\DirectShow\VideoMixingFilter\VideoMixingFilter.rc"
-				>
-			</File>
 		</Filter>
 	</Files>
 	<Globals>
