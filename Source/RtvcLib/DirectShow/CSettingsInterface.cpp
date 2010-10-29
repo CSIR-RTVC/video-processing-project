@@ -34,6 +34,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "CSettingsInterface.h"
 
 #include <Shared/StringUtil.h>
+#include <Shared/Conversion.h>
 
 CSettingsInterface::CSettingsInterface(void)
 {;}
@@ -114,7 +115,7 @@ STDMETHODIMP CSettingsInterface::GetParameter( const char* type, int nBufferSize
 				int* pValue = m_intParams.getParamAddress(sParamName);
 				if (pValue)
 				{
-					std::string sValue =  StringUtil::itos(*pValue);
+					std::string sValue =  toString(*pValue);
 					if (sValue.length() < nBufferSize)
 					{
 						memcpy(value, (void*)sValue.c_str(), sValue.length());
@@ -267,15 +268,15 @@ STDMETHODIMP CSettingsInterface::GetParameterSettings( char* szResult, int nSize
 
 	// Iterate over ints
 	std::vector<std::string> vParams = m_intParams.getParameterNames();
-	for (int i = 0; i < vParams.size(); i++)
+	for (size_t i = 0; i < vParams.size(); i++)
 	{
 		int nValue = *(m_intParams.getParamAddress(vParams[i]));
-		sResult += "Parameter name: " + vParams[i] + " Value: " + StringUtil::itos(nValue) + "\r\n";
+		sResult += "Parameter name: " + vParams[i] + " Value: " + toString(nValue) + "\r\n";
 	}
 
 	// Iterate over chars
 	vParams = m_stringParams.getParameterNames();
-	for (int i = 0; i < vParams.size(); i++)
+	for (size_t i = 0; i < vParams.size(); i++)
 	{
 		std::string sValue = *(m_stringParams.getParamAddress(vParams[i]));
 		sResult += "Parameter name: " + vParams[i] + " Value: " + sValue + "\r\n";
@@ -283,7 +284,7 @@ STDMETHODIMP CSettingsInterface::GetParameterSettings( char* szResult, int nSize
 
 	// Iterate over bool
 	vParams = m_boolParams.getParameterNames();
-	for (int i = 0; i < vParams.size(); i++)
+	for (size_t i = 0; i < vParams.size(); i++)
 	{
 		bool bValue = *(m_boolParams.getParamAddress(vParams[i]));
 		std::string sValue = (bValue)?"true":"false";
@@ -292,7 +293,7 @@ STDMETHODIMP CSettingsInterface::GetParameterSettings( char* szResult, int nSize
 
 	// Iterate over double
 	vParams = m_doubleParams.getParameterNames();
-	for (int i = 0; i < vParams.size(); i++)
+	for (size_t i = 0; i < vParams.size(); i++)
 	{
 		double dValue = *(m_doubleParams.getParamAddress(vParams[i]));
 		sResult += "Parameter name: " + vParams[i] + " Value: " + StringUtil::doubleToString(dValue) + "\r\n";
