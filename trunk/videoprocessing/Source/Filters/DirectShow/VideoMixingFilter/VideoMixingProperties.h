@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <DirectShow/CommonDefs.h>
 #include <DirectShow/FilterPropertiesBase.h>
-#include <Shared/StringUtil.h>
+#include <Shared/Conversion.h>
 
 #include "resource.h"
 #define BUFFER_SIZE 256
@@ -96,7 +96,7 @@ public:
 			int iCheck = SendMessage( GetDlgItem(m_Dlg, nRadioID),	(UINT) BM_GETCHECK,	0, 0);
 			if (iCheck != 0)
 			{
-				std::string sID = StringUtil::itos(i);
+				std::string sID = toString(i);
 				HRESULT hr = m_pSettingsInterface->SetParameter(ORIENTATION, sID.c_str());
 				break;
 			}
