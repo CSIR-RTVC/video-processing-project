@@ -1,4 +1,4 @@
-LIBRARY	"RGBtoYUV420Filter"
+LIBRARY	"YUV420ToRGBFilter"
 EXPORTS
             DllMain                 PRIVATE
             DllGetClassObject       PRIVATE
