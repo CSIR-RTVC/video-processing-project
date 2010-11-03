@@ -1,4 +1,4 @@
-LIBRARY	"RGBtoYUV420Filter"
+LIBRARY	"TimestampLoggerFilter"
 EXPORTS
             DllMain                 PRIVATE
             DllGetClassObject       PRIVATE
