@@ -27,6 +27,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectShow", "RtvcLib\Direc
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Image", "RtvcLib\Image\Image.vcproj", "{00930375-8B79-4D36-9B1F-E45D3EAC51A0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RtspSourceFilter", "DirectShowFilters\RtspSourceFilter\RtspSourceFilter.vcproj", "{462E6BFB-7A45-4B8F-A980-8F85164A0437}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -52,8 +56,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RotateFilter", "DirectShowFilters\RotateFilter\RotateFilter.vcproj", "{22A7CA13-A0A7-4F7D-8B12-5E61515F04E0}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YuvSource", "DirectShowFilters\YuvSource\YuvSource.vcproj", "{39469123-3EB7-45F3-A15B-3854DFD2C2EB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FramerateDisplayFilter", "DirectShowFilters\FramerateDisplayFilter\FramerateDisplayFilter.vcproj", "{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AudioMixingFilter", "DirectShowFilters\AudioMixingFilter\AudioMixingFilter.vcproj", "{2F6EF741-0EE0-4580-88BE-35E556387D45}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -125,6 +135,10 @@ Global
 		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Debug|Win32.Build.0 = Debug|Win32
 		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Release|Win32.ActiveCfg = Release|Win32
 		{588AEAE9-3E07-420B-B51D-D9D2E81D4EC8}.Release|Win32.Build.0 = Release|Win32
+		{2F6EF741-0EE0-4580-88BE-35E556387D45}.Debug|Win32.ActiveCfg = Debug|Win32
+		{2F6EF741-0EE0-4580-88BE-35E556387D45}.Debug|Win32.Build.0 = Debug|Win32
+		{2F6EF741-0EE0-4580-88BE-35E556387D45}.Release|Win32.ActiveCfg = Release|Win32
+		{2F6EF741-0EE0-4580-88BE-35E556387D45}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
