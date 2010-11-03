@@ -22,8 +22,15 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YUV420ToRGBFilter", "Direct
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DirectShow", "RtvcLib\DirectShow\DirectShow.vcproj", "{382B7FFF-3C67-4370-8D39-2FB7FD1693E1}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Image", "RtvcLib\Image\Image.vcproj", "{00930375-8B79-4D36-9B1F-E45D3EAC51A0}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RtspSourceFilter", "DirectShowFilters\RtspSourceFilter\RtspSourceFilter.vcproj", "{462E6BFB-7A45-4B8F-A980-8F85164A0437}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -49,8 +56,14 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "PicInPicFilter", "DirectShowFilters\PicInPicFilter\PicInPicFilter.vcproj", "{05A99009-23E7-47A0-844C-700D37D36F33}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "YuvSource", "DirectShowFilters\YuvSource\YuvSource.vcproj", "{39469123-3EB7-45F3-A15B-3854DFD2C2EB}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FramerateDisplayFilter", "DirectShowFilters\FramerateDisplayFilter\FramerateDisplayFilter.vcproj", "{D47D0E77-6DC1-4DD4-9A01-84022EB7AC89}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AudioMixingFilter", "DirectShowFilters\AudioMixingFilter\AudioMixingFilter.vcproj", "{54073435-B115-402D-A26A-C30649B9E32B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -122,6 +135,10 @@ Global
 		{D47D0E77-6DC1-4DD4-9A01-84022EB7AC89}.Debug|Win32.Build.0 = Debug|Win32
 		{D47D0E77-6DC1-4DD4-9A01-84022EB7AC89}.Release|Win32.ActiveCfg = Release|Win32
 		{D47D0E77-6DC1-4DD4-9A01-84022EB7AC89}.Release|Win32.Build.0 = Release|Win32
+		{54073435-B115-402D-A26A-C30649B9E32B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{54073435-B115-402D-A26A-C30649B9E32B}.Debug|Win32.Build.0 = Debug|Win32
+		{54073435-B115-402D-A26A-C30649B9E32B}.Release|Win32.ActiveCfg = Release|Win32
+		{54073435-B115-402D-A26A-C30649B9E32B}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
