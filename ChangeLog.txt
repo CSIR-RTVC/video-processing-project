@@ -5,3 +5,10 @@
 Thanks to John Orr for the following fixes
 - Fixed leaked handles in RtspSourceFilter
 - Fixed incorrect assignment in RtspSourceFilter.cpp/RtspSourceFilter::GetCurFile()
+
+2010/10/28
+- Added FramerateDisplayFilter alpha version
+
+2010/11/03
+- Added AudioMixingFilter alpha version
+- Corrected VS project build dependencies thanks to a hint from jamiefaye
