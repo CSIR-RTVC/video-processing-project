@@ -297,7 +297,7 @@ HRESULT AudioMixingFilter::Receive( IMediaSample *pSample, int nIndex )
     if (uiLen1 != uiLen2)
     {
       uiLen = min(uiLen1, uiLen2);
-      uiRemainder = std::abs(uiLen2 - uiLen1);
+      uiRemainder = std::abs((int)uiLen2 - (int)uiLen1);
     }
     else
     {
