@@ -1,0 +1,111 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{382B7FFF-3C67-4370-8D39-2FB7FD1693E1}</ProjectGuid>
+    <RootNamespace>DirectShow</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\RtvcLib.props" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+    <Import Project="..\RtvcLibDebug.props" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(SolutionDir)$(Configuration)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(DSHOWBASECLASSES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>_DEBUG;_WINDOWS;_USRDLL;DIRECTSHOW_EXPORTS;__USING_GMFBRIDGE;BOOST_ALL_NO_LIB;BOOST_ALL_DYN_LINK;BOOST_LIB_DIAGNOSTIC;_CRT_SECURE_NO_DEPRECATE;RTVC_ADD_GRAPH_TO_ROT;WIN32</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(DSHOWBASECLASSES);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;DIRECTSHOW_EXPORTS;__USING_GMFBRIDGE;BOOST_ALL_NO_LIB;BOOST_ALL_DYN_LINK;BOOST_LIB_DIAGNOSTIC;_CRT_SECURE_NO_DEPRECATE;RTVC_ADD_GRAPH_TO_ROT;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+    </ClCompile>
+  </ItemDefinitionGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CSettingsInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CStatusInterface.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CustomBaseFilter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\DirectShowHelper.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\MultiIOBaseFilter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\MultiIOInputPin.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\MultiIOOutputPin.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\stdafx.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\DirectShow\VideoMixingBase.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CommonDefs.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CSettingsInterface.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CStatusInterface.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CustomBaseFilter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\CustomMediaTypes.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\DirectShowHelper.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\FilterPropertiesBase.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\MultiIOBaseFilter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\MultiIOInputPin.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\MultiIOOutputPin.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\NotifyCodes.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\SettingsInterface.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\StatusInterface.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\stdafx.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\DirectShow\VideoMixingBase.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\3rdParty\BaseClasses\baseclasses.vcxproj">
+      <Project>{e8a3f6fa-ae1c-4c8e-a0b6-9c8480324eaa}</Project>
+      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
+    </ProjectReference>
+  </ItemGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>
