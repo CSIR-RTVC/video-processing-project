@@ -1,4 +1,4 @@
-LIBRARY	"CropFilter"
+LIBRARY	"AudioMixingFilter"
 EXPORTS
             DllMain                 PRIVATE
             DllGetClassObject       PRIVATE
