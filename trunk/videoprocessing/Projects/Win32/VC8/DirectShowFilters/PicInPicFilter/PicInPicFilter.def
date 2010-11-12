@@ -1,4 +1,4 @@
-LIBRARY	"CropFilter"
+LIBRARY	"PicInPicFilter"
 EXPORTS
             DllMain                 PRIVATE
             DllGetClassObject       PRIVATE
