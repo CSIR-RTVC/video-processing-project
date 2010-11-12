@@ -62,7 +62,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Msvcrtd.lib Winmm.lib strmbasd.lib libRtvcImageD.lib libRtvcDirectShowD.lib"
+				AdditionalDependencies="Msvcrtd.lib Winmm.lib strmbasd.lib libRtvcDirectShowD.lib"
 				OutputFile="$(BuildDir)\Debug\$(ProjectName)d.dll"
 				LinkIncremental="2"
 				ModuleDefinitionFile="Tee.def"
@@ -140,7 +140,7 @@
 			/>
 			<Tool
 				Name="VCLinkerTool"
-				AdditionalDependencies="Msvcrt.lib Winmm.lib odbc32.lib odbccp32.lib strmbase.lib libRtvcImage.lib libRtvcDirectShow.lib"
+				AdditionalDependencies="Msvcrt.lib Winmm.lib odbc32.lib odbccp32.lib strmbase.lib libRtvcDirectShow.lib"
 				OutputFile="$(BuildDir)\Release\$(ProjectName).dll"
 				LinkIncremental="1"
 				ModuleDefinitionFile="Tee.def"
