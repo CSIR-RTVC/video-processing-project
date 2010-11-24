@@ -225,24 +225,27 @@ HRESULT RotateFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *
 			return VFW_E_TYPE_NOT_ACCEPTED;
 		else
 		{
-			VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)mtOut->pbFormat;
-			//Now we need to calculate the size of the output image
-			BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
-			int iNewStride = pBi->biWidth;
-			// TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
-			if (iNewStride != m_nOutWidth)
-			{
-				//m_nStrideRenderer = iNewStride;
-				// FOR NOW JUST REJECT THE TYPE AND LET THE COLOR CONVERTER HANDLE IT
-				return VFW_E_TYPE_NOT_ACCEPTED;
-			}
-			int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
-			int iNewHeight = pBi->biHeight;
-			if (iNewHeight < 0)
-			{
-				// REJECT INVERTED PICTURES
-				return VFW_E_TYPE_NOT_ACCEPTED;
-			}
+      if (mtOut->formattype == FORMAT_VideoInfo)
+      {
+        VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)mtOut->pbFormat;
+        //Now we need to calculate the size of the output image
+        BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+        int iNewStride = pBi->biWidth;
+        // TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
+        if (iNewStride != m_nOutWidth)
+        {
+          //m_nStrideRenderer = iNewStride;
+          // FOR NOW JUST REJECT THE TYPE AND LET THE COLOR CONVERTER HANDLE IT
+          return VFW_E_TYPE_NOT_ACCEPTED;
+        }
+        int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
+        int iNewHeight = pBi->biHeight;
+        if (iNewHeight < 0)
+        {
+          // REJECT INVERTED PICTURES
+          return VFW_E_TYPE_NOT_ACCEPTED;
+        }
+      }
 		}
 
 	if (mtOut->subtype == MEDIASUBTYPE_RGB32)
