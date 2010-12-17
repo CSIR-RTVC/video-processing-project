@@ -108,11 +108,6 @@ public:
   virtual STDMETHODIMP BeginFlush(int nIndex);
   virtual STDMETHODIMP EndFlush(int nIndex);
 
-	/// Overridden from AudioMixingBase 
-	virtual HRESULT ReceiveFirstSample(IMediaSample *pSample);
-	/// Overridden from AudioMixingBase 
-	virtual HRESULT ReceiveSecondSample(IMediaSample *pSample);
-
 	HRESULT GenerateOutputSample(IMediaSample *pSample, int nIndex);
 
 	virtual void initParameters();
