@@ -109,9 +109,29 @@ bool MediaParameterExtractor::initialiseParameterExtractionMap( unsigned uiChann
     {
       m_mInitMap[uiChannelId] = false;
     }
+    // INCOMPLETE: AAC audio
+    /*
+    else if ( strcmp(szCodec, "MPEG4-GENERIC")==0 )
+    {
+      // TOREVISE: does AAC need any inband data?
+      m_mInitMap[uiChannelId] = true;
+    }
+    */
     else
     {
       // Unsupported audio codec
+      bResult = false;
+    }
+  }
+  else if ( strcmp(szMedium, "video")==0 )
+  {
+    if ( strcmp(szCodec, "H264")==0 )
+    {
+      m_mInitMap[uiChannelId] = true;
+    }
+    else
+    {
+      // Unsupported video codec
       bResult = false;
     }
   }
