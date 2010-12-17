@@ -119,7 +119,21 @@ private:
   void setSampleTimestamps( IMediaSample* pSample, MediaSample* pSampleData );
   void setSynchronisationMarker( IMediaSample* pSample, MediaSample* pSampleData );
   void resetTimeStampOffsets();
-
+  bool isIdrFrame(unsigned char nalUnitHeader)
+  {
+    unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+    assert(uiForbiddenZeroBit == 0);
+    unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+    unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+    switch (uiNalUnitType)
+    {
+      // IDR nal unit types
+    case 5:
+      return true;
+    default:
+      return false;
+    }
+  }
 	/// Source filter
 	RtspSourceFilter* m_pFilter;
 	/// Protects our internal state
