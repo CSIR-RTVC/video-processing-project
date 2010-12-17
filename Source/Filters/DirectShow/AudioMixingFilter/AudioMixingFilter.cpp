@@ -161,50 +161,6 @@ HRESULT AudioMixingFilter::GenerateOutputSample(IMediaSample *pSample, int nInde
 	return hr;
 }
 
-HRESULT AudioMixingFilter::ReceiveFirstSample( IMediaSample *pSample )
-{
-	// Copy the secondary sample into our buffer
-	if (pSample)
-	{
-		BYTE *pBuffer = NULL;
-		HRESULT hr = pSample->GetPointer(&pBuffer);
-		if (FAILED(hr))
-		{
-			return hr;
-		}
-
-		// Copy the buffer
-		memcpy(m_pSampleBuffers[0], pBuffer, m_nSampleSizes[0]);
-		return GenerateOutputSample(pSample, 0);
-	}
-	else
-	{
-		return E_POINTER;
-	}
-}
-
-HRESULT AudioMixingFilter::ReceiveSecondSample( IMediaSample *pSample )
-{
-	// Copy the secondary sample into our buffer
-	if (pSample)
-	{
-		BYTE *pBuffer = NULL;
-		HRESULT hr = pSample->GetPointer(&pBuffer);
-		if (FAILED(hr))
-		{
-			return hr;
-		}
-
-		// Copy the buffer
-		memcpy(m_pSampleBuffers[1], pBuffer, m_nSampleSizes[1]);
-		return GenerateOutputSample(pSample, 1);
-	}
-	else
-	{
-		return E_POINTER;
-	}
-}
-
 HRESULT AudioMixingFilter::CheckOutputType( const CMediaType* pMediaType )
 {
 	if (*(pMediaType->Subtype()) == MEDIASUBTYPE_PCM)
@@ -224,25 +180,11 @@ HRESULT AudioMixingFilter::Receive( IMediaSample *pSample, int nIndex )
 
   if (nIndex == 0)
   {
-    //return ReceiveFirstSample(pSample);
-    //m_pSample1 = pSample;
-    //m_pSample1->AddRef();
-    //if (!m_pSample2)
-    //{
-    //  DWORD result = WaitForSingleObject(m_hSyncEvent, INFINITE);
-    //}
     pSample->AddRef();
     m_qSamples1.push_back(pSample);
   }
   else
   {
-    //return ReceiveSecondSample(pSample);
-    //m_pSample2 = pSample;
-    //m_pSample2->AddRef();
-    //if (!m_pSample1)
-    //{
-    //  DWORD result = WaitForSingleObject(m_hSyncEvent, INFINITE);
-    //}
     pSample->AddRef();
     m_qSamples2.push_back(pSample);
   }
@@ -285,9 +227,7 @@ HRESULT AudioMixingFilter::Receive( IMediaSample *pSample, int nIndex )
       return hr;
     }
 
-    // TODO: do transform!
     // adding both samples
-
     unsigned uiLen = 0;
     unsigned uiRemainder = 0;
     unsigned uiLen1 = pSample1->GetActualDataLength();
@@ -344,19 +284,6 @@ HRESULT AudioMixingFilter::Receive( IMediaSample *pSample, int nIndex )
     {
       ASSERT(false);
     }
-
-    //for (size_t i = 0; i < uiLen; ++i)
-    //{
-    //  pBufferOut[i] = (0.73 * pBuffer1[i] + 0.73 * pBuffer2[i]);
-    //}
-
-    //memcpy(pBufferOut, pBuffer2, uiLen);
-
-    // interleave the PCM samples for n-channels where each channel is in m_pChanBuffersOut[n]
-    //for (int i=0; i < m_uiSamplesPerSecond; i++)
-      //for (int n=0; n< m_uiChannels; n++)
-        //*pBufferOut++ = m_pChanBuffersOut[n][i];
-        //*pBufferOut++ = m_pChanBuffersOut[n][i];
 
     // TODO: set size: use same size as input
     pOutSample->SetActualDataLength( uiLen );
