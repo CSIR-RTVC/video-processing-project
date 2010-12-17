@@ -122,7 +122,7 @@ private:
   bool isIdrFrame(unsigned char nalUnitHeader)
   {
     unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
-    assert(uiForbiddenZeroBit == 0);
+    //assert(uiForbiddenZeroBit == 0);
     unsigned uiNalRefIdc = nalUnitHeader & 0x60;
     unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
     switch (uiNalUnitType)
