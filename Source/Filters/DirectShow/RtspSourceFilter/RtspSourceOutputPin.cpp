@@ -37,6 +37,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // DS // For MP3 header
 #include <mmreg.h>
+#include <dvdmedia.h>
+#include <wmcodecdsp.h>
 
 // STL
 #include <iostream>
@@ -77,6 +79,7 @@ RtspSourceOutputPin::~RtspSourceOutputPin(void)
 		FreeMediaType(*m_pMediaType);
 }
 
+FOURCCMap H264(DWORD('462H'));
 void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, const StringMap_t& rParams, HRESULT* phr )
 {
   // Now iterate over all media subsessions and create our RTVC media attributes
@@ -275,7 +278,54 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         m_pMediaType->bFixedSizeSamples = TRUE;
         m_pMediaType->bTemporalCompression = FALSE;
       }
+      // INCOMPLETE: AAC not working yet
+      /*
+      else if ( strcmp(szCodec, "MPEG4-GENERIC")==0 )
+      {
+        const int SamplingFrequencies[] = 
+        {
+          96000,
+          88200,
+          64000,
+          48000,
+          44100,
+          32000,
+          24000,
+          22050,
+          16000,
+          12000,
+          11025,
+          8000,
+          7350,
+          0,
+          0,
+          0,
+        };
 
+        // RG
+        long m_cDecoderSpecific=0;
+        const int WAVE_FORMAT_AAC = 0x00ff;
+        unsigned char m_pDecoderSpecific[2];
+
+        m_pMediaType->InitMediaType();
+        m_pMediaType->SetType(&MEDIATYPE_Audio);
+        FOURCCMap faad(WAVE_FORMAT_AAC);
+        m_pMediaType->SetSubtype(&faad);
+        m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
+        WAVEFORMATEX* pwfx = (WAVEFORMATEX*)m_pMediaType->AllocFormatBuffer(sizeof(WAVEFORMATEX) + m_cDecoderSpecific);
+        ZeroMemory(pwfx,  sizeof(WAVEFORMATEX));
+        pwfx->cbSize = WORD(m_cDecoderSpecific);
+        CopyMemory((pwfx+1),  m_pDecoderSpecific,  m_cDecoderSpecific);
+
+        // parse decoder-specific info to get rate/channels
+        long samplerate = ((m_pDecoderSpecific[0] & 0x7) << 1) + ((m_pDecoderSpecific[1] & 0x80) >> 7);
+        pwfx->nSamplesPerSec = SamplingFrequencies[samplerate];
+        pwfx->nBlockAlign = 1;
+        pwfx->wBitsPerSample = 16;
+        pwfx->wFormatTag = WAVE_FORMAT_AAC;
+        pwfx->nChannels = (m_pDecoderSpecific[1] & 0x78) >> 3;
+      }
+      */
       else
       {
         // Unsupported
@@ -291,15 +341,54 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         // TODO
         *phr = VFW_E_INVALIDSUBTYPE;
       }
+      // INCOMPLETE: H264: hard-coding width and height doesn't seem to affect 
+      // correctness. Other resolution video is still rendered correctly?
+      // Should still parse parameter sets?
       else if (strcmp(szCodec, "H264") == 0 )
       {
         // TODO
-        *phr = VFW_E_INVALIDSUBTYPE;
+        // test.264
+        //const unsigned uiWidth = 720;
+        //const unsigned uiHeight = 576;
+
+        // test2.264
+        const unsigned uiWidth = 384;
+        const unsigned uiHeight = 288;
+        m_pMediaType->InitMediaType();
+        m_pMediaType->SetType(&MEDIATYPE_Video);
+        m_pMediaType->SetSubtype(&MEDIASUBTYPE_H264);
+        //MEDIASUBTYPE_h264
+        //MEDIASUBTYPE_X264
+        //MEDIASUBTYPE_x264
+        //MEDIASUBTYPE_AVC1
+        //FORMAT_MPEG2Video
+
+        m_pMediaType->SetFormatType(&FORMAT_VideoInfo2);
+        VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)m_pMediaType->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2));
+        ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
+        pvi2->bmiHeader.biBitCount = 24;
+        pvi2->bmiHeader.biSize = 40;
+        pvi2->bmiHeader.biPlanes = 1;
+        pvi2->bmiHeader.biWidth = uiWidth;
+        pvi2->bmiHeader.biHeight = uiHeight;
+        pvi2->bmiHeader.biSize = uiWidth * uiHeight * 3;
+        pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
+        pvi2->bmiHeader.biCompression = DWORD('1cva');
+        //pvi2->AvgTimePerFrame = m_tFrame;
+        //pvi2->AvgTimePerFrame = 1000000;
+        const REFERENCE_TIME FPS_25 = UNITS / 25;
+        pvi2->AvgTimePerFrame = FPS_25;
+        //SetRect(&pvi2->rcSource, 0, 0, m_cx, m_cy);
+        SetRect(&pvi2->rcSource, 0, 0, uiWidth, uiHeight);
+        pvi2->rcTarget = pvi2->rcSource;
+
+        pvi2->dwPictAspectRatioX = uiWidth;
+        pvi2->dwPictAspectRatioY = uiHeight;
       }
       else
       {
         // Unsupported
-        //m_sLastError = "Unsupported audio codec: " + std::string(szMedium) + std::string(szCodec);
+        //m_sLastError = "Unsupported video codec: " + std::string(szMedium) + std::string(szCodec);
         *phr = VFW_E_INVALIDSUBTYPE;
       }
     }
@@ -353,12 +442,19 @@ HRESULT RtspSourceOutputPin::DecideBufferSize( IMemAllocator* pAlloc, ALLOCATOR_
 		pRequest->cBuffers = 2;
 	}
 
-	if (m_pMediaType->formattype == FORMAT_VideoInfo)
+	if (m_pMediaType->formattype == FORMAT_VideoInfo)      
 	{
 		VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)m_pMediaType->pbFormat;
 		// Now get size of video
 		pRequest->cbBuffer = pVih->bmiHeader.biSizeImage;
 	}
+  else if (m_pMediaType->formattype == FORMAT_VideoInfo2)
+  {
+    VIDEOINFOHEADER2 *pVih = (VIDEOINFOHEADER2*)m_pMediaType->pbFormat;
+    // Now get size of video
+    pRequest->cbBuffer = pVih->bmiHeader.biSizeImage;
+    //pRequest->cbBuffer = pVih->bmiHeader.
+  }
 	else if (m_pMediaType->formattype == FORMAT_WaveFormatEx)
 	{
 		// Audio buffer size
@@ -497,6 +593,29 @@ void RtspSourceOutputPin::copyMediaDataIntoSample( IMediaSample* pSample, MediaS
   // Access the sample's data buffer
   pSample->GetPointer(&pDestinationBuffer);
 
+  if (m_pMediaType->subtype == MEDIASUBTYPE_H264)
+  {
+#if 0
+    pDestinationBuffer[0] = 0x0;
+    pDestinationBuffer[1] = 0x0;
+    pDestinationBuffer[2] = 0x0;
+    pDestinationBuffer[3] = 0x1;
+    // try manually copying in start codes
+    memcpy(pDestinationBuffer + 4, pSampleData->getData(), (DWORD) pSampleData->getSize());
+    // Set length of media sample
+    pSample->SetActualDataLength(pSampleData->getSize() + 4);
+#endif    
+    
+    pDestinationBuffer[0] = 0x0;
+    pDestinationBuffer[1] = 0x0;
+    pDestinationBuffer[2] = 0x1;
+    // try manually copying in start codes
+    memcpy(pDestinationBuffer + 3, pSampleData->getData(), (DWORD) pSampleData->getSize());
+    // Set length of media sample
+    pSample->SetActualDataLength(pSampleData->getSize() + 3);
+    return;
+  }
+
   // Copy the data from the sample into the buffer
   if (m_nBitsPerSample == 16)
   {
@@ -555,14 +674,40 @@ void RtspSourceOutputPin::setSampleTimestamps( IMediaSample* pSample, MediaSampl
 #endif
   REFERENCE_TIME rtStart = (REFERENCE_TIME) (dStartTime * 1000000 * 10);
 
-  // Set stop timestamp to be slightly in the future
-  // The commented out NULL time stamp for the stop time seemed to work the same
-  REFERENCE_TIME rtStop = rtStart + 1;
-  pSample->SetTime(&rtStart, &rtStop);
+  // Codec specific
+  if (m_pMediaType->subtype == MEDIASUBTYPE_H264)
+  {
+    // See:
+    // http://social.msdn.microsoft.com/Forums/en-US/windowsdirectshowdevelopment/thread/b337c5dd-f87f-4624-92c8-59eb9755fbcf
+    const BYTE* pData = pSampleData->getData();
+    if (isIdrFrame(pData[0]))
+    {
+      // RG: TESTING ONLY SETTING THE START TIME
+      pSample->SetTime(&rtStart, NULL);
+    }
+    else
+    {
+      pSample->SetTime(NULL, NULL);
+    }
 
+    // RG: setting timestamps according to the above link causes artifacts in video: still need to determine why
+    // Remove the following line once issue is sorted out
+    pSample->SetTime(NULL, NULL);
+  }
+  else
+  {
+    // Set stop timestamp to be slightly in the future
+    // The commented out NULL time stamp for the stop time seemed to work the same
+    REFERENCE_TIME rtStop = rtStart + 1;
+    pSample->SetTime(&rtStart, &rtStop);
+  }
+
+  // If timestamps seem to cause strange problems, uncomment the define to see how the stream renders without timestamps
+//#define RTVC_DEBUG_SET_NULL_TIMESTAMPS
 #ifdef RTVC_DEBUG_SET_NULL_TIMESTAMPS
   pSample->SetTime(NULL, NULL);
 #endif
+
 }
 
 void RtspSourceOutputPin::setSynchronisationMarker( IMediaSample* pSample, MediaSample* pSampleData )
@@ -583,9 +728,20 @@ void RtspSourceOutputPin::setSynchronisationMarker( IMediaSample* pSample, Media
     // All samples are sync points
     pSample->SetSyncPoint(TRUE);
   }
-
-  // Default
-  pSample->SetSyncPoint(FALSE);
+  else if (m_pMediaType->subtype == MEDIASUBTYPE_H264)
+  {
+    // if is IDR set flag
+    const BYTE* pData = pSampleData->getData();
+    if (isIdrFrame(pData[0]))
+    {
+      pSample->SetSyncPoint(TRUE);
+    }
+  }
+  else
+  {
+    // Default
+    pSample->SetSyncPoint(FALSE);
+  }
 }
 
 inline void RtspSourceOutputPin::resetTimeStampOffsets()
