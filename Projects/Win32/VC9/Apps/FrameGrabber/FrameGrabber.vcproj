@@ -224,6 +224,10 @@
 				RelativePath="..\..\..\..\..\Source\Apps\FrameGrabber\targetver.h"
 				>
 			</File>
+			<File
+				RelativePath="..\..\..\..\..\Source\RtvcLib\Shared\TimerUtil.h"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Resource Files"
