@@ -3,6 +3,7 @@
 
 #include "stdafx.h"
 
+#include <algorithm>
 #include <dshow.h>
 // Needed for sample grabber
 #include <qedit.h>
@@ -10,15 +11,61 @@
 #include "ComTypeDefs.h"
 #include "CustomSampleGrabberCB.h"
 #include <DirectShow/DirectShowHelper.h>
+#include <Shared/CommonDefs.h>
+#include <Shared/StringUtil.h>
+#include <Shared/TimerUtil.h>
 
-int main()
+StringMap_t g_mArguments;
+StringList_t g_vArguments;
+
+void parseCmdLineArgs(int argc, char** argv)
 {
+  // Check for additional cmd line arguments
+  for (size_t i = 2; i < (size_t)argc; ++i)
+  {
+    std::string sArg(argv[i]);
+    size_t pos = sArg.find("=");
+    if (pos != std::string::npos && pos > 0)
+    {
+      g_mArguments[sArg.substr(pos)] = sArg.substr(pos + 1);
+    }
+    else
+    {
+      g_vArguments.push_back(sArg);
+    }
+  }
+}
+
+int main(int argc, char** argv)
+{
+  if (argc < 2)
+  {
+    std::cout << "Usage: " << argv[0] << " <<Filename>> [-PSNR]" << std::endl;
+    return -1;
+  }
+
+  std::string sFilename(argv[1]);
+  // Check file name
+  wchar_t* pwszFileName = new wchar_t[sFilename.length()];
+  pwszFileName = StringUtil::stlToWide(sFilename);
+  // TODO: check if file exists
+
+  parseCmdLineArgs(argc, argv);
+
   IGraphBuilderPtr pGraph = NULL;
   IMediaControlPtr pControl = NULL;
   IMediaEventPtr pEvent = NULL;
   IBaseFilterPtr pBaseFilter = NULL;
   ISampleGrabberPtr pSampleGrabber = NULL;
+  // Create and configure sample grabber
   CustomSampleGrabberCB* pSampleGrabberCB = new CustomSampleGrabberCB();
+  
+  StringList_t::iterator it = std::find(g_vArguments.begin(), g_vArguments.end(), "-PSNR");
+  if (it != g_vArguments.end())
+  {
+    pSampleGrabberCB->measurePSNR(true);
+  }
+
   //CustomSampleGrabberCB sampleGrabberCB;
   BITMAPINFOHEADER bitmapInfoHeader;
 
@@ -88,7 +135,9 @@ int main()
 #endif
 
   // Build the graph. IMPORTANT: Change this string to a file on your system.
-  hr = pGraph->RenderFile(L"D:\\Foreman_352x288_30fps.avi", NULL);
+  //hr = pGraph->RenderFile(L"D:\\Foreman_352x288_30fps.avi", NULL);
+  hr = pGraph->RenderFile(pwszFileName, NULL);
+  delete[] pwszFileName;
 
   // Get media type of sample grabber
   IPinPtr pPin;
@@ -129,6 +178,9 @@ int main()
   DWORD ROT_ID = 0;
   CDirectShowHelper::AddGraphToRot(pGraph, &ROT_ID);
 
+  TimerUtil timer;
+  timer.start();
+
   if (SUCCEEDED(hr))
   {
     // Run the graph.
@@ -142,6 +194,13 @@ int main()
       // can block indefinitely.
     }
   }
+
+  double dMilliseconds = timer.stop();
+
+  std::cout << "Total time: " << dMilliseconds 
+            << " Average PSNR: " << pSampleGrabberCB->getAveragePSNR() 
+            << " Measurements: " << pSampleGrabberCB->getNumberOfMeasurements() 
+            << std::endl;
 
   // Remove graph from running object table
   CDirectShowHelper::RemoveGraphFromRot(ROT_ID);

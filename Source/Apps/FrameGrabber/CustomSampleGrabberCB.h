@@ -3,6 +3,7 @@
 // STL
 #include <cassert>
 #include <iostream>
+#include <numeric>
 #include <string>
 #include <vector>
 
@@ -19,6 +20,8 @@
 #include <Image/RealRGB24toYUV420Converter.h>
 #include <Image/RealYUV420toRGB24Converter.h>
 
+#include <Shared/TimerUtil.h>
+
 class CustomSampleGrabberCB : public ISampleGrabberCB
 {
 public:
@@ -30,9 +33,11 @@ public:
     m_pYuvDataBuffer(NULL),
     m_pRgbDataBuffer(NULL),
     m_uiPixels(0),
-    m_uiYuvSize(0)
+    m_uiYuvSize(0),
+    m_bMeasurePSNR(false)
   {
-
+    // Need to adapt this for other videos
+    m_vPsnr.reserve(10000);
   }
 
   ~CustomSampleGrabberCB()
@@ -67,6 +72,22 @@ public:
     // allocate memory for RGB output
     SAFE_DELETE(m_pRgbDataBuffer);
     m_pRgbDataBuffer = new BYTE[m_pBbitmapInfoHeader->biWidth * m_pBbitmapInfoHeader->biHeight * 3];
+  }
+
+  void measurePSNR(bool bValue)
+  {
+    m_bMeasurePSNR = bValue;
+  }
+
+  double getAveragePSNR() const
+  {
+    if (m_vPsnr.empty()) return 0.0;
+    return std::accumulate(m_vPsnr.begin(), m_vPsnr.end(), 0.0)/m_vPsnr.size();
+  }
+
+  size_t getNumberOfMeasurements() const
+  {
+    return m_vPsnr.size();
   }
 
   // Fake out any COM ref counting
@@ -114,6 +135,8 @@ public:
       unsigned uiTotalSize(0);
 
       //////////////////////////////////////////////////////////////////////////
+      m_timer.start();
+
       // convert RGB to YUV
       //Map everything into yuvType pointers
       yuvType* pYUV = NULL;
@@ -145,22 +168,38 @@ public:
       //RGB24 stores 3 Bytes per pixel
       //nRet = m_nInPixels * BYTES_PER_PIXEL_RGB24;
 
-      // Do PSNR calculations
-      ImageHandlerV2 imageHandler;
-      imageHandler.CreateImage(m_pBbitmapInfoHeader);
-      // point at the original data
-      imageHandler._bmptr = pbData;
-      imageHandler.ConvertToYUV(ImageHandlerV2::YUV444);
+      double dTotalTime = m_timer.stop();
+#if 0
+      std::cout << "Conversion time: " << dTotalTime << std::endl;
+#endif
+      if (m_bMeasurePSNR)
+      {
+        // Time PSNR
+        m_timer.start();
 
-      ImageHandlerV2 imageHandler2;
-      imageHandler2.CreateImage(m_pBbitmapInfoHeader);
-      // point at converted data
-      imageHandler2._bmptr = m_pRgbDataBuffer;
-      imageHandler2.ConvertToYUV(ImageHandlerV2::YUV444);
+        // Do PSNR calculations
+        ImageHandlerV2 imageHandler;
+        imageHandler.CreateImage(m_pBbitmapInfoHeader);
+        // point at the original data
+        memcpy(imageHandler._bmptr, pbData, sampleLength);
+        imageHandler.ConvertToYUV(ImageHandlerV2::YUV444);
 
-      double dPsnr = imageHandler.PSNR(imageHandler2);
-      std::cout << "PSNR: " << dPsnr << std::endl;
+        ImageHandlerV2 imageHandler2;
+        imageHandler2.CreateImage(m_pBbitmapInfoHeader);
+        // point at converted data
+        memcpy(imageHandler2._bmptr, m_pRgbDataBuffer, sampleLength);
+        imageHandler2.ConvertToYUV(ImageHandlerV2::YUV444);
 
+        double dPsnr = imageHandler.PSNR(imageHandler2);
+        m_vPsnr.push_back(dPsnr);
+
+        double dPsnrTotalTime = m_timer.stop();
+#if 0
+        std::cout << "PSNR time: " << dPsnrTotalTime << std::endl;
+        std::cout << "PSNR: " << dPsnr << std::endl;
+#endif
+      }
+      
       // Copy converted sample to media sample
       CopyMemory(pbData, m_pRgbDataBuffer, uiTotalSize);
     }
@@ -184,4 +223,8 @@ private:
   BYTE* m_pRgbDataBuffer;
   unsigned m_uiPixels;
   unsigned m_uiYuvSize;
+  bool m_bMeasurePSNR;
+
+  TimerUtil m_timer;
+  std::vector<double> m_vPsnr;
 };
