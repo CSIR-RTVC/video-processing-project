@@ -36,7 +36,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "MultiIOInputPin.h"
 #include "MultiIOOutputPin.h"
 
-#include <atlconv.h>
+#include <Shared/StringUtil.h>
+#include <Shared/Conversion.h>
+
+//#include <atlconv.h>
 
 #pragma comment(lib, "atls.lib")
 
@@ -174,26 +177,21 @@ STDMETHODIMP CMultiIOBaseFilter::FindPin( LPCWSTR Id, IPin **ppPin )
 	//Find pin according to it's name
 	CheckPointer(ppPin,E_POINTER);
 	ValidateReadWritePtr(ppPin,sizeof(IPin *));
-	//Todo: Modify for this MUX: Check what ids this method is called with
 
 	//Parse Id and get string number
-	USES_CONVERSION;
-	char* szInput = W2A(Id);
-	char szTemp[10];
-	ZeroMemory(szTemp, 10);
-	memcpy(szTemp, szInput, 5);
-	szTemp[5] = '\0';
-	if (strcmp(szTemp, "Input")== 0)
+  std::string sId = StringUtil::wideToStl(Id);
+  std::string sType = sId.substr(0, 5);
+	if (sType == "Input")
 	{
-		char* szID = szInput + 6;
-		int nId = atoi(szID);
+    std::string sIdCount = sId.substr(6);
+    int nId = convert<int>(sIdCount);
 		*ppPin = GetPin(nId);
 	}
-	else if (0==strcmp(szTemp, "Outpu")) 
+	else if (sType == "Outpu")
 	{
-		char* szID = szInput + 7;
-		int nId = atoi(szID);
-		*ppPin = GetPin(m_vInputPins.size() + nId);
+    std::string sIdCount = sId.substr(7);
+    int nId = convert<int>(sIdCount);
+		*ppPin = GetPin((int)m_vInputPins.size() + nId);
 	} 
 	else 
 	{
@@ -217,10 +215,11 @@ STDMETHODIMP CMultiIOBaseFilter::FindPin( LPCWSTR Id, IPin **ppPin )
 void CMultiIOBaseFilter::CreateInputPin()
 {
 	HRESULT hr;
-	USES_CONVERSION;
-	char buffer[10] = "Input ";
-	itoa(m_vInputPins.size(), buffer + 6, 10);
-	CMultiIOInputPin* pInputPin = new CMultiIOInputPin(this, &m_csFilter, &hr, A2W(buffer), m_vInputPins.size());
+  std::ostringstream ostr;
+  ostr << "Input " << m_vInputPins.size();
+  wchar_t* wszId = StringUtil::stlToWide(ostr.str());
+	CMultiIOInputPin* pInputPin = new CMultiIOInputPin(this, &m_csFilter, &hr, wszId, (int)m_vInputPins.size());
+  delete wszId;
 	pInputPin->AddRef();
 	m_vInputPins.push_back(pInputPin);
 	// ensure enumerator is refreshed
@@ -230,11 +229,13 @@ void CMultiIOBaseFilter::CreateInputPin()
 void CMultiIOBaseFilter::CreateOutputPin()
 {
 	HRESULT hr;
-	USES_CONVERSION;
-	char buffer[10] = "Output ";
-	itoa(m_vOutputPins.size(), buffer + 7, 10);
-	CMultiIOOutputPin* pOutputPin = new CMultiIOOutputPin(this, &m_csFilter, &hr, A2W(buffer), m_vOutputPins.size());
-	pOutputPin->AddRef();
+  std::ostringstream ostr;
+  ostr << "Output " << m_vInputPins.size();
+  wchar_t* wszId = StringUtil::stlToWide(ostr.str());
+	CMultiIOOutputPin* pOutputPin = new CMultiIOOutputPin(this, &m_csFilter, &hr, wszId, (int)m_vOutputPins.size());
+  delete wszId;
+
+  pOutputPin->AddRef();
 	m_vOutputPins.push_back(pOutputPin);
 	// ensure enumerator is refreshed
 	IncrementPinVersion();	
