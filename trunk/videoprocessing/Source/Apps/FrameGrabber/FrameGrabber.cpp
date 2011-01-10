@@ -15,18 +15,22 @@
 #include <Shared/StringUtil.h>
 #include <Shared/TimerUtil.h>
 
+/// Command line arguments
 StringMap_t g_mArguments;
 StringList_t g_vArguments;
 
+/// Helper method to parse cmd line args
+/// Stores single arguments in g_vArguments
+/// Stores name value pairs in g_mArguments
 void parseCmdLineArgs(int argc, char** argv)
 {
-  // Check for additional cmd line arguments
   for (size_t i = 2; i < (size_t)argc; ++i)
   {
     std::string sArg(argv[i]);
     size_t pos = sArg.find("=");
     if (pos != std::string::npos && pos > 0)
     {
+      // NVP
       g_mArguments[sArg.substr(pos)] = sArg.substr(pos + 1);
     }
     else
@@ -94,18 +98,13 @@ int main(int argc, char** argv)
   const GUID* pClsID = &CLSID_SampleGrabber;
 
   //Add Filter using Class ID
-
-  //WCHAR* wszName = StringUtil::stlToWide(pFilterInfo->getName());
   hr = CDirectShowHelper::AddFilterByCLSID(pGraph, *pClsID, L"SampleGrabber", &pBaseFilter);
-  //delete[] wszName;
-#if 1
   if (SUCCEEDED(hr))
   {
     pSampleGrabber = pBaseFilter;
 
     if (pSampleGrabber)
     {
-#if 1
       AM_MEDIA_TYPE acceptedMediaType;
       ZeroMemory(&acceptedMediaType, sizeof(acceptedMediaType));
       acceptedMediaType.majortype = GUID_NULL;
@@ -118,8 +117,6 @@ int main(int argc, char** argv)
       pSampleGrabber->SetMediaType(&acceptedMediaType);
       pSampleGrabber->SetOneShot(false);
       pSampleGrabber->SetCallback(pSampleGrabberCB, 0);  
-      //pSampleGrabber->SetCallback(&sampleGrabberCB, 0);  
-#endif
     }
     else
     {
@@ -132,10 +129,8 @@ int main(int argc, char** argv)
     printf("ERROR - Failed to load sample grabber filter");
     return -1;
   }
-#endif
 
   // Build the graph. IMPORTANT: Change this string to a file on your system.
-  //hr = pGraph->RenderFile(L"D:\\Foreman_352x288_30fps.avi", NULL);
   hr = pGraph->RenderFile(pwszFileName, NULL);
   delete[] pwszFileName;
 
@@ -221,9 +216,6 @@ int main(int argc, char** argv)
   pEvent    = NULL;
   pGraph    = NULL;
 
-  //pControl->Release();
-  //pEvent->Release();
-  //pGraph->Release();
   CoUninitialize();
   return 0;
 }
