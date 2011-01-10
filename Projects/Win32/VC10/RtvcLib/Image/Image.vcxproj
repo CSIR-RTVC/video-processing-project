@@ -75,6 +75,7 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB24Impl.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB32Impl.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicCropperRGB24Impl.cpp" />
@@ -91,6 +92,7 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24Converter.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatBase.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB24Impl.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB32Impl.h" />
