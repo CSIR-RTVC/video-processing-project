@@ -19,6 +19,8 @@
 #include <Image/ImageHandlerV2.h>
 #include <Image/RealRGB24toYUV420Converter.h>
 #include <Image/RealYUV420toRGB24Converter.h>
+// FAST ALGORITHMS 1
+// Add your include files here
 
 #include <Shared/TimerUtil.h>
 
@@ -28,8 +30,8 @@ public:
 
   CustomSampleGrabberCB()
     :m_pBbitmapInfoHeader(NULL),
-    m_pRgbToYuvConverter(new RealRGB24toYUV420Converter()),
-    m_pYuvToRgbConverter(new RealYUV420toRGB24Converter()),
+    m_pRgbToYuvConverter(NULL),
+    m_pYuvToRgbConverter(NULL),
     m_pYuvDataBuffer(NULL),
     m_pRgbDataBuffer(NULL),
     m_uiPixels(0),
@@ -48,9 +50,28 @@ public:
     SAFE_DELETE(m_pRgbDataBuffer);
   }
 
+  void initColorConverters()
+  {
+    //////////////////////////////////////////////////////////////////////////
+    // FAST ALGORITHMS 2
+    // instantiate your color converter
+    // Don't forget to undefine the standard color converter
+#if 0
+    m_pRgbToYuvConverter = new MyFastRGB24toYUV420Converter();
+    m_pYuvToRgbConverter = new MyFastRealYUV420toRGB24Converter();
+#endif
+
+#if 1
+    m_pRgbToYuvConverter = new RealRGB24toYUV420Converter();
+    m_pYuvToRgbConverter = new RealYUV420toRGB24Converter();
+#endif
+  }
+
   void setBitmapInfoHeader(BITMAPINFOHEADER* pBitmapInfoHeader)
   {
     assert(pBitmapInfoHeader);
+
+    initColorConverters();
 
     m_pBbitmapInfoHeader = pBitmapInfoHeader;
 
