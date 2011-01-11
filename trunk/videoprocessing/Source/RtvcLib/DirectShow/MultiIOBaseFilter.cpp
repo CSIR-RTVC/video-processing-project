@@ -40,8 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Shared/Conversion.h>
 
 //#include <atlconv.h>
-
-#pragma comment(lib, "atls.lib")
+//#pragma comment(lib, "atls.lib")
 
 CMultiIOBaseFilter::CMultiIOBaseFilter(TCHAR *pObjectName, LPUNKNOWN lpUnk, CLSID clsid)
 : CBaseFilter(pObjectName, lpUnk, &m_csFilter, clsid),
@@ -51,11 +50,11 @@ m_bInitialised(false)
 CMultiIOBaseFilter::~CMultiIOBaseFilter(void)
 {
 	// Release all the COM interfaces
-	for (int i = 0; i < m_vInputPins.size(); i++)
+	for (size_t i = 0; i < m_vInputPins.size(); i++)
 	{
 		m_vInputPins[i]->Release();
 	}
-	for (int i = 0; i < m_vOutputPins.size(); i++)
+	for (size_t i = 0; i < m_vOutputPins.size(); i++)
 	{
 		m_vOutputPins[i]->Release();
 	}
@@ -65,11 +64,11 @@ CMultiIOBaseFilter::~CMultiIOBaseFilter(void)
 	// Clean up Output type map
 	CleanupTypeMap(m_mOutputTypeMap);
 	// Clean up generic types
-	for (int i = 0; i < m_vInputTypes.size(); i++)
+	for (size_t i = 0; i < m_vInputTypes.size(); i++)
 	{
 		delete m_vInputTypes.at(i);
 	}
-	for (int i = 0; i < m_vOutputTypes.size(); i++)
+	for (size_t i = 0; i < m_vOutputTypes.size(); i++)
 	{
 		delete m_vOutputTypes.at(i);
 	}
@@ -83,7 +82,7 @@ void CMultiIOBaseFilter::CleanupTypeMap(MEDIA_TYPE_MAP mTypeMap)
 		//Delete the input type list for that pin
 		MEDIA_TYPE_LIST* pInputList = (*it).second;
 		//Iterate over list and delete all input types
-		for (int i = 0; i < pInputList->size(); i++)
+		for (size_t i = 0; i < pInputList->size(); i++)
 		{
 			delete pInputList->at(i);
 		}
@@ -315,7 +314,7 @@ void CMultiIOBaseFilter::OnDisconnect( int nIndex )
 		{
 			// Now make sure that we can't disconnect more than the initial number of inputs
 			// You cannot remove a pin to have less pins than you started with
-			if (m_vInputPins.size() > InitialNumberOfInputPins())
+			if (m_vInputPins.size() > (size_t)InitialNumberOfInputPins())
 			{
 				m_vInputPins[m_vInputPins.size()-1]->Release();
 				m_vInputPins.pop_back();
@@ -476,7 +475,7 @@ HRESULT CMultiIOBaseFilter::SetMediaType( PIN_DIRECTION direction,const CMediaTy
 
 HRESULT CMultiIOBaseFilter::FindMediaType(const CMediaType* pmt, MEDIA_TYPE_LIST* pInputTypeList)
 {
-	for (int i = 0; i < pInputTypeList->size(); i++)
+	for (size_t i = 0; i < pInputTypeList->size(); i++)
 	{
 		//Compare major type
 		const GUID* pType = (pInputTypeList->at(i))->MediaType;
