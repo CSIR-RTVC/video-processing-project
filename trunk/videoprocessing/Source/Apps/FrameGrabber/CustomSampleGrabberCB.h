@@ -18,18 +18,36 @@
 // Color conversion helper classes
 #include <Image/ImageHandlerV2.h>
 #include <Image/RealRGB24toYUV420Converter.h>
+#ifdef USE_MULTI_THREADED
+  #include <Image/MtRGB24toYUV420Converter.h>
+#endif
 #include <Image/RealYUV420toRGB24Converter.h>
-// FAST ALGORITHMS 1
-// Add your include files here
+#include <Image/FastRGB24toYUV420Converter.h>
+#include <Image/FastLookupTableRGB24toYUV420Converter.h>
+#include <Image/FastFixedPointRGB24toYUV420Converter.h>
+#include <Image/FastSimdRGB24toYUV420Converter.h>
+#include <Image/FastGpuRGB24toYUV420Converter.h>
+
+#include <Image/FastYUV420toRGB24Converter.h>
 
 #include <Shared/TimerUtil.h>
+
+enum Mode
+{
+  ORIGINAL,
+  LOOKUP_TABLE,
+  FIXED_POINT,
+  SIMD, 
+  GPU
+};
 
 class CustomSampleGrabberCB : public ISampleGrabberCB
 {
 public:
 
-  CustomSampleGrabberCB()
-    :m_pBbitmapInfoHeader(NULL),
+  CustomSampleGrabberCB(Mode eMode)
+    : m_eMode(eMode),
+    m_pBbitmapInfoHeader(NULL),
     m_pRgbToYuvConverter(NULL),
     m_pYuvToRgbConverter(NULL),
     m_pYuvDataBuffer(NULL),
@@ -40,14 +58,15 @@ public:
   {
     // Need to adapt this for other videos
     m_vPsnr.reserve(10000);
+    m_vConversionTimes.reserve(10000);
   }
 
   ~CustomSampleGrabberCB()
   {
-    SAFE_DELETE(m_pRgbToYuvConverter);
-    SAFE_DELETE(m_pYuvToRgbConverter);
-    SAFE_DELETE(m_pYuvDataBuffer);
-    SAFE_DELETE(m_pRgbDataBuffer);
+    SafeDelete(m_pRgbToYuvConverter);
+    SafeDelete(m_pYuvToRgbConverter);
+    SafeDeleteArray(m_pYuvDataBuffer);
+    SafeDeleteArray(m_pRgbDataBuffer);
   }
 
   void initColorConverters()
@@ -56,15 +75,51 @@ public:
     // FAST ALGORITHMS 2
     // instantiate your color converter
     // Don't forget to undefine the standard color converter
-#if 0
-    m_pRgbToYuvConverter = new MyFastRGB24toYUV420Converter();
-    m_pYuvToRgbConverter = new MyFastRealYUV420toRGB24Converter();
+
+    switch (m_eMode)
+    {
+    case ORIGINAL:
+      {
+        printf("Creating standard color converter\r\n");
+        m_pRgbToYuvConverter = new RealRGB24toYUV420Converter();
+        break;
+      }
+    case LOOKUP_TABLE:
+      {
+        printf("Creating lookup table-based color converter\r\n");
+        m_pRgbToYuvConverter = new FastLookupTableRGB24toYUV420Converter();
+        break;
+      }
+    case FIXED_POINT:
+      {
+        printf("Creating fixed-point color converter\r\n");
+        m_pRgbToYuvConverter = new FastFixedPointRGB24toYUV420Converter();
+        break;
+      }
+    case SIMD:
+      {
+        printf("Creating SIMD color converter\r\n");
+        m_pRgbToYuvConverter = new FastSimdRGB24toYUV420Converter();
+        break;
+      }
+    case GPU:
+      {
+        printf("Creating GPU-based color converter\r\n");
+        m_pRgbToYuvConverter = new FastGpuRGB24toYUV420Converter();
+        break;
+      }
+    default:
+      {
+        m_pRgbToYuvConverter = new RealRGB24toYUV420Converter();
+      }
+    }
+
+#ifdef USE_MULTI_THREADED
+    // Use Multi-threaded converter
+    m_pRgbToYuvConverter = new MtRGB24toYUV420Converter();
 #endif
 
-#if 1
-    m_pRgbToYuvConverter = new RealRGB24toYUV420Converter();
     m_pYuvToRgbConverter = new RealYUV420toRGB24Converter();
-#endif
   }
 
   void setBitmapInfoHeader(BITMAPINFOHEADER* pBitmapInfoHeader)
@@ -80,24 +135,31 @@ public:
 
     // configure converters
     m_pRgbToYuvConverter->SetDimensions(m_pBbitmapInfoHeader->biWidth, m_pBbitmapInfoHeader->biHeight);
-    //m_pRgbToYuvConverter->setChrominanceOffset(128);
     m_pRgbToYuvConverter->setChrominanceOffset(128);
     m_pYuvToRgbConverter->SetDimensions(m_pBbitmapInfoHeader->biWidth, m_pBbitmapInfoHeader->biHeight);
     m_pYuvToRgbConverter->SetRotate(0);
-    //m_pYuvToRgbConverter->setChrominanceOffset(128);
 
     // allocate memory for YUV (1.5 suffices but BUILD_FOR_SHORT requires 2 x 1.5)
-    SAFE_DELETE(m_pYuvDataBuffer);
-    m_pYuvDataBuffer = new BYTE[m_pBbitmapInfoHeader->biWidth * m_pBbitmapInfoHeader->biHeight * 3];
+    SafeDeleteArray(m_pYuvDataBuffer);
+    unsigned uiBufferSize = m_pBbitmapInfoHeader->biWidth * m_pBbitmapInfoHeader->biHeight * 3;
+    m_pYuvDataBuffer = new BYTE[uiBufferSize];
+    memset(m_pYuvDataBuffer, 0, uiBufferSize);
 
     // allocate memory for RGB output
-    SAFE_DELETE(m_pRgbDataBuffer);
-    m_pRgbDataBuffer = new BYTE[m_pBbitmapInfoHeader->biWidth * m_pBbitmapInfoHeader->biHeight * 3];
+    SafeDeleteArray(m_pRgbDataBuffer);
+    m_pRgbDataBuffer = new BYTE[uiBufferSize];
+    memset(m_pRgbDataBuffer, 0, uiBufferSize);
   }
 
   void measurePSNR(bool bValue)
   {
     m_bMeasurePSNR = bValue;
+  }
+
+  double getAverageConversionTime() const
+  {
+    if (m_vConversionTimes.empty()) return 0.0;
+    return std::accumulate(m_vConversionTimes.begin(), m_vConversionTimes.end(), 0.0)/m_vConversionTimes.size();
   }
 
   double getAveragePSNR() const
@@ -131,10 +193,6 @@ public:
   /// Note this all happens in the DirectShow streaming thread!!!!!!!!!!!!
   STDMETHODIMP SampleCB( double dSampleTime, IMediaSample * pSample )
   {
-#if 0
-    std::cout << "Callback: " << dSampleTime << std::endl;
-#endif
-
     // set time to NULL to allow for fast rendering since the 
     // the video renderer controls the rendering rate according
     // to the timestamps
@@ -156,7 +214,6 @@ public:
       unsigned uiTotalSize(0);
 
       //////////////////////////////////////////////////////////////////////////
-      m_timer.start();
 
       // convert RGB to YUV
       //Map everything into yuvType pointers
@@ -170,12 +227,15 @@ public:
       yuvType* pU = pYUV + m_uiPixels;
       yuvType* pV = pU + m_uiYuvSize;
       //Convert to YUV
+      m_timer.start();
+
       m_pRgbToYuvConverter->Convert((void*)pbData, (void*)pY, (void*)pU, (void*)pV);
-      //DbgLog((LOG_TRACE, 0, TEXT("Converted to YUV directly")));
-    
+
+      double dTotalTime = m_timer.stop();
+      m_vConversionTimes.push_back(dTotalTime);
+
       //////////////////////////////////////////////////////////////////////////
       // convert back to RGB
-      //yuvType* pYUV = NULL;
       pYUV = (yuvType*)m_pYuvDataBuffer;
       assert (pYUV);
       int iYuvSize = sizeof(yuvType);
@@ -185,14 +245,7 @@ public:
       pV = pYUV + m_uiPixels + m_uiYuvSize;
       //Convert
       m_pYuvToRgbConverter->Convert((void*)pY, (void*)pU, (void*)pV, (void*)m_pRgbDataBuffer);
-      //DbgLog((LOG_TRACE, 0, TEXT("Converted from YUV420 to RGB Directly")));
-      //RGB24 stores 3 Bytes per pixel
-      //nRet = m_nInPixels * BYTES_PER_PIXEL_RGB24;
 
-      double dTotalTime = m_timer.stop();
-#if 0
-      std::cout << "Conversion time: " << dTotalTime << std::endl;
-#endif
       if (m_bMeasurePSNR)
       {
         // Time PSNR
@@ -235,6 +288,7 @@ public:
 
 private:
 
+  Mode m_eMode;
   BITMAPINFOHEADER* m_pBbitmapInfoHeader;
 
   RGBtoYUV420Converter* m_pRgbToYuvConverter;
@@ -247,5 +301,6 @@ private:
   bool m_bMeasurePSNR;
 
   TimerUtil m_timer;
+  std::vector<double> m_vConversionTimes;
   std::vector<double> m_vPsnr;
 };
