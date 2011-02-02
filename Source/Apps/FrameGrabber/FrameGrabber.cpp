@@ -31,7 +31,7 @@ void parseCmdLineArgs(int argc, char** argv)
     if (pos != std::string::npos && pos > 0)
     {
       // NVP
-      g_mArguments[sArg.substr(pos)] = sArg.substr(pos + 1);
+      g_mArguments[sArg.substr(0, pos)] = sArg.substr(pos + 1);
     }
     else
     {
@@ -44,7 +44,12 @@ int main(int argc, char** argv)
 {
   if (argc < 2)
   {
-    std::cout << "Usage: " << argv[0] << " <<Filename>> [-PSNR]" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <<Filename>> [-PSNR] [mode=<<mode>> ]" << std::endl;
+    std::cout << "<<mode>> 0: Original" << std::endl;
+    std::cout << "<<mode>> 1: Lookup table" << std::endl;
+    std::cout << "<<mode>> 2: Fixed-point" << std::endl;
+    std::cout << "<<mode>> 3: SIMD" << std::endl;
+    std::cout << "<<mode>> 4: CUDA" << std::endl;
     return -1;
   }
 
@@ -56,13 +61,21 @@ int main(int argc, char** argv)
 
   parseCmdLineArgs(argc, argv);
 
+  Mode eMode = ORIGINAL;
+  if (g_mArguments.find("mode") != g_mArguments.end())
+  {
+    int iMode = atoi(g_mArguments["mode"].c_str());
+    eMode = static_cast<Mode>(iMode);
+    if (eMode > GPU) eMode = ORIGINAL;
+  }
+
   IGraphBuilderPtr pGraph = NULL;
   IMediaControlPtr pControl = NULL;
   IMediaEventPtr pEvent = NULL;
   IBaseFilterPtr pBaseFilter = NULL;
   ISampleGrabberPtr pSampleGrabber = NULL;
   // Create and configure sample grabber
-  CustomSampleGrabberCB* pSampleGrabberCB = new CustomSampleGrabberCB();
+  CustomSampleGrabberCB* pSampleGrabberCB = new CustomSampleGrabberCB(eMode);
   
   StringList_t::iterator it = std::find(g_vArguments.begin(), g_vArguments.end(), "-PSNR");
   if (it != g_vArguments.end())
@@ -192,8 +205,9 @@ int main(int argc, char** argv)
 
   double dMilliseconds = timer.stop();
 
-  std::cout << "Total time: " << dMilliseconds 
+  std::cout << "Total time: " << dMilliseconds << " ms"
             << " Average PSNR: " << pSampleGrabberCB->getAveragePSNR() 
+            << " Average Time per frame: " << pSampleGrabberCB->getAverageConversionTime() << " ms"
             << " Measurements: " << pSampleGrabberCB->getNumberOfMeasurements() 
             << std::endl;
 
