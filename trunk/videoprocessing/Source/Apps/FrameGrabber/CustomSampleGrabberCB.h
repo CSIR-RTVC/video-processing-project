@@ -22,13 +22,10 @@
   #include <Image/MtRGB24toYUV420Converter.h>
 #endif
 #include <Image/RealYUV420toRGB24Converter.h>
-#include <Image/FastRGB24toYUV420Converter.h>
 #include <Image/FastLookupTableRGB24toYUV420Converter.h>
 #include <Image/FastFixedPointRGB24toYUV420Converter.h>
 #include <Image/FastSimdRGB24toYUV420Converter.h>
 #include <Image/FastGpuRGB24toYUV420Converter.h>
-
-#include <Image/FastYUV420toRGB24Converter.h>
 
 #include <Shared/TimerUtil.h>
 
