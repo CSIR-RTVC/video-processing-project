@@ -37,5 +37,16 @@
     <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\stdafx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayProperties.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayFilter.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
