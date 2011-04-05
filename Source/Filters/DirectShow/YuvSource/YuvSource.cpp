@@ -38,6 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "YuvSource.h"
 
+#include <Shared/Conversion.h>
 #include <Shared/StringUtil.h>
 
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
@@ -272,8 +273,9 @@ STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE
 		m_in1.seekg( 0 , std::ios::beg );
 
 		recalculate();
-
 		m_pYuvBuffer = new unsigned char[m_iFrameSize];
+
+    guessDimensions();
 		return S_OK;
 	}
 	else
@@ -281,6 +283,74 @@ STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE
 		SetLastError("Failed to open file: " + m_sFile, true);
 		return E_FAIL;
 	}
+}
+
+void YuvSourceFilter::guessDimensions()
+{
+  // try and guess what the dimensions are based on file name
+  std::string sFile = m_sFile;
+  std::transform(sFile.begin(), sFile.end(), sFile.begin(), ::tolower);
+
+  size_t pos = sFile.find("qcif");
+  if (pos != std::string::npos)
+  {
+    setDimensions("176x144");
+    return;
+  }
+
+  // NB search for cif last since 'qcif' and '4cif' contain 'cif'
+  pos = sFile.find("cif");
+  if (pos != std::string::npos)
+  {
+    setDimensions("352x288");
+    return;
+  }
+  
+
+  // try searching for x's
+  pos = sFile.find("x");
+  while (pos != std::string::npos)
+  {
+    std::string sWidth, sHeight;
+    // check if there is at least a number before and after the x, else continue
+    size_t uiBeforePos = pos - 1;
+    while (isdigit(sFile[uiBeforePos]) && uiBeforePos >= 0)
+    {
+      --uiBeforePos;
+    }
+    if (uiBeforePos != pos - 1)
+    {
+      // we found at least one digit
+      sWidth = sFile.substr(uiBeforePos + 1, pos - uiBeforePos - 1);
+    }
+    else
+    {
+      pos = sFile.find("x", pos + 1);
+      continue;
+    }
+
+    size_t uiAfterPos = pos + 1;
+    while (isdigit(sFile[uiAfterPos]) && uiAfterPos < sFile.length())
+    {
+      ++uiAfterPos;
+    }
+    if (uiAfterPos != pos + 1)
+    {
+      // we found at least one digit
+      sHeight = sFile.substr(pos + 1, uiAfterPos - pos - 1);
+    }
+    else
+    {
+      pos = sFile.find("x", pos + 1);
+      continue;
+    }
+
+    // try and convert to int
+    int iWidth = convert<int>(sWidth);
+    int iHeight = convert<int>(sHeight);
+    setDimensions(iWidth, iHeight);
+    break;
+  }
 }
 
 STDMETHODIMP YuvSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt )
@@ -377,19 +447,28 @@ bool YuvSourceFilter::setDimensions( const std::string& sDimensions )
 		istr >> iWidth;
 		std::istringstream istr2( sDimensions.substr( pos + 1) );
 		istr2 >> iHeight;
-		if (iWidth > 0 && iHeight > 0)
-		{
-			m_iWidth = iWidth;
-			m_iHeight = iHeight;
-			recalculate();
-
-			if (m_pYuvBuffer)
-			{
-				delete[] m_pYuvBuffer;
-			}
-			m_pYuvBuffer = new unsigned char[m_iFrameSize];
-			return true;
-		}
+		return setDimensions(iWidth, iHeight);
 	}
 	return false;
+}
+
+bool YuvSourceFilter::setDimensions(int iWidth, int iHeight)
+{
+  if (iWidth > 0 && iHeight > 0)
+  {
+    m_iWidth = iWidth;
+    m_iHeight = iHeight;
+    recalculate();
+
+    if (m_pYuvBuffer)
+    {
+      delete[] m_pYuvBuffer;
+    }
+    m_pYuvBuffer = new unsigned char[m_iFrameSize];
+    return true;
+  }
+  else
+  {
+    return false;
+  }
 }
