@@ -65,14 +65,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 const unsigned MAX_FRAMERATE_INTERVAL_SIZE = 50;
 
+using namespace Gdiplus;
+
 FramerateDisplayFilter::FramerateDisplayFilter(LPUNKNOWN pUnk, HRESULT *pHr)
   : CTransInPlaceFilter(NAME("CSIR RTVC Framerate Display Filter"), pUnk, CLSID_RTVCFramerateDisplayFilter, pHr, false),
   m_bSeenFirstFrame(false),
   m_previousTimestamp(0)
-{;}
+{
+  GdiplusStartup(&m_pGdiToken,&m_gdiplusStartupInput, NULL); //gdi+ init
+  // Init parameters
+	initParameters();
+}
 
 FramerateDisplayFilter::~FramerateDisplayFilter()
-{;}
+{
+  GdiplusShutdown(m_pGdiToken); //gdi+ end session
+}
 
 CUnknown * WINAPI FramerateDisplayFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 {
@@ -86,7 +94,18 @@ CUnknown * WINAPI FramerateDisplayFilter::CreateInstance( LPUNKNOWN pUnk, HRESUL
 
 STDMETHODIMP FramerateDisplayFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
 {
-  return CTransInPlaceFilter::NonDelegatingQueryInterface(riid, ppv);
+  if (riid == IID_ISpecifyPropertyPages)
+  {
+    return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+  }
+  else if(riid == (IID_ISettingsInterface))
+  {
+    return GetInterface((ISettingsInterface*) this, ppv);
+  }
+  else
+  {
+    return CTransInPlaceFilter::NonDelegatingQueryInterface(riid, ppv);
+  }
 }
 
 HRESULT FramerateDisplayFilter::Transform(IMediaSample *pSample)
@@ -97,23 +116,73 @@ HRESULT FramerateDisplayFilter::Transform(IMediaSample *pSample)
   HRESULT hr = pSample->GetTime(&tStart, &tStop);
   if (!m_bSeenFirstFrame)
   {
-    if (SUCCEEDED(hr))
+    if (m_uiFramerateEstimationMode == static_cast<unsigned>(FRM_TIMESTAMP))
     {
-      m_previousTimestamp = tStart;
+      if (SUCCEEDED(hr))
+      {
+        m_previousTimestamp = tStart;
+        m_bSeenFirstFrame = true;
+      }
+    }
+    else if (m_uiFramerateEstimationMode == static_cast<unsigned>(FRM_SYSTEM_TIME))
+    {
+      QueryPerformanceCounter((LARGE_INTEGER*)&m_previousTimestamp);
+
+      //FILETIME ft;
+      //GetSystemTimeAsFileTime(&ft);
+      //unsigned long long tt = ft.dwHighDateTime;
+      //tt <<=32;
+      //tt |= ft.dwLowDateTime;
+      //tt /=10;
+      //tt -= 11644473600000000ULL;
+      //m_previousTimestamp = tt;
+
       m_bSeenFirstFrame = true;
     }
     return S_OK;
   }
   else
   {
-    if (SUCCEEDED(hr))
+    if (m_uiFramerateEstimationMode == static_cast<unsigned>(FRM_TIMESTAMP))
     {
-      REFERENCE_TIME tDiff = tStart - m_previousTimestamp;
+      if (SUCCEEDED(hr))
+      {
+        REFERENCE_TIME tDiff = tStart - m_previousTimestamp;
+        // Make sure timestamps are increasing
+        if (tDiff > 0)
+        {
+          m_qDurations.push_back(tDiff);
+          m_previousTimestamp = tStart;
+
+          // limit the number of measurements
+          if (m_qDurations.size() > MAX_FRAMERATE_INTERVAL_SIZE)
+          {
+            m_qDurations.pop_front();
+          }
+        }
+      }
+    }
+    else if (m_uiFramerateEstimationMode == static_cast<unsigned>(FRM_SYSTEM_TIME))
+    {
+      unsigned __int64 tNow;
+      unsigned __int64 freq;
+      QueryPerformanceCounter((LARGE_INTEGER *)&tNow);
+      QueryPerformanceFrequency((LARGE_INTEGER*)&freq);
+      //FILETIME ft;
+      //GetSystemTimeAsFileTime(&ft);
+      //unsigned long long tt = ft.dwHighDateTime;
+      //tt <<=32;
+      //tt |= ft.dwLowDateTime;
+      //tt /=10;
+      //tt -= 11644473600000000ULL;
+      //tNow = tt;
+
+      REFERENCE_TIME tDiff = ((tNow - m_previousTimestamp)* 10000000 / freq) ;
       // Make sure timestamps are increasing
       if (tDiff > 0)
       {
         m_qDurations.push_back(tDiff);
-        m_previousTimestamp = tStart;
+        m_previousTimestamp = tNow;
 
         // limit the number of measurements
         if (m_qDurations.size() > MAX_FRAMERATE_INTERVAL_SIZE)
@@ -132,8 +201,9 @@ HRESULT FramerateDisplayFilter::Transform(IMediaSample *pSample)
     // Avoid div by zero in cases where the timestamps are invalid
     if (tAvg > 0)
     {
-      double dAverageFramerate = static_cast<double>(UNITS/tAvg);
+      double dAverageFramerate = static_cast<double>(UNITS/static_cast<double>(tAvg));
       // Create a string.
+      m_dEstimatedFramerate = dAverageFramerate;
       std::string sFramerate = StringUtil::doubleToString(dAverageFramerate) + " fps";
       wchar_t* wsFramerate = StringUtil::stlToWide(sFramerate);
 
@@ -164,7 +234,7 @@ HRESULT FramerateDisplayFilter::Transform(IMediaSample *pSample)
 
       // Initialize font
       Font myFont(L"Arial", 16);
-      RectF layoutRect(0.0f, 0.0f, 200.0f, 50.0f);
+      RectF layoutRect(m_uiX, m_uiY, 200.0f, 50.0f);
       StringFormat format;
       format.SetAlignment(StringAlignmentNear);
       SolidBrush blackBrush(Color(255, 0, 0, 0));
@@ -217,6 +287,11 @@ HRESULT FramerateDisplayFilter::Run( REFERENCE_TIME tStart )
 
 HRESULT FramerateDisplayFilter::Stop( void )
 {
+  m_qDurations.clear();
+  m_dEstimatedFramerate = 0;
+  m_bSeenFirstFrame = false;
+  m_previousTimestamp = 0;
+
   return CTransInPlaceFilter::Stop();
 }
 

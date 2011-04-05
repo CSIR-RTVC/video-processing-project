@@ -8,7 +8,7 @@ DESCRIPTION           : Filter that logs media sample timestamps and durations t
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,20 +32,41 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #pragma once
+#pragma warning(push)     // disable for this header only
+#pragma warning(disable:4312) 
+// DirectShow
 #include <streams.h>
+#pragma warning(pop)      // restore original warning level
+
+#include <DirectShow/CSettingsInterface.h>
 
 #include <deque>
+#define ULONG_PTR ULONG
+#include <gdiplus.h>
+#include <GdiPlusInit.h>
+
+#pragma comment(lib, "comctl32.lib")
 
 // {8E974B99-BC09-4041-98F4-1103BAA1B0EA}
 static const GUID CLSID_RTVCFramerateDisplayFilter = 
 { 0x8e974b99, 0xbc09, 0x4041, { 0x98, 0xf4, 0x11, 0x3, 0xba, 0xa1, 0xb0, 0xea } };
 
-// Forward declarations
+enum FramerateEstimationMode
+{
+  FRM_TIMESTAMP = 0,
+  FRM_SYSTEM_TIME = 1
+};
+
+// {2B67CF84-C1C1-481F-AF87-B26046AFBBAE}
+static const GUID CLSID_FramerateDisplayProperties = 
+{ 0x2b67cf84, 0xc1c1, 0x481f, { 0xaf, 0x87, 0xb2, 0x60, 0x46, 0xaf, 0xbb, 0xae } };
 
 /**
 * \ingroup DirectShowFilters
 */
-class FramerateDisplayFilter : public CTransInPlaceFilter
+class FramerateDisplayFilter :  public CTransInPlaceFilter,
+                                public CSettingsInterface,
+					                      public ISpecifyPropertyPages
 {
 public:
   DECLARE_IUNKNOWN
@@ -70,9 +91,38 @@ public:
   STDMETHODIMP Run( REFERENCE_TIME tStart );
   STDMETHODIMP Stop(void);
 
+  STDMETHODIMP GetPages(CAUUID *pPages)
+	{
+		if (pPages == NULL) return E_POINTER;
+		pPages->cElems = 1;
+		pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+		if (pPages->pElems == NULL) 
+		{
+			return E_OUTOFMEMORY;
+		}
+		pPages->pElems[0] = CLSID_FramerateDisplayProperties;
+		return S_OK;
+	}
+
+  /// Overridden from CSettingsInterface
+  virtual void initParameters() 
+  { 
+    addParameter("X", &m_uiX, 0);
+    addParameter("Y", &m_uiY, 0);
+    addParameter("estimatedframerate", &m_dEstimatedFramerate, 0);
+    addParameter("mode", &m_uiFramerateEstimationMode, 1);
+  }
 private:
 
+  unsigned m_uiX;
+  unsigned m_uiY;
+  double m_dEstimatedFramerate;
+  unsigned m_uiFramerateEstimationMode;
   bool m_bSeenFirstFrame;
   REFERENCE_TIME m_previousTimestamp;  
   std::deque<REFERENCE_TIME> m_qDurations;
+  double m_dTimerFrequency;
+
+  Gdiplus::GdiplusStartupInput m_gdiplusStartupInput;
+  ULONG_PTR m_pGdiToken;
 };
