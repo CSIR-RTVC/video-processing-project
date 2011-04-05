@@ -50,6 +50,14 @@ void CSettingsInterface::addParameter( const char* szParamName, int* pAddr, int 
 	m_intParams.addParam(std::string(szParamName), pAddr, nDefaultValue, bReadOnly, vAllowedValues);
 }
 
+void CSettingsInterface::addParameter( const char* szParamName, unsigned* pAddr, unsigned uiDefaultValue, bool bReadOnly, std::vector<unsigned> vAllowedValues)
+{
+  // Add the param to the map
+  std::string sParamName(szParamName);
+  m_mParamTypes[sParamName] = RTVC_UINT;
+  m_uintParams.addParam(std::string(szParamName), pAddr, uiDefaultValue, bReadOnly, vAllowedValues);
+}
+
 void CSettingsInterface::addParameter( const char* szParamName, std::string* pAddr, std::string sDefaultValue, bool bReadOnly, std::vector<std::string> vAllowedValues )
 {
 	// Add the param to the map
@@ -131,6 +139,28 @@ STDMETHODIMP CSettingsInterface::GetParameter( const char* type, int nBufferSize
 				return E_FAIL;
 				break;
 			}
+    case RTVC_UINT:
+      {
+        // Check the int map
+        unsigned* pValue = m_uintParams.getParamAddress(sParamName);
+        if (pValue)
+        {
+          std::string sValue =  toString(*pValue);
+          if (sValue.length() < (unsigned)nBufferSize)
+          {
+            memcpy(value, (void*)sValue.c_str(), sValue.length());
+            *length = sValue.length();
+            value[*length] = 0;
+            return S_OK;
+          }
+          else
+          {
+            return E_OUTOFMEMORY;
+          }
+        }
+        return E_FAIL;
+        break;
+      }
 		case RTVC_BOOL:
 			{
 				// Check the int map
@@ -226,6 +256,21 @@ STDMETHODIMP CSettingsInterface::SetParameter( const char* type, const char* val
 				return E_FAIL;
 				break;
 			}
+    case RTVC_UINT:
+      {
+        // Check if the parameter exists
+        if (m_uintParams.contains(sParamName))
+        {
+          // Get int value
+          unsigned uiNewValue = convert<unsigned>(value);
+          if (m_uintParams.setParameterValue(sParamName, uiNewValue))
+          {
+            return S_OK;
+          }
+        }
+        return E_FAIL;
+        break;
+      }
 		case RTVC_BOOL:
 			{
 				// Allow 0, 1, TRUE, true, FALSE and false
@@ -273,6 +318,14 @@ STDMETHODIMP CSettingsInterface::GetParameterSettings( char* szResult, int nSize
 		int nValue = *(m_intParams.getParamAddress(vParams[i]));
 		sResult += "Parameter name: " + vParams[i] + " Value: " + toString(nValue) + "\r\n";
 	}
+
+  // Iterate over uints
+  vParams = m_uintParams.getParameterNames();
+  for (size_t i = 0; i < vParams.size(); i++)
+  {
+    unsigned uiValue = *(m_uintParams.getParamAddress(vParams[i]));
+    sResult += "Parameter name: " + vParams[i] + " Value: " + toString(uiValue) + "\r\n";
+  }
 
 	// Iterate over chars
 	vParams = m_stringParams.getParameterNames();
@@ -340,6 +393,15 @@ bool CSettingsInterface::revertParameter( const char* type )
 				}
 				return false;
 			}
+    case RTVC_UINT:
+      {
+        // Check if the parameter exists
+        if (m_uintParams.contains(sParamName))
+        {
+          return m_uintParams.revertToPreviousValue(sParamName);
+        }
+        return false;
+      }
 		case RTVC_BOOL:
 			{
 				if (m_boolParams.contains(sParamName))
