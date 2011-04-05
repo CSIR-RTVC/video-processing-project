@@ -49,88 +49,88 @@ class YuvProperties : public FilterPropertiesBase
 {
 public:
 
-	static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr) 
-	{
-		YuvProperties *pNewObject = new YuvProperties(pUnk);
-		if (pNewObject == NULL) 
-		{
-			*pHr = E_OUTOFMEMORY;
-		}
-		return pNewObject;
-	}
+  static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr) 
+  {
+    YuvProperties *pNewObject = new YuvProperties(pUnk);
+    if (pNewObject == NULL) 
+    {
+      *pHr = E_OUTOFMEMORY;
+    }
+    return pNewObject;
+  }
 
-	YuvProperties::YuvProperties(IUnknown *pUnk) : 
-	FilterPropertiesBase(NAME("YUV Source Properties"), pUnk, IDD_YUV_DIALOG, IDS_YUV_CAPTION)
-	{;}
+  YuvProperties::YuvProperties(IUnknown *pUnk) : 
+  FilterPropertiesBase(NAME("YUV Source Properties"), pUnk, IDD_YUV_DIALOG, IDS_YUV_CAPTION)
+  {;}
 
-	HRESULT ReadSettings()
-	{
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
+  HRESULT ReadSettings()
+  {
+    int nLength = 0;
+    char szBuffer[BUFFER_SIZE];
 
-		initialiseControls();
+    initialiseControls();
 
-		HRESULT hr = m_pSettingsInterface->GetParameter(SOURCE_DIMENSIONS, sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-			SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SELECTSTRING,  0, (LPARAM)szBuffer);
-		else
-			return E_FAIL;
+    HRESULT hr = m_pSettingsInterface->GetParameter(SOURCE_DIMENSIONS, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+      SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SELECTSTRING,  0, (LPARAM)szBuffer);
+    else
+      return E_FAIL;
 
-		hr = m_pSettingsInterface->GetParameter(SOURCE_FPS, sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-			// Default value of 30 FPS
-			SetDlgItemText(m_Dlg, IDC_FPS, szBuffer);
+    hr = m_pSettingsInterface->GetParameter(SOURCE_FPS, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+      // Default value of 30 FPS
+      SetDlgItemText(m_Dlg, IDC_FPS, szBuffer);
 
-		return hr;
-	}
+    return hr;
+  }
 
-	HRESULT OnApplyChanges(void)
-	{
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
+  HRESULT OnApplyChanges(void)
+  {
+    int nLength = 0;
+    char szBuffer[BUFFER_SIZE];
 
-		nLength = GetDlgItemText(m_Dlg, IDC_CMB_DIMENSIONS, szBuffer, BUFFER_SIZE);
-		HRESULT hr = m_pSettingsInterface->SetParameter(SOURCE_DIMENSIONS, szBuffer);
+    nLength = GetDlgItemText(m_Dlg, IDC_CMB_DIMENSIONS, szBuffer, BUFFER_SIZE);
+    HRESULT hr = m_pSettingsInterface->SetParameter(SOURCE_DIMENSIONS, szBuffer);
 
-		if (FAILED(hr)) return E_FAIL;
+    if (FAILED(hr)) return E_FAIL;
 
-		nLength = GetDlgItemText(m_Dlg, IDC_FPS, szBuffer, BUFFER_SIZE);
-		int iFps = atoi(szBuffer);
-		hr = m_pSettingsInterface->SetParameter(SOURCE_FPS, szBuffer);
-		return hr;
-		return S_OK;
-	} 
+    nLength = GetDlgItemText(m_Dlg, IDC_FPS, szBuffer, BUFFER_SIZE);
+    int iFps = atoi(szBuffer);
+    hr = m_pSettingsInterface->SetParameter(SOURCE_FPS, szBuffer);
+    return hr;
+    return S_OK;
+  } 
 
 private:
-	void initialiseControls()
-	{
-		InitCommonControls();
+  void initialiseControls()
+  {
+    InitCommonControls();
 
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_RESETCONTENT, 0, 0);
-		//Add default option
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_ADDSTRING,	 0, (LPARAM)"Select");
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SELECTSTRING,  0, (LPARAM)"Select");
-		// Now populate the graphs
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  1, (LPARAM)"176x144");
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  2, (LPARAM)"320x240");
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  3, (LPARAM)"352x288");
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  4, (LPARAM)"704x576");
-		SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SETMINVISIBLE, 5, 0);
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_RESETCONTENT, 0, 0);
+    //Add default option
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_ADDSTRING,	 0, (LPARAM)"Select");
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SELECTSTRING,  0, (LPARAM)"Select");
+    // Now populate the graphs
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  1, (LPARAM)"176x144");
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  2, (LPARAM)"320x240");
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  3, (LPARAM)"352x288");
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_INSERTSTRING,  4, (LPARAM)"704x576");
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SETMINVISIBLE, 5, 0);
 
-		// Init frames per second
-		short lower = 1;
-		short upper = 60;
+    // Init frames per second
+    short lower = 1;
+    short upper = 60;
 
-		// Init UI
-		long lResult = SendMessage(			// returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN_FPS),	// handle to destination control
-			(UINT) UDM_SETRANGE,			// message ID
-			(WPARAM) 0,						// = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			);
-		// Default value of 30 FPS
-		SetDlgItemText(m_Dlg, IDC_FPS, "30");
+    // Init UI
+    long lResult = SendMessage(			// returns LRESULT in lResult
+      GetDlgItem(m_Dlg, IDC_SPIN_FPS),	// handle to destination control
+      (UINT) UDM_SETRANGE,			// message ID
+      (WPARAM) 0,						// = 0; not used, must be zero
+      (LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+      );
+    // Default value of 30 FPS
+    SetDlgItemText(m_Dlg, IDC_FPS, "30");
 
-	}
+  }
 };
 

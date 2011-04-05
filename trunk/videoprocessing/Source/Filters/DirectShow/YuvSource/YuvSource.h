@@ -54,11 +54,11 @@ const REFERENCE_TIME rtDefaultFrameLength = FPS_10;
 
 // {DAC3AA2A-5AB3-4705-963B-FFAF9C0D08D8}
 DEFINE_GUID(CLSID_YUVSource, 
-			0xdac3aa2a, 0x5ab3, 0x4705, 0x96, 0x3b, 0xff, 0xaf, 0x9c, 0xd, 0x8, 0xd8);
+  0xdac3aa2a, 0x5ab3, 0x4705, 0x96, 0x3b, 0xff, 0xaf, 0x9c, 0xd, 0x8, 0xd8);
 
 // {B044F35E-A7BD-464a-AD9F-9A1BEFBD95ED}
 DEFINE_GUID(CLSID_YUVProperties, 
-			0xb044f35e, 0xa7bd, 0x464a, 0xad, 0x9f, 0x9a, 0x1b, 0xef, 0xbd, 0x95, 0xed);
+  0xb044f35e, 0xa7bd, 0x464a, 0xad, 0x9f, 0x9a, 0x1b, 0xef, 0xbd, 0x95, 0xed);
 
 
 // Filter name strings
@@ -68,116 +68,116 @@ DEFINE_GUID(CLSID_YUVProperties,
 #define SOURCE_FPS			  "fps"
 
 /**********************************************
- *
- *  Class declarations
- *
- **********************************************/
+*
+*  Class declarations
+*
+**********************************************/
 
 class YuvOutputPin : public CSourceStream
 {
-	friend class YuvSourceFilter;
+  friend class YuvSourceFilter;
 
 public:
-	YuvOutputPin(HRESULT *phr, YuvSourceFilter *pFilter);
-	~YuvOutputPin();
+  YuvOutputPin(HRESULT *phr, YuvSourceFilter *pFilter);
+  ~YuvOutputPin();
 
-	// Override the version that offers exactly one media type
-	HRESULT GetMediaType(CMediaType *pMediaType);
-	HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest);
-	HRESULT FillBuffer(IMediaSample *pSample);
+  // Override the version that offers exactly one media type
+  HRESULT GetMediaType(CMediaType *pMediaType);
+  HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest);
+  HRESULT FillBuffer(IMediaSample *pSample);
 
-	// Quality control
-	// Not implemented because we aren't going in real time.
-	// If the file-writing filter slows the graph down, we just do nothing, which means
-	// wait until we're unblocked. No frames are ever dropped.
-	STDMETHODIMP Notify(IBaseFilter *pSelf, Quality q)
-	{
-		return E_FAIL;
-	}
+  // Quality control
+  // Not implemented because we aren't going in real time.
+  // If the file-writing filter slows the graph down, we just do nothing, which means
+  // wait until we're unblocked. No frames are ever dropped.
+  STDMETHODIMP Notify(IBaseFilter *pSelf, Quality q)
+  {
+    return E_FAIL;
+  }
 
 protected:
-	YuvSourceFilter* m_pYuvFilter;
+  YuvSourceFilter* m_pYuvFilter;
 
-	int m_iCurrentFrame;
-    REFERENCE_TIME m_rtFrameLength;
+  int m_iCurrentFrame;
+  REFERENCE_TIME m_rtFrameLength;
 
-    CCritSec m_cSharedState;            // Protects our internal state
+  CCritSec m_cSharedState;            // Protects our internal state
 };
 
 class YuvSourceFilter : public CSource,
-						public CSettingsInterface,	/* Rtvc Settings Interface */
-						public CStatusInterface,	/* Rtvc Status Interface */
-						public IFileSourceFilter,	/* To facilitate loading of URL */
-						public ISpecifyPropertyPages
+  public CSettingsInterface,	/* Rtvc Settings Interface */
+  public CStatusInterface,	/* Rtvc Status Interface */
+  public IFileSourceFilter,	/* To facilitate loading of URL */
+  public ISpecifyPropertyPages
 {
-	friend class YuvOutputPin;
+  friend class YuvOutputPin;
 
 public:
-	///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
-	DECLARE_IUNKNOWN;
+  ///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
+  DECLARE_IUNKNOWN;
 
-	static CUnknown * WINAPI CreateInstance(IUnknown *pUnk, HRESULT *phr);  
+  static CUnknown * WINAPI CreateInstance(IUnknown *pUnk, HRESULT *phr);  
 
-	/// override this to publicize our interfaces
-	STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
+  /// override this to publicize our interfaces
+  STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 
-	/// From CSource
-	STDMETHODIMP Stop();
+  /// From CSource
+  STDMETHODIMP Stop();
 
-	/// From CSettingsInterface
-	virtual void initParameters()
-	{
-		addParameter( SOURCE_DIMENSIONS, &m_sDimensions, "352x288"); 
-		addParameter( SOURCE_FPS, &m_iFramesPerSecond, 30);
-	}
-	STDMETHODIMP SetParameter( const char* type, const char* value );
+  /// From CSettingsInterface
+  virtual void initParameters()
+  {
+    addParameter( SOURCE_DIMENSIONS, &m_sDimensions, "352x288"); 
+    addParameter( SOURCE_FPS, &m_iFramesPerSecond, 30);
+  }
+  STDMETHODIMP SetParameter( const char* type, const char* value );
 
-	/// From IFileSourceFilter
-	STDMETHODIMP Load(LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt);
-	/// From IFileSourceFilter
-	STDMETHODIMP GetCurFile(LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt);
+  /// From IFileSourceFilter
+  STDMETHODIMP Load(LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt);
+  /// From IFileSourceFilter
+  STDMETHODIMP GetCurFile(LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt);
 
-	STDMETHODIMP GetPages(CAUUID *pPages)
-	{
-		if (pPages == NULL) return E_POINTER;
-		pPages->cElems = 1;
-		pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
-		if (pPages->pElems == NULL) 
-		{
-			return E_OUTOFMEMORY;
-		}
-		pPages->pElems[0] = CLSID_YUVProperties;
-		return S_OK;
-	}
+  STDMETHODIMP GetPages(CAUUID *pPages)
+  {
+    if (pPages == NULL) return E_POINTER;
+    pPages->cElems = 1;
+    pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+    if (pPages->pElems == NULL) 
+    {
+      return E_OUTOFMEMORY;
+    }
+    pPages->pElems[0] = CLSID_YUVProperties;
+    return S_OK;
+  }
 
 private:
-    // Constructor is private because you have to use CreateInstance
-    YuvSourceFilter(IUnknown *pUnk, HRESULT *phr);
-    ~YuvSourceFilter();
+  // Constructor is private because you have to use CreateInstance
+  YuvSourceFilter(IUnknown *pUnk, HRESULT *phr);
+  ~YuvSourceFilter();
 
-	bool setDimensions(const std::string& sDimensions);
+  bool setDimensions(const std::string& sDimensions);
   bool setDimensions(int iWidth, int iHeight);
 
-	void recalculate();
-	bool readFrame();
+  void recalculate();
+  bool readFrame();
   void guessDimensions();
 
   YuvOutputPin *m_pPin;
 
-	int m_iWidth;
-	int m_iHeight;
-	std::string m_sDimensions;
-	int m_iFramesPerSecond;
-	int m_iNoFrames;
-	int m_iFrameSize;
-	double m_dBitsPerPixel;
+  int m_iWidth;
+  int m_iHeight;
+  std::string m_sDimensions;
+  int m_iFramesPerSecond;
+  int m_iNoFrames;
+  int m_iFrameSize;
+  double m_dBitsPerPixel;
 
-	std::string m_sFile;
+  std::string m_sFile;
 
-	unsigned char* m_pYuvBuffer;
-	int m_iFileSize;
-	int m_iRead;
-	std::ifstream m_in1;
+  unsigned char* m_pYuvBuffer;
+  int m_iFileSize;
+  int m_iRead;
+  std::ifstream m_in1;
 };
 
 
