@@ -132,7 +132,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayFilter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayProperties.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\resource.h" />
     <ClInclude Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\stdafx.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="..\..\..\..\..\Source\Filters\DirectShow\FramerateDisplayFilter\FramerateDisplayFilter.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
