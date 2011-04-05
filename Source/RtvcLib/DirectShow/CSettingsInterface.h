@@ -100,12 +100,19 @@ protected:
 	/// @param[in] vAllowedValues A vector of allowed values. If the size of this vector > 0 only the values in the vector are considered valid
 	virtual void addParameter(const char* szParamName, int* pAddr, int nDefaultValue, bool bReadOnly = false, std::vector<int> vAllowedValues = std::vector<int>());
 	/// The addParameter methods should be called from inside initParameters at start up
+  /// @param[in] szParamName The name of the parameter that should be reverted to its previous value
+  /// @param[in] pAddr A pointer to the member variable that will store the value
+  /// @param[in] uiDefaultValue An optional default value for the member variable
+  /// @param[in] bReadOnly Readonly parameters cannot be set using the SetParameter method
+  /// @param[in] vAllowedValues A vector of allowed values. If the size of this vector > 0 only the values in the vector are considered valid
+  virtual void addParameter(const char* szParamName, unsigned* pAddr, unsigned uiDefaultValue, bool bReadOnly = false, std::vector<unsigned> vAllowedValues = std::vector<unsigned>());
+	/// The addParameter methods should be called from inside initParameters at start up
 	/// @param[in] szParamName The name of the parameter that should be reverted to its previous value
 	/// @param[in] pAddr A pointer to the member variable that will store the value
 	/// @param[in] szDefaultValue An optional default value for the member variable
 	/// @param[in] bReadOnly Readonly parameters cannot be set using the SetParameter method
 	/// @param[in] vAllowedValues A vector of allowed values. If the size of this vector > 0 only the values in the vector are considered valid
-	virtual void addParameter(const char* szParamName, std::string* pAddr, std::string szDefaultValue, bool bReadOnly = false, std::vector<std::string> vAllowedValues = std::vector<std::string>());
+  virtual void addParameter(const char* szParamName, std::string* pAddr, std::string szDefaultValue, bool bReadOnly = false, std::vector<std::string> vAllowedValues = std::vector<std::string>());
 	/// The addParameter methods should be called from inside initParameters at start up
 	/// @param[in] szParamName The name of the parameter that should be reverted to its previous value
 	/// @param[in] pAddr A pointer to the member variable that will store the value
@@ -127,6 +134,7 @@ private:
 	{
 		RTVC_STRING,
 		RTVC_INT,
+    RTVC_UINT,
 		RTVC_BOOL,
 		RTVC_DOUBLE
 	};
@@ -264,6 +272,7 @@ private:
 	};
 
 	RtvcParameterValue<int> m_intParams;
+  RtvcParameterValue<unsigned> m_uintParams;
 	RtvcParameterValue<double> m_doubleParams;
 	RtvcParameterValue<bool> m_boolParams;
 	RtvcParameterValue<std::string> m_stringParams;
