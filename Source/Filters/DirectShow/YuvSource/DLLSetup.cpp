@@ -50,31 +50,31 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Filter setup data
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 {
-    &MEDIATYPE_Video,       // Major type
-    &MEDIASUBTYPE_NULL      // Minor type
+  &MEDIATYPE_Video,       // Major type
+  &MEDIASUBTYPE_NULL      // Minor type
 };
 
 
 const AMOVIESETUP_PIN sudOutputPinBitmap = 
 {
-    L"Output",      // Obsolete, not used.
-    FALSE,          // Is this pin rendered?
-    TRUE,           // Is it an output pin?
-    FALSE,          // Can the filter create zero instances?
-    FALSE,          // Does the filter create multiple instances?
-    &CLSID_NULL,    // Obsolete.
-    NULL,           // Obsolete.
-    1,              // Number of media types.
-    &sudOpPinTypes  // Pointer to media types.
+  L"Output",      // Obsolete, not used.
+  FALSE,          // Is this pin rendered?
+  TRUE,           // Is it an output pin?
+  FALSE,          // Can the filter create zero instances?
+  FALSE,          // Does the filter create multiple instances?
+  &CLSID_NULL,    // Obsolete.
+  NULL,           // Obsolete.
+  1,              // Number of media types.
+  &sudOpPinTypes  // Pointer to media types.
 };
 
 const AMOVIESETUP_FILTER sudPushSourceBitmap =
 {
-    &CLSID_YUVSource,		// Filter CLSID
-    g_wszYuvSource,			// String name
-    MERIT_DO_NOT_USE,       // Filter merit
-    1,                      // Number pins
-    &sudOutputPinBitmap     // Pin details
+  &CLSID_YUVSource,		// Filter CLSID
+  g_wszYuvSource,			// String name
+  MERIT_DO_NOT_USE,       // Filter merit
+  1,                      // Number pins
+  &sudOutputPinBitmap     // Pin details
 };
 
 
@@ -85,21 +85,21 @@ const AMOVIESETUP_FILTER sudPushSourceBitmap =
 
 CFactoryTemplate g_Templates[] = 
 {
-    { 
-      g_wszYuvSource,						// Name
+  { 
+    g_wszYuvSource,						// Name
       &CLSID_YUVSource,						// CLSID
       YuvSourceFilter::CreateInstance,	// Method to create an instance of MyComponent
       NULL,									// Initialization function
       &sudPushSourceBitmap				    // Set-up information (for filters)
-    },
-	// This entry is for the property page.
-	{ 
-		L"YUV Source Filter Properties",
-		&CLSID_YUVProperties,
-		YuvProperties::CreateInstance, 
-		NULL, 
-		NULL
-	  }
+  },
+  // This entry is for the property page.
+  { 
+    L"YUV Source Filter Properties",
+      &CLSID_YUVProperties,
+      YuvProperties::CreateInstance, 
+      NULL, 
+      NULL
+    }
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
@@ -115,12 +115,12 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 STDAPI DllRegisterServer()
 {
-    return AMovieDllRegisterServer2( TRUE );
+  return AMovieDllRegisterServer2( TRUE );
 }
 
 STDAPI DllUnregisterServer()
 {
-    return AMovieDllRegisterServer2( FALSE );
+  return AMovieDllRegisterServer2( FALSE );
 }
 
 //
@@ -129,9 +129,9 @@ STDAPI DllUnregisterServer()
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
 BOOL APIENTRY DllMain(HANDLE hModule, 
-                      DWORD  dwReason, 
-                      LPVOID lpReserved)
+  DWORD  dwReason, 
+  LPVOID lpReserved)
 {
-	return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
+  return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }
 

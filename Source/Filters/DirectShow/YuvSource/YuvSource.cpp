@@ -43,25 +43,25 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 {
-    &MEDIATYPE_Video,       // Major type
-    &MEDIASUBTYPE_NULL      // Minor type
+  &MEDIATYPE_Video,       // Major type
+  &MEDIASUBTYPE_NULL      // Minor type
 };
 
 DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
-0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
+  0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
 
 /**********************************************
- *
- *  YuvOutputPin Class
- *  
- *
- **********************************************/
+*
+*  YuvOutputPin Class
+*  
+*
+**********************************************/
 
 YuvOutputPin::YuvOutputPin(HRESULT *phr, YuvSourceFilter* pFilter)
-      : CSourceStream(NAME("YUV Source"), phr, pFilter, L"Out"),
-		m_pYuvFilter(pFilter),
-		m_iCurrentFrame(0),
-        m_rtFrameLength(FPS_30) // Display 5 bitmap frames per second: TODO_ move to property page
+  : CSourceStream(NAME("YUV Source"), phr, pFilter, L"Out"),
+  m_pYuvFilter(pFilter),
+  m_iCurrentFrame(0),
+  m_rtFrameLength(FPS_30) // Display 5 bitmap frames per second: TODO_ move to property page
 {
 }
 
@@ -74,81 +74,81 @@ YuvOutputPin::~YuvOutputPin()
 // GetMediaType: This method tells the downstream pin what types we support.
 HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
 {
-    CAutoLock cAutoLock(m_pFilter->pStateLock());
+  CAutoLock cAutoLock(m_pFilter->pStateLock());
 
-    CheckPointer(pMediaType, E_POINTER);
+  CheckPointer(pMediaType, E_POINTER);
 
-    // Allocate enough room for the VIDEOINFOHEADER
-    VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->AllocFormatBuffer( sizeof(VIDEOINFOHEADER) );
-    if (pvi == 0) 
-        return(E_OUTOFMEMORY);
+  // Allocate enough room for the VIDEOINFOHEADER
+  VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->AllocFormatBuffer( sizeof(VIDEOINFOHEADER) );
+  if (pvi == 0) 
+    return(E_OUTOFMEMORY);
 
-    ZeroMemory(pvi, pMediaType->cbFormat);   
-    pvi->AvgTimePerFrame = m_rtFrameLength;
-	pvi->dwBitRate = ((int)(m_pYuvFilter->m_iFramesPerSecond * m_pYuvFilter->m_iFrameSize * m_pYuvFilter->m_dBitsPerPixel)) << 3;
+  ZeroMemory(pvi, pMediaType->cbFormat);   
+  pvi->AvgTimePerFrame = m_rtFrameLength;
+  pvi->dwBitRate = ((int)(m_pYuvFilter->m_iFramesPerSecond * m_pYuvFilter->m_iFrameSize * m_pYuvFilter->m_dBitsPerPixel)) << 3;
 
-	pvi->bmiHeader.biBitCount = 12;
-	pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
+  pvi->bmiHeader.biBitCount = 12;
+  pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
 
-	pvi->bmiHeader.biClrImportant = 0;
-	pvi->bmiHeader.biClrUsed = 0;
-	pvi->bmiHeader.biPlanes = 1;
-	pvi->bmiHeader.biXPelsPerMeter = 0;
-	pvi->bmiHeader.biYPelsPerMeter = 0;
-	pvi->bmiHeader.biWidth = m_pYuvFilter->m_iWidth;
-	pvi->bmiHeader.biHeight = m_pYuvFilter->m_iHeight;
+  pvi->bmiHeader.biClrImportant = 0;
+  pvi->bmiHeader.biClrUsed = 0;
+  pvi->bmiHeader.biPlanes = 1;
+  pvi->bmiHeader.biXPelsPerMeter = 0;
+  pvi->bmiHeader.biYPelsPerMeter = 0;
+  pvi->bmiHeader.biWidth = m_pYuvFilter->m_iWidth;
+  pvi->bmiHeader.biHeight = m_pYuvFilter->m_iHeight;
 
-	//int iSize = m_pYuvFilter->m_iWidth * m_pYuvFilter->m_iHeight * m_pYuvFilter->m_dBitsPerPixel;
+  //int iSize = m_pYuvFilter->m_iWidth * m_pYuvFilter->m_iHeight * m_pYuvFilter->m_dBitsPerPixel;
 
-	pvi->bmiHeader.biSizeImage = m_pYuvFilter->m_iFrameSize;
-	pvi->bmiHeader.biSize = 40;
+  pvi->bmiHeader.biSizeImage = m_pYuvFilter->m_iFrameSize;
+  pvi->bmiHeader.biSize = 40;
 
-    // Clear source and target rectangles
-    SetRectEmpty(&(pvi->rcSource)); // we want the whole image area rendered
-    SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
+  // Clear source and target rectangles
+  SetRectEmpty(&(pvi->rcSource)); // we want the whole image area rendered
+  SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
 
-    pMediaType->SetType(&MEDIATYPE_Video);
-    pMediaType->SetFormatType(&FORMAT_VideoInfo);
-    pMediaType->SetTemporalCompression(FALSE);
+  pMediaType->SetType(&MEDIATYPE_Video);
+  pMediaType->SetFormatType(&FORMAT_VideoInfo);
+  pMediaType->SetTemporalCompression(FALSE);
 
-	pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
+  pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
 
-	pMediaType->SetSampleSize( m_pYuvFilter->m_iFrameSize );
-    return S_OK;
+  pMediaType->SetSampleSize( m_pYuvFilter->m_iFrameSize );
+  return S_OK;
 }
 
 
 HRESULT YuvOutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest)
 {
-    HRESULT hr;
-    CAutoLock cAutoLock(m_pFilter->pStateLock());
+  HRESULT hr;
+  CAutoLock cAutoLock(m_pFilter->pStateLock());
 
-    CheckPointer(pAlloc, E_POINTER);
-    CheckPointer(pRequest, E_POINTER);
+  CheckPointer(pAlloc, E_POINTER);
+  CheckPointer(pRequest, E_POINTER);
 
-    VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*) m_mt.Format();
-    
-    // Ensure a minimum number of buffers
-    if (pRequest->cBuffers == 0)
-    {
-        pRequest->cBuffers = 1;
-    }
-    pRequest->cbBuffer = pvi->bmiHeader.biSizeImage;
+  VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*) m_mt.Format();
 
-    ALLOCATOR_PROPERTIES Actual;
-    hr = pAlloc->SetProperties(pRequest, &Actual);
-    if (FAILED(hr)) 
-    {
-        return hr;
-    }
+  // Ensure a minimum number of buffers
+  if (pRequest->cBuffers == 0)
+  {
+    pRequest->cBuffers = 1;
+  }
+  pRequest->cbBuffer = pvi->bmiHeader.biSizeImage;
 
-    // Is this allocator unsuitable?
-    if (Actual.cbBuffer < pRequest->cbBuffer) 
-    {
-        return E_FAIL;
-    }
+  ALLOCATOR_PROPERTIES Actual;
+  hr = pAlloc->SetProperties(pRequest, &Actual);
+  if (FAILED(hr)) 
+  {
+    return hr;
+  }
 
-    return S_OK;
+  // Is this allocator unsuitable?
+  if (Actual.cbBuffer < pRequest->cbBuffer) 
+  {
+    return E_FAIL;
+  }
+
+  return S_OK;
 }
 
 
@@ -156,133 +156,133 @@ HRESULT YuvOutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTI
 // FillBuffer is called once for every sample in the stream.
 HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
 {
-    BYTE *pData;
-    long cbData;
+  BYTE *pData;
+  long cbData;
 
-    CheckPointer(pSample, E_POINTER);
+  CheckPointer(pSample, E_POINTER);
 
-    CAutoLock cAutoLockShared(&m_cSharedState);
+  CAutoLock cAutoLockShared(&m_cSharedState);
 
-	if ( m_iCurrentFrame < m_pYuvFilter->m_iNoFrames )
-	{
-		if (!m_pYuvFilter->readFrame())
-			return S_FALSE;
+  if ( m_iCurrentFrame < m_pYuvFilter->m_iNoFrames )
+  {
+    if (!m_pYuvFilter->readFrame())
+      return S_FALSE;
 
-		// Access the sample's data buffer
-		pSample->GetPointer(&pData);
-		cbData = pSample->GetSize();
+    // Access the sample's data buffer
+    pSample->GetPointer(&pData);
+    cbData = pSample->GetSize();
 
-		// Check that we're still using video
-		ASSERT(m_mt.formattype == FORMAT_VideoInfo);
+    // Check that we're still using video
+    ASSERT(m_mt.formattype == FORMAT_VideoInfo);
 
-		VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)m_mt.pbFormat;
-				
-		memcpy( pData, m_pYuvFilter->m_pYuvBuffer, m_pYuvFilter->m_iFrameSize );
+    VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)m_mt.pbFormat;
 
-		// Set the timestamps that will govern playback frame rate.
-		// If this file is getting written out as an AVI,
-		// then you'll also need to configure the AVI Mux filter to 
-		// set the Average Time Per Frame for the AVI Header.
-		// The current time is the sample's start
-		REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
-		REFERENCE_TIME rtStop  = rtStart + m_rtFrameLength;
+    memcpy( pData, m_pYuvFilter->m_pYuvBuffer, m_pYuvFilter->m_iFrameSize );
 
-		pSample->SetTime( &rtStart, &rtStop );
+    // Set the timestamps that will govern playback frame rate.
+    // If this file is getting written out as an AVI,
+    // then you'll also need to configure the AVI Mux filter to 
+    // set the Average Time Per Frame for the AVI Header.
+    // The current time is the sample's start
+    REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
+    REFERENCE_TIME rtStop  = rtStart + m_rtFrameLength;
 
-		// Set TRUE on every sample for uncompressed frames
-		pSample->SetSyncPoint(TRUE);
+    pSample->SetTime( &rtStart, &rtStop );
 
-		m_iCurrentFrame++;
-		return S_OK;
-	}
-	else
-	{
-		// EOF
-		return S_FALSE;
-	}
+    // Set TRUE on every sample for uncompressed frames
+    pSample->SetSyncPoint(TRUE);
+
+    m_iCurrentFrame++;
+    return S_OK;
+  }
+  else
+  {
+    // EOF
+    return S_FALSE;
+  }
 }
 
 
 /**********************************************
- *
- *  YuvSourceFilter Class
- *
- **********************************************/
+*
+*  YuvSourceFilter Class
+*
+**********************************************/
 
 CUnknown * WINAPI YuvSourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
 {
-	YuvSourceFilter *pNewFilter = new YuvSourceFilter(pUnk, phr );
-	if (phr)
-	{
-		if (pNewFilter == NULL) 
-			*phr = E_OUTOFMEMORY;
-		else
-			*phr = S_OK;
-	}
-	return pNewFilter;
+  YuvSourceFilter *pNewFilter = new YuvSourceFilter(pUnk, phr );
+  if (phr)
+  {
+    if (pNewFilter == NULL) 
+      *phr = E_OUTOFMEMORY;
+    else
+      *phr = S_OK;
+  }
+  return pNewFilter;
 }
 
 YuvSourceFilter::YuvSourceFilter(IUnknown *pUnk, HRESULT *phr)
-	: CSource(NAME("CSIR RTVC YUV Source"), pUnk, CLSID_YUVSource),
-	m_iWidth(352),
-	m_iHeight(288),
-	m_sDimensions("352x288"),
-	m_iFramesPerSecond(30),
-	m_iNoFrames(150),		//TODO: move to property page
-	m_dBitsPerPixel(1.5),	//TODO: move to property page
-	m_pYuvBuffer(NULL),
-	m_iFileSize(0),
-	m_iRead(0)
+  : CSource(NAME("CSIR RTVC YUV Source"), pUnk, CLSID_YUVSource),
+  m_iWidth(352),
+  m_iHeight(288),
+  m_sDimensions("352x288"),
+  m_iFramesPerSecond(30),
+  m_iNoFrames(150),		//TODO: move to property page
+  m_dBitsPerPixel(1.5),	//TODO: move to property page
+  m_pYuvBuffer(NULL),
+  m_iFileSize(0),
+  m_iRead(0)
 {
-	// Init CSettingsInterface
-	initParameters();
+  // Init CSettingsInterface
+  initParameters();
 
-    m_pPin = new YuvOutputPin(phr, this);
+  m_pPin = new YuvOutputPin(phr, this);
 
-    if (phr)
-    {
-        if (m_pPin == NULL)
-            *phr = E_OUTOFMEMORY;
-        else
-            *phr = S_OK;
-    }  
+  if (phr)
+  {
+    if (m_pPin == NULL)
+      *phr = E_OUTOFMEMORY;
+    else
+      *phr = S_OK;
+  }  
 }
 
 YuvSourceFilter::~YuvSourceFilter()
 {
-	if ( m_in1.is_open() )
-	{
-		m_in1.close();
-	}
-	if (m_pYuvBuffer)
-		delete[] m_pYuvBuffer;
+  if ( m_in1.is_open() )
+  {
+    m_in1.close();
+  }
+  if (m_pYuvBuffer)
+    delete[] m_pYuvBuffer;
 
-	delete m_pPin;
+  delete m_pPin;
 }
 
 STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt )
 {
-	// Store the URL
-	m_sFile = StringUtil::wideToStl(lpwszFileName);
+  // Store the URL
+  m_sFile = StringUtil::wideToStl(lpwszFileName);
 
-	m_in1.open(m_sFile.c_str(), std::ifstream::in | std::ifstream::binary);
-	if ( m_in1.is_open() )
-	{
-		m_in1.seekg( 0, std::ios::end );
-		m_iFileSize = m_in1.tellg();
-		m_in1.seekg( 0 , std::ios::beg );
+  m_in1.open(m_sFile.c_str(), std::ifstream::in | std::ifstream::binary);
+  if ( m_in1.is_open() )
+  {
+    m_in1.seekg( 0, std::ios::end );
+    m_iFileSize = m_in1.tellg();
+    m_in1.seekg( 0 , std::ios::beg );
 
-		recalculate();
-		m_pYuvBuffer = new unsigned char[m_iFrameSize];
+    recalculate();
+    m_pYuvBuffer = new unsigned char[m_iFrameSize];
 
     guessDimensions();
-		return S_OK;
-	}
-	else
-	{
-		SetLastError("Failed to open file: " + m_sFile, true);
-		return E_FAIL;
-	}
+    return S_OK;
+  }
+  else
+  {
+    SetLastError("Failed to open file: " + m_sFile, true);
+    return E_FAIL;
+  }
 }
 
 void YuvSourceFilter::guessDimensions()
@@ -305,7 +305,7 @@ void YuvSourceFilter::guessDimensions()
     setDimensions("352x288");
     return;
   }
-  
+
 
   // try searching for x's
   pos = sFile.find("x");
@@ -355,101 +355,101 @@ void YuvSourceFilter::guessDimensions()
 
 STDMETHODIMP YuvSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt )
 {
-	*ppszFileName = NULL;
+  *ppszFileName = NULL;
 
-	if (m_sFile.length()!=0) 
-	{
-		WCHAR* pFileName = (StringUtil::stlToWide(m_sFile));	
+  if (m_sFile.length()!=0) 
+  {
+    WCHAR* pFileName = (StringUtil::stlToWide(m_sFile));	
 
-		DWORD n = sizeof(WCHAR)*(1+lstrlenW(pFileName));
+    DWORD n = sizeof(WCHAR)*(1+lstrlenW(pFileName));
 
-		*ppszFileName = (LPOLESTR) CoTaskMemAlloc( n );
-		if (*ppszFileName!=NULL) {
-			CopyMemory(*ppszFileName, pFileName, n);
-		}
-		delete[] pFileName;
-	}
-	return NOERROR;
+    *ppszFileName = (LPOLESTR) CoTaskMemAlloc( n );
+    if (*ppszFileName!=NULL) {
+      CopyMemory(*ppszFileName, pFileName, n);
+    }
+    delete[] pFileName;
+  }
+  return NOERROR;
 }
 
 STDMETHODIMP YuvSourceFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
 {
-	if(riid == (IID_ISettingsInterface))
-	{
-		return GetInterface((ISettingsInterface*) this, ppv);
-	}
-	else if (riid == IID_IStatusInterface)
-	{
-		return GetInterface((IStatusInterface*) this, ppv);
-	}
-	else if (riid == IID_IFileSourceFilter)
-	{
-		return GetInterface((IFileSourceFilter*) this, ppv);
-	}
-	else if (riid == IID_ISpecifyPropertyPages)
-	{
-		return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
-	}
-	else
-	{
-		return CSource::NonDelegatingQueryInterface(riid, ppv);
-	}
+  if(riid == (IID_ISettingsInterface))
+  {
+    return GetInterface((ISettingsInterface*) this, ppv);
+  }
+  else if (riid == IID_IStatusInterface)
+  {
+    return GetInterface((IStatusInterface*) this, ppv);
+  }
+  else if (riid == IID_IFileSourceFilter)
+  {
+    return GetInterface((IFileSourceFilter*) this, ppv);
+  }
+  else if (riid == IID_ISpecifyPropertyPages)
+  {
+    return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+  }
+  else
+  {
+    return CSource::NonDelegatingQueryInterface(riid, ppv);
+  }
 }
 
 STDMETHODIMP YuvSourceFilter::Stop()
 {
-	m_pPin->m_iCurrentFrame = 0;
-	m_in1.seekg( 0 , std::ios::beg );
-	return CSource::Stop();
+  m_pPin->m_iCurrentFrame = 0;
+  m_in1.seekg( 0 , std::ios::beg );
+  return CSource::Stop();
 }
 
 STDMETHODIMP YuvSourceFilter::SetParameter( const char* type, const char* value )
 {
-	if (strcmp(type, SOURCE_DIMENSIONS) == 0)
-	{
-		if ( setDimensions(value) )
-			return CSettingsInterface::SetParameter(type, value);
-		else
-			return E_FAIL;
-	}
-	else
-	{
-		HRESULT hr = CSettingsInterface::SetParameter(type, value);
-		if (SUCCEEDED(hr)) recalculate();
-		return hr;
-	}
+  if (strcmp(type, SOURCE_DIMENSIONS) == 0)
+  {
+    if ( setDimensions(value) )
+      return CSettingsInterface::SetParameter(type, value);
+    else
+      return E_FAIL;
+  }
+  else
+  {
+    HRESULT hr = CSettingsInterface::SetParameter(type, value);
+    if (SUCCEEDED(hr)) recalculate();
+    return hr;
+  }
 }
 
 void YuvSourceFilter::recalculate()
 {
-	m_iFrameSize = m_iWidth*m_iHeight*m_dBitsPerPixel;
-	m_iNoFrames = m_iFileSize/m_iFrameSize;
-	m_pPin->m_rtFrameLength = UNITS/m_iFramesPerSecond;
+  m_iFrameSize = m_iWidth*m_iHeight*m_dBitsPerPixel;
+  m_iNoFrames = m_iFileSize/m_iFrameSize;
+  m_pPin->m_rtFrameLength = UNITS/m_iFramesPerSecond;
 }
 
 bool YuvSourceFilter::readFrame()
 {
-	if (m_in1.is_open())
-	{
-		m_in1.read( (char*)m_pYuvBuffer, m_iFrameSize );
-		return true;
-	}
-	return false;
+  if (m_in1.is_open())
+  {
+    m_in1.read( (char*)m_pYuvBuffer, m_iFrameSize );
+    return true;
+  }
+  return false;
 }
 
 bool YuvSourceFilter::setDimensions( const std::string& sDimensions )
 {
-	size_t pos = sDimensions.find( "x" );
-	if (pos != std::string::npos ) 
-	{
-		int iWidth = 0, iHeight = 0;
-		std::istringstream istr( sDimensions.substr( 0, pos ) );
-		istr >> iWidth;
-		std::istringstream istr2( sDimensions.substr( pos + 1) );
-		istr2 >> iHeight;
-		return setDimensions(iWidth, iHeight);
-	}
-	return false;
+  size_t pos = sDimensions.find( "x" );
+  if (pos != std::string::npos ) 
+  {
+    int iWidth = 0, iHeight = 0;
+    std::istringstream istr( sDimensions.substr( 0, pos ) );
+    istr >> iWidth;
+    std::istringstream istr2( sDimensions.substr( pos + 1) );
+    istr2 >> iHeight;
+    return setDimensions(iWidth, iHeight);
+  }
+  return false;
 }
 
 bool YuvSourceFilter::setDimensions(int iWidth, int iHeight)
