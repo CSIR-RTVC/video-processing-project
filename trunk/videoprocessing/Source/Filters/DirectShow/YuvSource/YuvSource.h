@@ -65,7 +65,7 @@ DEFINE_GUID(CLSID_YUVProperties,
 #define g_wszYuvSource     L"CSIR RTVC YUV Source"
 
 #define SOURCE_DIMENSIONS	"sourcedimensions"
-#define SOURCE_FPS			"fps"
+#define SOURCE_FPS			  "fps"
 
 /**********************************************
  *
@@ -156,10 +156,13 @@ private:
     ~YuvSourceFilter();
 
 	bool setDimensions(const std::string& sDimensions);
+  bool setDimensions(int iWidth, int iHeight);
+
 	void recalculate();
 	bool readFrame();
+  void guessDimensions();
 
-    YuvOutputPin *m_pPin;
+  YuvOutputPin *m_pPin;
 
 	int m_iWidth;
 	int m_iHeight;
