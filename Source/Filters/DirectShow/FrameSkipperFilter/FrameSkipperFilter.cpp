@@ -96,14 +96,14 @@ HRESULT FrameSkipperFilter::Transform(IMediaSample *pSample)
       if(m_SkipFrameNumber != 0)
       {
 
-        if((in_framecount % (m_SkipFrameNumber+1))== 0) 
+        if((in_framecount % (m_SkipFrameNumber+1))!= 0) // if the in_framecount is not equal to the specified parameter, skip that frame
         {
-          return S_FALSE; // skip this frame if it is true
+          return S_FALSE; 
         }        
       }
       previousTimestamp = tStart;
     }
-	  return S_OK;
+	  return S_OK; // Let the frame through if it is indeed equal to that parameter
 }
 
 HRESULT FrameSkipperFilter::CheckInputType(const CMediaType* mtIn)
