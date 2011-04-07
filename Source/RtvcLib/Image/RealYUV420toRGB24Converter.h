@@ -5,8 +5,8 @@ MODULE				: RealYUV420toRGB24Converter
 FILE NAME			: RealYUV420toRGB24Converter.h
 
 DESCRIPTION			: Floating point implementation of YUV420 (8 bpp) to RGB 24 bit 
-					colour convertion derived from the YUV420toRGBConverter base 
-					class.
+colour convertion derived from the YUV420toRGBConverter base 
+class.
 					  
 					  
 LICENSE: Software License Agreement (BSD License)
@@ -40,29 +40,37 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "YUV420toRGBConverter.h"
 
 /**
- * \ingroup ImageLib
- * Floating point implementation of YUV420 (8 bpp) to RGB 24 bit 
- * colour convertion derived from the YUV420toRGBConverter base 
- * class.
- */
+* \ingroup ImageLib
+* Floating point implementation of YUV420 (8 bpp) to RGB 24 bit 
+* colour convertion derived from the YUV420toRGBConverter base 
+* class.
+*/
+
 class RealYUV420toRGB24Converter: public YUV420toRGBConverter
 {
-	public:
-		// Construction and destruction.
-		RealYUV420toRGB24Converter(void) { }
-		RealYUV420toRGB24Converter(int width, int height): YUV420toRGBConverter(width,height) { }
-		virtual ~RealYUV420toRGB24Converter(void) {}
+public:
+  // Construction and destruction.
+  RealYUV420toRGB24Converter(void) { }
+  RealYUV420toRGB24Converter(int width, int height): YUV420toRGBConverter(width,height) { }
+  virtual ~RealYUV420toRGB24Converter(void) {}
 
-		// Interface.
-		virtual void Convert(void* pY, void* pU, void* pV, void* pRgb) 
-		{
-			if(_rotate) RotateConvert(pY, pU, pV, pRgb);
-			else				NonRotateConvert(pY, pU, pV, pRgb);
-		};
+  // Interface.
+  virtual void Convert(void* pY, void* pU, void* pV, void* pRgb) 
+  {
+    // let invert take precedence, not catering for both
+    if(_invert) 
+      InvertConvert(pY, pU, pV, pRgb);
+    else				
+    {
+      if(_rotate) RotateConvert(pY, pU, pV, pRgb);
+      else				NonRotateConvert(pY, pU, pV, pRgb);
+    }
+  };
 
-	protected:
-		virtual void NonRotateConvert(void* pY, void* pU, void* pV, void* pRgb);
-		virtual void RotateConvert(void* pY, void* pU, void* pV, void* pRgb);
+protected:
+  void InvertConvert(void* pY, void* pU, void* pV, void* pRgb);
+  virtual void NonRotateConvert(void* pY, void* pU, void* pV, void* pRgb);
+  virtual void RotateConvert(void* pY, void* pU, void* pV, void* pRgb);
 
 };//end RealYUV420toRGB24Converter.
 
