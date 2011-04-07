@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const unsigned TIMEOUT_MILLISECONDS = 3000;
 
 RtspSourceFilter::RtspSourceFilter( IUnknown* pUnk, HRESULT* phr )
-	: CSource(NAME("RTVC Live Media RTSP Source Filter"), pUnk, CLSID_RTVC_RtspOsSourceFilter),
+	: CSource(NAME("RTVC VPP RTSP Source Filter"), pUnk, CLSID_RTVC_RtspOsSourceFilter),
 	m_bStreamUsingTCP(false),
   m_dInitialOffset(-1.0),
   m_dInitialStreamTimeOffset(0.0),

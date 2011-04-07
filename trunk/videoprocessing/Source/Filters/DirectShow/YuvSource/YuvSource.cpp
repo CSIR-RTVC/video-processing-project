@@ -58,7 +58,7 @@ DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
 **********************************************/
 
 YuvOutputPin::YuvOutputPin(HRESULT *phr, YuvSourceFilter* pFilter)
-  : CSourceStream(NAME("YUV Source"), phr, pFilter, L"Out"),
+  : CSourceStream(NAME("CSIR VPP YUV Source"), phr, pFilter, L"Out"),
   m_pYuvFilter(pFilter),
   m_iCurrentFrame(0),
   m_rtFrameLength(FPS_30) // Display 5 bitmap frames per second: TODO_ move to property page

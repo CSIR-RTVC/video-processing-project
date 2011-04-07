@@ -47,7 +47,7 @@ class RtspSession;
 class MediaSubsession;
 
 // Filter name strings
-#define g_wszFilterName    L"CSIR OS RTVC RTSP Source Filter"
+#define g_wszFilterName    L"CSIR VPP RTSP Source Filter"
 
 #define STREAM_USING_TCP	"streamusingtcp"
 

@@ -68,7 +68,7 @@ const unsigned MAX_FRAMERATE_INTERVAL_SIZE = 50;
 using namespace Gdiplus;
 
 FramerateDisplayFilter::FramerateDisplayFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-  : CTransInPlaceFilter(NAME("CSIR RTVC Framerate Display Filter"), pUnk, CLSID_RTVCFramerateDisplayFilter, pHr, false),
+  : CTransInPlaceFilter(NAME("CSIR VPP Framerate Display Filter"), pUnk, CLSID_RTVCFramerateDisplayFilter, pHr, false),
   m_bSeenFirstFrame(false),
   m_previousTimestamp(0)
 {
