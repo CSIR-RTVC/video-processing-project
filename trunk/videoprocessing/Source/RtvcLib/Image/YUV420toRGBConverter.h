@@ -5,11 +5,11 @@ MODULE				: YUV420toRGBConverter
 FILE NAME			: YUV420toRGBConverter.h
 
 DESCRIPTION			: Colour convertions are required on the output of
-					all video codecs. For embedded applications only some
-					combinations of colour depths and inversions are required.
-					This class is the base class defining the minimum interface
-					and properties for all derived classes. 
-					  
+all video codecs. For embedded applications only some
+combinations of colour depths and inversions are required.
+This class is the base class defining the minimum interface
+and properties for all derived classes. 
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2008, CSIR
@@ -47,37 +47,49 @@ typedef signed char yuvType ;
 #endif
 
 /**
- * \ingroup ImageLib
- * Colour convertions are required on the output of
- * all video codecs. For embedded applications only some
- * combinations of colour depths and inversions are required.
- * This class is the base class defining the minimum interface
- * and properties for all derived classes. 
- */
+* \ingroup ImageLib
+* Colour convertions are required on the output of
+* all video codecs. For embedded applications only some
+* combinations of colour depths and inversions are required.
+* This class is the base class defining the minimum interface
+* and properties for all derived classes. 
+*/
 class YUV420toRGBConverter
 {
-	public:
-		// Construction and destruction.
-		YUV420toRGBConverter(void) {_width = 0; _height = 0; _rotate = 0;}
-		YUV420toRGBConverter(int width, int height) {_width = width; _height = height; _rotate = 0;}
-		virtual ~YUV420toRGBConverter(void) {}
+public:
+  // Construction and destruction.
+  YUV420toRGBConverter(void) {_width = 0; _height = 0; _chrOff = 0; _rotate = 0;}
+  YUV420toRGBConverter(int width, int height) {_width = width; _height = height; _chrOff = 0; _rotate = 0;}
+  YUV420toRGBConverter(int width, int height, int chrOff){_width = width; _height = height; _chrOff = 0; _chrOff = chrOff; _invert = false;}
 
-		// Interface.
-		virtual void Convert(void* pY, void* pU, void* pV, void* pRgb) = 0;
+  virtual ~YUV420toRGBConverter(void) {}
 
-		// Member interface.
-		int	GetWidth(void)		{ return(_width); }
-		int	GetHeight(void)		{ return(_height); }
-		int	GetRotate(void)		{ return(_rotate); }
+  // Interface.
+  virtual void Convert(void* pY, void* pU, void* pV, void* pRgb) = 0;
 
-		void	SetDimensions(int width, int height)	{_width = width; _height = height;}
-		void	SetRotate(int rotate)									{ _rotate = rotate;}
+  // Member interface.
+  int	GetWidth(void)		{ return(_width); }
+  int	GetHeight(void)		{ return(_height); }
+  int	GetRotate(void)		{ return(_rotate); }
+  // YUV 420 is stored top-down. Bitmaps are bottom up on windows
+  // In order for everything conform to the OS, we provide this flag to invert the image
+  bool GetInvert() { return _invert; }
+  int GetChrominanceOffset() const { return _chrOff; }  
 
-	protected:
-		// Members.
-		int	_width;
-		int	_height;
-		int	_rotate;
+  void SetDimensions(int width, int height)	{_width = width; _height = height;}
+  void SetRotate(int rotate) { _rotate = rotate;}
+  void SetInvert(bool bInvert) { _invert = bInvert;}
+  void SetChrominanceOffset(int val) { _chrOff = val; }
+
+protected:
+  // Members.
+  int	_width;
+  int	_height;
+  int	_rotate;
+  // invert
+  bool _invert;
+  /// Offset added to the chr values. Typically = 128 to shift all values to positive.
+  int _chrOff;
 
 };//end YUV420toRGBConverter.
 
