@@ -8,7 +8,7 @@ DESCRIPTION			:
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -65,11 +65,9 @@ YuvOutputPin::YuvOutputPin(HRESULT *phr, YuvSourceFilter* pFilter)
 {
 }
 
-
 YuvOutputPin::~YuvOutputPin()
 {   
 }
-
 
 // GetMediaType: This method tells the downstream pin what types we support.
 HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
@@ -88,18 +86,20 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
   pvi->dwBitRate = ((int)(m_pYuvFilter->m_iFramesPerSecond * m_pYuvFilter->m_iFrameSize * m_pYuvFilter->m_dBitsPerPixel)) << 3;
 
   pvi->bmiHeader.biBitCount = 12;
-  pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
 
+  // For some reason IYUV requires a color converter before the renderer and I420 does not even though 
+  // these media types are the same
+  pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
+  // Works too but DS inserts color space converter before renderer
+  //pvi->bmiHeader.biCompression = MAKEFOURCC('I', 'Y', 'U', 'V');
+  
   pvi->bmiHeader.biClrImportant = 0;
   pvi->bmiHeader.biClrUsed = 0;
   pvi->bmiHeader.biPlanes = 1;
   pvi->bmiHeader.biXPelsPerMeter = 0;
   pvi->bmiHeader.biYPelsPerMeter = 0;
   pvi->bmiHeader.biWidth = m_pYuvFilter->m_iWidth;
-  pvi->bmiHeader.biHeight = m_pYuvFilter->m_iHeight;
-
-  //int iSize = m_pYuvFilter->m_iWidth * m_pYuvFilter->m_iHeight * m_pYuvFilter->m_dBitsPerPixel;
-
+  pvi->bmiHeader.biHeight = -1 * m_pYuvFilter->m_iHeight;
   pvi->bmiHeader.biSizeImage = m_pYuvFilter->m_iFrameSize;
   pvi->bmiHeader.biSize = 40;
 
@@ -111,7 +111,14 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
   pMediaType->SetFormatType(&FORMAT_VideoInfo);
   pMediaType->SetTemporalCompression(FALSE);
 
+  // Both of these work
   pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
+  //pMediaType->SetSubtype(&MEDIASUBTYPE_IYUV);
+
+  // Tried other media types MEDIASUBTYPE_IMC3, MEDIASUBTYPE_IMC2, MEDIASUBTYPE_IMC4, etc
+  // These have no effect on the connection
+  // The most important thing seems to be the bmiHeader.biCompression being set correctly
+  // pMediaType->SetSubtype(&MEDIASUBTYPE_IMC3);
 
   pMediaType->SetSampleSize( m_pYuvFilter->m_iFrameSize );
   return S_OK;
@@ -178,6 +185,57 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
     VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)m_mt.pbFormat;
 
     memcpy( pData, m_pYuvFilter->m_pYuvBuffer, m_pYuvFilter->m_iFrameSize );
+    
+#if 0
+    // debug top-bottom
+    // set luminance for 1st row to zero
+    int iW = m_pYuvFilter->m_iWidth;
+    int iWUV = m_pYuvFilter->m_iWidth >> 1;
+    int iH = m_pYuvFilter->m_iHeight;
+    int iHUV = m_pYuvFilter->m_iHeight >> 1;
+    int iSY = m_pYuvFilter->m_iWidth * m_pYuvFilter->m_iHeight;
+    int iSUV = iSY >> 2;
+    
+    // YUV is stored top down
+    //Luminance
+    // 10 white lines
+    //memset( pData, 255, iW * 10);
+    //memset( pData + ((iH/2 - 10) * iW), 255, iW * 10);
+    //memset( pData + ((iH - 10) * iW), 255, iW * 10);
+    // Single white lines
+    //memset( pData, 255, iW);
+    //memset( pData + ((iH/2) * iW), 255, iW);
+    //memset( pData + ((iH - 1) * iW), 255, iW);
+    
+    // Chrominance
+    // change to grey scale
+    memset( pData + iSY, 128, iSUV*2 );
+    //blue
+    memset( pData + iSY,            255, iWUV);
+    memset( pData + iSY + iWUV,     255, iWUV);
+    memset( pData + iSY + 2 * iWUV, 255, iWUV);
+    memset( pData + iSY + 3 * iWUV, 255, iWUV);
+    memset( pData + iSY + 4 * iWUV, 255, iWUV);
+
+    //memset( pData + iSY,            0, iWUV);
+    //memset( pData + iSY + iWUV,     0, iWUV);
+    //memset( pData + iSY + 2 * iWUV, 0, iWUV);
+    //memset( pData + iSY + 3 * iWUV, 0, iWUV);
+    //memset( pData + iSY + 4 * iWUV, 0, iWUV);
+    
+    // red
+    //memset( pData + iSY + iSUV,            255, iWUV);
+    //memset( pData + iSY + iSUV + iWUV,     255, iWUV);
+    //memset( pData + iSY + iSUV + 2 * iWUV, 255, iWUV);
+    //memset( pData + iSY + iSUV + 3 * iWUV, 255, iWUV);
+    //memset( pData + iSY + iSUV + 4 * iWUV, 255, iWUV);
+
+    //memset( pData + iSY + iSUV,            0, iWUV);
+    //memset( pData + iSY + iSUV + iWUV,     0, iWUV);
+    //memset( pData + iSY + iSUV + 2 * iWUV, 0, iWUV);
+    //memset( pData + iSY + iSUV + 3 * iWUV, 0, iWUV);
+    //memset( pData + iSY + iSUV + 4 * iWUV, 0, iWUV);
+#endif
 
     // Set the timestamps that will govern playback frame rate.
     // If this file is getting written out as an AVI,
@@ -228,7 +286,7 @@ YuvSourceFilter::YuvSourceFilter(IUnknown *pUnk, HRESULT *phr)
   m_iHeight(288),
   m_sDimensions("352x288"),
   m_iFramesPerSecond(30),
-  m_iNoFrames(150),		//TODO: move to property page
+  m_iNoFrames(150),		  //TODO: move to property page
   m_dBitsPerPixel(1.5),	//TODO: move to property page
   m_pYuvBuffer(NULL),
   m_iFileSize(0),
@@ -305,7 +363,6 @@ void YuvSourceFilter::guessDimensions()
     setDimensions("352x288");
     return;
   }
-
 
   // try searching for x's
   pos = sFile.find("x");
