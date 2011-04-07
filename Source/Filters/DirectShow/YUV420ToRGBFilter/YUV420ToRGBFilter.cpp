@@ -43,7 +43,7 @@ DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
   0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
 
 YUV420toRGBFilter::YUV420toRGBFilter()
-  : CCustomBaseFilter(NAME("CSIR RTVC YUV420P 2 RGB Converter"), 0, CLSID_YUV420toRGBColorConverter),
+  : CCustomBaseFilter(NAME("CSIR VPP YUV420P 2 RGB Converter"), 0, CLSID_YUV420toRGBColorConverter),
   m_pConverter(NULL),
   m_nSizeUV(0),
   m_bInvert(false)

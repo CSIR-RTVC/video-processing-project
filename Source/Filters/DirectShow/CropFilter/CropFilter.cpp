@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicCropperRGB32Impl.h>
 
 CCropFilter::CCropFilter()
-: CCustomBaseFilter(NAME("CSIR RTVC Crop Filter"), 0, CLSID_CropFilter),
+: CCustomBaseFilter(NAME("CSIR VPP Crop Filter"), 0, CLSID_CropFilter),
 	m_pCropper(NULL),
 	m_nBytesPerPixel(BYTES_PER_PIXEL_RGB24),
 	m_nStride(0),

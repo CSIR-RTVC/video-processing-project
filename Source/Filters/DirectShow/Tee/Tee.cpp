@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Tee.h"
 
 RtvcTee::RtvcTee() 
-	:CMultiIOBaseFilter(NAME("CSIR RTVC Tee Filter"), 0, CLSID_RtvcTee)
+	:CMultiIOBaseFilter(NAME("CSIR VPP Tee Filter"), 0, CLSID_RtvcTee)
 {
 	//Hack virtual method of subclass can't be called from base class contructor, hence must be called in child contructor
 	Initialise();

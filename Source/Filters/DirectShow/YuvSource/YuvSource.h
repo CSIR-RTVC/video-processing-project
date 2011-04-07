@@ -62,7 +62,7 @@ DEFINE_GUID(CLSID_YUVProperties,
 
 
 // Filter name strings
-#define g_wszYuvSource     L"CSIR RTVC YUV Source"
+#define g_wszYuvSource     L"CSIR VPP YUV Source"
 
 #define SOURCE_DIMENSIONS	"sourcedimensions"
 #define SOURCE_FPS			  "fps"

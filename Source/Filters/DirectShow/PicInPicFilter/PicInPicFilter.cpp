@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicScalerRGB24Impl.h>
 
 PicInPicFilter::PicInPicFilter()
-	:VideoMixingBase(NAME("CSIR RTVC PicInPic Video Mixing Multiplexer"), 0, CLSID_PicInPicFilter),
+	:VideoMixingBase(NAME("CSIR VPP Picture in Picture Filter"), 0, CLSID_PicInPicFilter),
 	m_pPicInPic(NULL),
 	m_pTargetPicScaler(NULL),
 	m_pSubPicScaler(NULL)

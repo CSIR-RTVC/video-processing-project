@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CommonDefs.h>
 
 AudioMixingFilter::AudioMixingFilter()
-  :CMultiIOBaseFilter("CSIR RTVC Audio Mixing Multiplexer", 0, CLSID_AudioMixingFilter),
+  :CMultiIOBaseFilter("CSIR VPP Audio Mixer", 0, CLSID_AudioMixingFilter),
   //m_pSample1(NULL),
   //m_pSample2(NULL),
   m_uiBitsPerSample(0),

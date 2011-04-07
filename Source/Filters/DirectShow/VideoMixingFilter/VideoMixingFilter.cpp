@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 VideoMixingFilter::VideoMixingFilter()
-	:VideoMixingBase(NAME("CSIR RTVC Video Mixing Multiplexer"), 0, CLSID_VideoMixingFilter),
+	:VideoMixingBase(NAME("CSIR VPP Video Mixer"), 0, CLSID_VideoMixingFilter),
 	m_pPicConcat(NULL)
 {
 	m_pSampleBuffers[0] = NULL;
