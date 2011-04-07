@@ -7,12 +7,7 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "Windows.h"
-
-#ifdef IDC_STATIC
-#undef IDC_STATIC
-#endif
-#define IDC_STATIC              (-1)     // all static controls
+#include "afxres.h"
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -21,10 +16,8 @@
 // English (South Africa) resources
 
 #if !defined(AFX_RESOURCE_DLL) || defined(AFX_TARG_ENS)
-#ifdef _WIN32
 LANGUAGE LANG_ENGLISH, SUBLANG_ENGLISH_SOUTH_AFRICA
 #pragma code_page(1252)
-#endif //_WIN32
 
 #ifdef APSTUDIO_INVOKED
 /////////////////////////////////////////////////////////////////////////////
@@ -64,6 +57,7 @@ BEGIN
     LTEXT           "Chrominance offset:",IDC_STATIC,17,19,66,8
     EDITTEXT        IDC_EDIT_CHR_OFFSET,85,16,35,14,ES_AUTOHSCROLL | ES_NUMBER,WS_EX_RIGHT
     CONTROL         "",IDC_SPIN1,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,114,16,11,14
+    CONTROL         "Invert image",IDC_CHECK_INVERT,"Button",BS_AUTOCHECKBOX | WS_TABSTOP,19,34,57,10
 END
 
 
@@ -73,7 +67,7 @@ END
 //
 
 #ifdef APSTUDIO_INVOKED
-GUIDELINES DESIGNINFO 
+GUIDELINES DESIGNINFO
 BEGIN
     IDD_YUV2RGB_DIALOG, DIALOG
     BEGIN
@@ -91,7 +85,7 @@ END
 // String Table
 //
 
-STRINGTABLE 
+STRINGTABLE
 BEGIN
     IDS_YUV2RGB_CAPTION     "CSIR Yuv 2 RGB Filter Properties"
 END
