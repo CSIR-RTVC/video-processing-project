@@ -8,7 +8,7 @@ DESCRIPTION			:
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -105,9 +105,9 @@ protected:
 };
 
 class YuvSourceFilter : public CSource,
-  public CSettingsInterface,	/* Rtvc Settings Interface */
-  public CStatusInterface,	/* Rtvc Status Interface */
-  public IFileSourceFilter,	/* To facilitate loading of URL */
+  public CSettingsInterface,  /* Rtvc Settings Interface */
+  public CStatusInterface,    /* Rtvc Status Interface */
+  public IFileSourceFilter,   /* To facilitate loading of URL */
   public ISpecifyPropertyPages
 {
   friend class YuvOutputPin;
