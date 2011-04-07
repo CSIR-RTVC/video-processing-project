@@ -73,25 +73,21 @@ public:
   // Member interface.
   int	GetWidth(void)		{ return(_width); }
   int	GetHeight(void)		{ return(_height); }
-
   // YUV 420 is stored top-down. Bitmaps are bottom up on windows
   // In order for everything conform to the OS, we provide this flag to invert the image
   bool GetInvert() { return _invert; }
+  int GetChrominanceOffset() const { return _chrOff; }
+
+  void SetDimensions(int width, int height)	{_width = width; _height = height;}
   void SetInvert(bool bInvert) { _invert = bInvert;}
-
-  void	SetDimensions(int width, int height)	{_width = width; _height = height;}
-
-  int getChrominanceOffset() const { return _chrOff; }
-  void setChrominanceOffset(int val) { _chrOff = val; }
+  void SetChrominanceOffset(int val) { _chrOff = val; }
 
 protected:
   // Members.
   int	_width;
   int	_height;
-
   // invert
   bool _invert;
-
   /// Offset added to the chr values. Typically = 128 to shift all values to positive.
   int _chrOff;
 };//end RGBtoYUV420Converter.
