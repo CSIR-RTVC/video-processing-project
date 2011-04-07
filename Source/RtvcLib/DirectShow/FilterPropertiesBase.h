@@ -129,8 +129,79 @@ protected:
 		}
 	}
 
+  void setSpinBoxRange(int iSpinBoxId, short lower, short upper)
+  {
+    long lResult = SendMessage(			    // returns LRESULT in lResult
+			GetDlgItem(m_Dlg, iSpinBoxId),	    // handle to destination control
+			(UINT) UDM_SETRANGE,			        // message ID
+			(WPARAM) 0,						            // = 0; not used, must be zero
+			(LPARAM) MAKELONG ( upper, lower) // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+			);
+  }
+
+  HRESULT setEditTextFromIntFilterParameter(const char* szParam, int iEditId)
+  {
+    int nLength = 0;
+		char szBuffer[BUFFER_SIZE];
+		HRESULT hr = m_pSettingsInterface->GetParameter(szParam, sizeof(szBuffer), szBuffer, &nLength);
+		if (SUCCEEDED(hr))
+		{
+			SetDlgItemText(m_Dlg, iEditId, szBuffer);
+      return S_OK;
+		}
+		else
+		{
+			return E_FAIL;
+		}
+  }
+
+  HRESULT setIntFilterParameterFromEditText(const char* szParam, int iEditId)
+  {
+    int nLength = 0;
+		char szBuffer[BUFFER_SIZE];
+		nLength = GetDlgItemText(m_Dlg, iEditId, szBuffer, BUFFER_SIZE);
+		return m_pSettingsInterface->SetParameter(szParam, szBuffer);
+  }
+
+  HRESULT setCheckBoxFromBoolFilterParameter(const char* szParam, int iCheckBoxId)
+  {
+    int nLength = 0;
+    char szBuffer[BUFFER_SIZE];
+    HRESULT hr = m_pSettingsInterface->GetParameter(szParam, sizeof(szBuffer), szBuffer, &nLength);
+		if (SUCCEEDED(hr))
+		{
+			WPARAM wParam = (szBuffer[0] == '0') ? 0 : 1;
+			long lResult = SendMessage(				      // returns LRESULT in lResult
+				GetDlgItem(m_Dlg, iCheckBoxId),	// handle to destination control
+				(UINT) BM_SETCHECK,					          // message ID
+				(WPARAM) wParam,							        // = 0; not used, must be zero
+				(LPARAM) 0							              // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+				);
+      return S_OK;
+		}
+		else
+		{
+			return E_FAIL;
+		}
+  }
+
+  HRESULT setBoolFilterParameterFromCheckBox(const char* szParam, int iCheckBoxId)
+  {
+    HRESULT hr(S_OK);
+    int iCheck = SendMessage( GetDlgItem(m_Dlg, iCheckBoxId),	(UINT) BM_GETCHECK,	0, 0);
+		if (iCheck == 0)
+		{
+      hr = m_pSettingsInterface->SetParameter(szParam, "false");
+		}
+		else
+		{
+			hr = m_pSettingsInterface->SetParameter(szParam, "true");
+		}
+    return hr;
+  }
+
 	/// Pointer to the filter's custom interface.
 	/// This pointer allows subclasses access to the filter for setting configuration.
-	ISettingsInterface* m_pSettingsInterface;    
+	ISettingsInterface* m_pSettingsInterface;
 };
 
