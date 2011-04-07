@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008, CSIR
+Copyright (c) 2008 - 2011, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -45,14 +45,15 @@ DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
 
 RGBtoYUV420Filter::RGBtoYUV420Filter()
-: CCustomBaseFilter(NAME("CSIR RTVC RGB 2 YUV420P Converter"), 0, CLSID_RGBtoYUV420ColorConverter),
-m_pConverter(NULL),
-m_nSizeYUV(0)
+  : CCustomBaseFilter(NAME("CSIR RTVC RGB 2 YUV420P Converter"), 0, CLSID_RGBtoYUV420ColorConverter),
+  m_pConverter(NULL),
+  m_nSizeYUV(0),
+  m_bInvert(false)
 {
-	//Call the initialise input method to load all acceptable input types for this filter
-	InitialiseInputTypes();
-    // Init parameters
-    initParameters();
+  //Call the initialise input method to load all acceptable input types for this filter
+  InitialiseInputTypes();
+  // Init parameters
+  initParameters();
 }
 
 RGBtoYUV420Filter::~RGBtoYUV420Filter()
@@ -100,10 +101,14 @@ HRESULT RGBtoYUV420Filter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
 			if (pmt->subtype == MEDIASUBTYPE_RGB24)
 			{
 				m_pConverter = new RealRGB24toYUV420Converter(m_nInWidth, m_nInHeight, m_nChrominanceOffset);
+        m_pConverter->SetInvert(m_bInvert);
+        m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 			}
 			else if (pmt->subtype == MEDIASUBTYPE_RGB32)
 			{
 				m_pConverter = new RealRGB32toYUV420Converter(m_nInWidth, m_nInHeight);
+        m_pConverter->SetInvert(m_bInvert);
+        m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 			}
 		}
 	}
@@ -134,7 +139,42 @@ HRESULT RGBtoYUV420Filter::GetMediaType( int iPosition, CMediaType *pMediaType )
 
 		VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->Format();
 		pvi->bmiHeader.biBitCount = 12;
-		pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');;
+		pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
+
+    // try setting to -1 to indicate that image is inverted?
+    // YUV420 is naturally top to bottom
+    
+    // TODO: Refactor below: inner ifs are the same, just leaving for now to make 4 scenarios explicit
+    // if input is already in YUV orientation: top to bottom
+    if (pvi->bmiHeader.biHeight < 0 )
+    {
+      // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
+      if (!m_bInvert)
+      {
+        // leave -1 so that the converter can change the orientation
+        pvi->bmiHeader.biHeight = pvi->bmiHeader.biHeight;
+      }
+      else
+      {
+        // get rid of -1
+        pvi->bmiHeader.biHeight =  -1 * pvi->bmiHeader.biHeight;
+      }
+    }
+    else
+    {
+      // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
+      if (!m_bInvert)
+      {
+        // leave it, the downstream filter can simply convert the image
+        pvi->bmiHeader.biHeight = pvi->bmiHeader.biHeight;
+      }
+      else
+      {
+        // add -1 since we're turning the image upside down
+        pvi->bmiHeader.biHeight =  -1 * pvi->bmiHeader.biHeight;
+      }
+    }
+
 
 		return S_OK;
 	}
@@ -245,10 +285,48 @@ HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaT
 				return VFW_E_TYPE_NOT_ACCEPTED;
 			}
 
-			if (pBi1->biHeight!= pBi2->biHeight )
-			{
-				return VFW_E_TYPE_NOT_ACCEPTED;
-			}
+      // TODO: refactor same as in GetMediaType
+      if (pVih1->bmiHeader.biHeight < 0 )
+      {
+        // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
+        if (!m_bInvert)
+        {
+          if (pVih1->bmiHeader.biHeight !=  pVih2->bmiHeader.biHeight)
+          {
+            return VFW_E_TYPE_NOT_ACCEPTED;
+          }
+        }
+        else
+        {
+          if (pVih1->bmiHeader.biHeight != (-1 * pVih2->bmiHeader.biHeight))
+          {
+            return VFW_E_TYPE_NOT_ACCEPTED;
+          }
+        }
+      }
+      else
+      {
+        // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
+        if (!m_bInvert)
+        {
+          if (pVih1->bmiHeader.biHeight !=  pVih2->bmiHeader.biHeight)
+          {
+            return VFW_E_TYPE_NOT_ACCEPTED;
+          }
+        }
+        else
+        {
+          if (pVih1->bmiHeader.biHeight != (-1 * pVih2->bmiHeader.biHeight))
+          {
+            return VFW_E_TYPE_NOT_ACCEPTED;
+          }
+        }
+      }
+      //int iDestHeight = !m_bInvert ? (-1 * pBi2->biHeight) : pBi2->biHeight;
+      //if (pBi1->biHeight !=  iDestHeight )
+      //{
+      //  return VFW_E_TYPE_NOT_ACCEPTED;
+      //}
 		}
 		////Now we need to calculate the size of the output image
 		//BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
@@ -277,14 +355,17 @@ HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaT
 
 STDMETHODIMP RGBtoYUV420Filter::SetParameter( const char* type, const char* value )
 {
-    if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
+  if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
+  {
+    if (m_pConverter)
     {
-        if (m_pConverter)
-            m_pConverter->setChrominanceOffset(m_nChrominanceOffset);
-        return S_OK;
+      m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
+      m_pConverter->SetInvert(m_bInvert);
     }
-    else
-    {
-        return E_FAIL;
-    }
+    return S_OK;
+  }
+  else
+  {
+    return E_FAIL;
+  }
 }
