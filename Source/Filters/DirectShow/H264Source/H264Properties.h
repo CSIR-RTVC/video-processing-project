@@ -61,41 +61,39 @@ public:
 
   HRESULT ReadSettings()
   {
-    //int nLength = 0;
-    //char szBuffer[BUFFER_SIZE];
-
-    //initialiseControls();
-
-    //HRESULT hr = m_pSettingsInterface->GetParameter(SOURCE_DIMENSIONS, sizeof(szBuffer), szBuffer, &nLength);
-    //if (SUCCEEDED(hr))
-    //  SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SELECTSTRING,  0, (LPARAM)szBuffer);
-    //else
-    //  return E_FAIL;
-
-    //hr = m_pSettingsInterface->GetParameter(SOURCE_FPS, sizeof(szBuffer), szBuffer, &nLength);
-    //if (SUCCEEDED(hr))
-    //  // Default value of 30 FPS
-    //  SetDlgItemText(m_Dlg, IDC_FPS, szBuffer);
-
-    //return hr;
-    return S_OK;
+    int nLength = 0;
+		char szBuffer[BUFFER_SIZE];
+		HRESULT hr = m_pSettingsInterface->GetParameter(USE_RTVC_H264, sizeof(szBuffer), szBuffer, &nLength);
+		if (SUCCEEDED(hr))
+		{
+			WPARAM wParam;
+			if (szBuffer[0] == '0')
+				wParam = 0;	
+			else
+				wParam = 1;
+			long lResult = SendMessage(				// returns LRESULT in lResult
+				GetDlgItem(m_Dlg, IDC_USE_RTVC_H264),	// handle to destination control
+				(UINT) BM_SETCHECK,					// message ID
+				(WPARAM) wParam,							// = 0; not used, must be zero
+				(LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+				);
+		}
+		return hr;
   }
 
   HRESULT OnApplyChanges(void)
   {
-    //int nLength = 0;
-    //char szBuffer[BUFFER_SIZE];
-
-    //nLength = GetDlgItemText(m_Dlg, IDC_CMB_DIMENSIONS, szBuffer, BUFFER_SIZE);
-    //HRESULT hr = m_pSettingsInterface->SetParameter(SOURCE_DIMENSIONS, szBuffer);
-
-    //if (FAILED(hr)) return E_FAIL;
-
-    //nLength = GetDlgItemText(m_Dlg, IDC_FPS, szBuffer, BUFFER_SIZE);
-    //int iFps = atoi(szBuffer);
-    //hr = m_pSettingsInterface->SetParameter(SOURCE_FPS, szBuffer);
-    //return hr;
-    return S_OK;
+    HRESULT hr;
+		int iCheck = SendMessage( GetDlgItem(m_Dlg, IDC_USE_RTVC_H264),	(UINT) BM_GETCHECK,	0, 0);
+		if (iCheck == 0)
+		{
+			hr = m_pSettingsInterface->SetParameter(USE_RTVC_H264, "false");
+		}
+		else
+		{
+			hr = m_pSettingsInterface->SetParameter(USE_RTVC_H264, "true");
+		}
+		return hr;
   } 
 
 private:
