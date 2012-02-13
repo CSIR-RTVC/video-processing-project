@@ -67,6 +67,7 @@ static const GUID CLSID_H264Properties =
 
 #define SOURCE_DIMENSIONS	"sourcedimensions"
 #define SOURCE_FPS			  "fps"
+#define USE_RTVC_H264     "usertvch264"
 
 // fwd
 class H264OutputPin;
@@ -95,6 +96,7 @@ public:
   virtual void initParameters()
   {
     addParameter( SOURCE_FPS, &m_iFramesPerSecond, 30);
+    addParameter( USE_RTVC_H264, &m_bUseRtvcH264, false);
   }
 
   STDMETHODIMP SetParameter( const char* type, const char* value );
@@ -127,6 +129,7 @@ private:
   int findIndexOfNextStartCode(unsigned uiStartingPos);
 
   H264OutputPin *m_pPin;
+  bool m_bUseRtvcH264;
 
   int m_iFramesPerSecond;
 

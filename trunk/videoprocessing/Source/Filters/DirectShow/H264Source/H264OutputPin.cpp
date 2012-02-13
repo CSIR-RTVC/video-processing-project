@@ -28,8 +28,80 @@ HRESULT H264OutputPin::GetMediaType(CMediaType *pMediaType)
   CAutoLock cAutoLock(m_pFilter->pStateLock());
 
   CheckPointer(pMediaType, E_POINTER);
+  if (!m_pFilter->m_bUseRtvcH264)
+  {
+    pMediaType->InitMediaType();    
+    pMediaType->SetType(&MEDIATYPE_Video);
+    pMediaType->SetSubtype(&MEDIASUBTYPE_H264);
+    pMediaType->SetFormatType(&FORMAT_VideoInfo2);
+    VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pMediaType->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2));
+    ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
+    pvi2->bmiHeader.biBitCount = 24;
+    pvi2->bmiHeader.biSize = 40;
+    pvi2->bmiHeader.biPlanes = 1;
+    pvi2->bmiHeader.biWidth = m_pFilter->m_iWidth;
+    pvi2->bmiHeader.biHeight = m_pFilter->m_iHeight;
+    pvi2->bmiHeader.biSize = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
+    pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
+    pvi2->bmiHeader.biCompression = DWORD('1cva');
+    //pvi2->AvgTimePerFrame = m_tFrame;
+    //pvi2->AvgTimePerFrame = 1000000;
+    const REFERENCE_TIME FPS_25 = UNITS / 25;
+    pvi2->AvgTimePerFrame = FPS_25;
+    //SetRect(&pvi2->rcSource, 0, 0, m_cx, m_cy);
+    SetRect(&pvi2->rcSource, 0, 0, m_pFilter->m_iWidth, m_pFilter->m_iHeight);
+    pvi2->rcTarget = pvi2->rcSource;
 
-#if 1
+    pvi2->dwPictAspectRatioX = m_pFilter->m_iWidth;
+    pvi2->dwPictAspectRatioY = m_pFilter->m_iHeight;
+  }
+  else
+  {
+    // Allocate enough room for the VIDEOINFOHEADER
+    VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->AllocFormatBuffer( sizeof(VIDEOINFOHEADER) );
+    if (pvi == 0) 
+      return(E_OUTOFMEMORY);
+
+    ZeroMemory(pvi, pMediaType->cbFormat);   
+    pvi->AvgTimePerFrame = m_rtFrameLength;
+    //pvi->dwBitRate = ((int)(m_pFilter->m_iFramesPerSecond * m_pFilter->m_iFrameSize * m_pFilter->m_dBitsPerPixel)) << 3;
+
+    pvi->bmiHeader.biBitCount = 12;
+    pvi->bmiHeader.biCompression = DWORD('1cva');
+
+    pvi->bmiHeader.biClrImportant = 0;
+    pvi->bmiHeader.biClrUsed = 0;
+    pvi->bmiHeader.biPlanes = 1;
+    pvi->bmiHeader.biXPelsPerMeter = 0;
+    pvi->bmiHeader.biYPelsPerMeter = 0;
+    pvi->bmiHeader.biWidth = m_pFilter->m_iWidth;
+    pvi->bmiHeader.biHeight = m_pFilter->m_iHeight;
+
+    unsigned uiFramesize = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
+    pvi->bmiHeader.biSizeImage = uiFramesize;
+    pvi->bmiHeader.biSize = 40;
+
+    // Clear source and target rectangles
+    SetRectEmpty(&(pvi->rcSource)); // we want the whole image area rendered
+    SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
+
+    pMediaType->SetType(&MEDIATYPE_Video);
+    pMediaType->SetFormatType(&FORMAT_VideoInfo);
+    pMediaType->SetTemporalCompression(FALSE);
+
+    static const GUID MEDIASUBTYPE_H264M = 
+    { 0xbdf25152, 0x46b, 0x4509, { 0x8e, 0x55, 0x6c, 0x73, 0x83, 0x1c, 0x8d, 0xc4 } };
+
+    pMediaType->SetSubtype(&MEDIASUBTYPE_H264M);
+
+    pMediaType->SetSampleSize( uiFramesize );
+  }
+  return S_OK;
+
+#if 0
+//#define TRY_USE_MS_H264_DECODER
+#ifdef TRY_USE_MS_H264_DECODER
+  
   pMediaType->InitMediaType();    
   pMediaType->SetType(&MEDIATYPE_Video);
   pMediaType->SetSubtype(&MEDIASUBTYPE_H264);
@@ -96,6 +168,7 @@ HRESULT H264OutputPin::GetMediaType(CMediaType *pMediaType)
 
   pMediaType->SetSampleSize( uiFramesize );
   return S_OK;
+#endif
 #endif
 }
 
