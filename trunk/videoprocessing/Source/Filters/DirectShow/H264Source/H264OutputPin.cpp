@@ -11,7 +11,7 @@ H264OutputPin::H264OutputPin(HRESULT *phr, H264SourceFilter* pFilter)
   //m_iWidth(DEFAULT_WIDTH),
   //m_iHeight(DEFAULT_HEIGHT),
   m_iCurrentFrame(0),
-  m_rtFrameLength(FPS_30) 
+  m_rtFrameLength(FPS_25) 
 {
 
 }
@@ -95,6 +95,36 @@ HRESULT H264OutputPin::GetMediaType(CMediaType *pMediaType)
     pMediaType->SetSubtype(&MEDIASUBTYPE_H264M);
 
     pMediaType->SetSampleSize( uiFramesize );
+
+    // Add SPS and PPS to the media type
+    // Store SPS and PPS in media format header
+    int nCurrentFormatBlockSize = pMediaType->cbFormat;
+
+      if (m_pFilter->m_uiSeqParamSetLen + m_pFilter->m_uiPicParamSetLen > 0)
+      {
+        // old size + one int to store size of SPS/PPS + SPS/PPS/prepended by start codes
+        int iAdditionalLength = sizeof(int) + m_pFilter->m_uiSeqParamSetLen + m_pFilter->m_uiPicParamSetLen;
+        int nNewSize = nCurrentFormatBlockSize + iAdditionalLength;
+        pMediaType->ReallocFormatBuffer(nNewSize);
+
+        BYTE* pFormat = pMediaType->Format();
+        BYTE* pStartPos = &(pFormat[nCurrentFormatBlockSize]);
+        // copy SPS
+        memcpy(pStartPos, m_pFilter->m_pSeqParamSet, m_pFilter->m_uiSeqParamSetLen);
+        pStartPos += m_pFilter->m_uiSeqParamSetLen;
+        // copy PPS
+        memcpy(pStartPos, m_pFilter->m_pPicParamSet, m_pFilter->m_uiPicParamSetLen);
+        pStartPos += m_pFilter->m_uiPicParamSetLen;
+        // Copy additional header size
+        memcpy(pStartPos, &iAdditionalLength, sizeof(int));
+      }
+      else
+      {
+        // not configured: just copy in size of 0
+        pMediaType->ReallocFormatBuffer(nCurrentFormatBlockSize + sizeof(int));
+        BYTE* pFormat = pMediaType->Format();
+        memset(pFormat + nCurrentFormatBlockSize, 0, sizeof(int));
+      }
   }
   return S_OK;
 
@@ -233,7 +263,36 @@ HRESULT H264OutputPin::FillBuffer(IMediaSample *pSample)
 
   ASSERT(m_pFilter->m_uiCurrentNalUnitSize > 0);
   memcpy( pData, m_pFilter->m_pBuffer, m_pFilter->m_uiCurrentNalUnitSize );
+#if 1
+#if 1
+  if (!m_pFilter->isParameterSet(m_pFilter->m_pBuffer[0]))
+  {
+    // TODO: non VLC NAL units should not increment the timestamp
+    REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
+    REFERENCE_TIME rtStop  = rtStart + m_rtFrameLength;
+    pSample->SetTime( &rtStart, &rtStop );
+    ++m_iCurrentFrame;
+  }
+  else
+  {
+    pSample->SetTime( NULL, NULL );
+  }
+#else
+  // setting timestamps to NULL until we can parse the NAL units to check the type
+  pSample->SetTime( NULL, NULL );
+#endif
 
+  if (m_pFilter->isIdrFrame(m_pFilter->m_pBuffer[0]))
+  {
+    pSample->SetSyncPoint(TRUE);
+  }
+  else
+  {
+    pSample->SetSyncPoint(false);
+  }
+
+  pSample->SetActualDataLength(m_pFilter->m_uiCurrentNalUnitSize);
+#else
 #if 0
   // TODO: non VLC NAL units should not increment the timestamp
   REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
@@ -250,5 +309,12 @@ HRESULT H264OutputPin::FillBuffer(IMediaSample *pSample)
   pSample->SetActualDataLength(m_pFilter->m_uiCurrentNalUnitSize);
 
   m_iCurrentFrame++;
+#endif
+
+  //Sleep(30);
+  //Sleep(30);
+  //Sleep(30);
+  //Sleep(30);
+  //Sleep(100);
   return S_OK;
 }

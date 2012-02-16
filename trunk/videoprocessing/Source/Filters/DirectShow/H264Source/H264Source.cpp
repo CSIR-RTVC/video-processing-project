@@ -49,22 +49,6 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 
 const unsigned char g_startCode[] = { 0, 0, 0, 1};
 
-bool isParameterSet(unsigned char nalUnitHeader)
-{
-  unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
-  unsigned uiNalRefIdc = nalUnitHeader & 0x60;
-  unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
-  switch (uiNalUnitType)
-  {
-    // IDR nal unit types
-  case 7:
-  case 8:
-    return true;
-  default:
-    return false;
-  }
-}
-
 CUnknown * WINAPI H264SourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
 {
   H264SourceFilter *pNewFilter = new H264SourceFilter(pUnk, phr );
@@ -88,6 +72,10 @@ H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
   m_pBuffer(NULL),
   m_uiBytesInBuffer(0),
   m_uiCurrentNalUnitSize(0),
+  m_pSeqParamSet(0),
+  m_uiSeqParamSetLen(0),
+  m_pPicParamSet(0),
+  m_uiPicParamSetLen(0),
   m_iFileSize(0),
   m_iRead(0)
 {
@@ -107,6 +95,9 @@ H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
 
 H264SourceFilter::~H264SourceFilter()
 {
+  if (m_pSeqParamSet) delete[] m_pSeqParamSet;
+  if (m_pPicParamSet) delete[] m_pPicParamSet;
+
   if ( m_in1.is_open() )
   {
     m_in1.close();
@@ -115,6 +106,15 @@ H264SourceFilter::~H264SourceFilter()
     delete[] m_pBuffer;
 
   delete m_pPin;
+}
+
+void H264SourceFilter::reset()
+{
+  m_pPin->m_iCurrentFrame = 0;
+  m_uiBytesInBuffer = 0;
+  m_uiCurrentNalUnitSize = 0;
+  m_in1.clear(); // clear for next play
+  m_in1.seekg( 0 , std::ios::beg );
 }
 
 STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE *pmt )
@@ -131,6 +131,42 @@ STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
 
     recalculate();
     m_pBuffer = new unsigned char[m_uiCurrentBufferSize];
+
+    bool bSps = false, bPps = false;
+    // now try to search for SPS and PPS
+    while (true)
+    {
+      if (!readNalUnit())
+      {
+        // failed to find SPS and PPS
+        return E_FAIL;
+      }
+
+      // check for SPS and PPS
+      if (isSps(m_pBuffer[4]))
+      {
+        bSps = true;
+        if (m_pSeqParamSet) delete[] m_pSeqParamSet;
+        m_pSeqParamSet = new unsigned char[m_uiCurrentNalUnitSize];
+        memcpy(m_pSeqParamSet, m_pBuffer, m_uiCurrentNalUnitSize);
+        m_uiSeqParamSetLen = m_uiCurrentNalUnitSize;
+      }
+
+      if (isPps(m_pBuffer[4]))
+      {
+        bPps = true;
+        if (m_pPicParamSet) delete[] m_pPicParamSet;
+        m_pPicParamSet = new unsigned char[m_uiCurrentNalUnitSize];
+        memcpy(m_pPicParamSet, m_pBuffer, m_uiCurrentNalUnitSize);
+        m_uiPicParamSetLen = m_uiCurrentNalUnitSize;
+      }
+
+      if (bSps && bPps) break;
+    }
+
+    // reset file pointer
+    reset();
+
     return S_OK;
   }
   else
@@ -185,11 +221,7 @@ STDMETHODIMP H264SourceFilter::NonDelegatingQueryInterface( REFIID riid, void **
 
 STDMETHODIMP H264SourceFilter::Stop()
 {
-  m_pPin->m_iCurrentFrame = 0;
-  m_uiBytesInBuffer = 0;
-  m_uiCurrentNalUnitSize = 0;
-  m_in1.clear(); // clear for next play
-  m_in1.seekg( 0 , std::ios::beg );
+  reset();
   return CSource::Stop();
 }
 

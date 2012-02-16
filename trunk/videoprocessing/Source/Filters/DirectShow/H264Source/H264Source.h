@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // UNITS / 30 = 30 fps;
 // UNITS / 20 = 20 fps, etc
 const REFERENCE_TIME FPS_30 = UNITS / 30;
+const REFERENCE_TIME FPS_25 = UNITS / 25;
 const REFERENCE_TIME FPS_20 = UNITS / 20;
 const REFERENCE_TIME FPS_10 = UNITS / 10;
 const REFERENCE_TIME FPS_5  = UNITS / 5;
@@ -124,7 +125,59 @@ private:
   H264SourceFilter(IUnknown *pUnk, HRESULT *phr);
   ~H264SourceFilter();
 
+  bool isIdrFrame(unsigned char nalUnitHeader)
+  {
+    unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+    //assert(uiForbiddenZeroBit == 0);
+    unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+    unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+    switch (uiNalUnitType)
+    {
+      // IDR nal unit types
+    case 5:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  bool isSps(unsigned char nalUnitHeader)
+  {
+    unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+    unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+    unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+    switch (uiNalUnitType)
+    {
+      // IDR nal unit types
+    case 7:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  bool isPps(unsigned char nalUnitHeader)
+  {
+    unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+    unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+    unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+    switch (uiNalUnitType)
+    {
+      // IDR nal unit types
+    case 8:
+      return true;
+    default:
+      return false;
+    }
+  }
+
+  bool isParameterSet(unsigned char nalUnitHeader)
+  {
+    return isSps(nalUnitHeader) || isPps(nalUnitHeader);
+  }
+
   void recalculate();
+  void reset();
   bool readNalUnit();
   int findIndexOfNextStartCode(unsigned uiStartingPos);
 
@@ -136,6 +189,11 @@ private:
   int m_iWidth;
   int m_iHeight;
   std::string m_sFile;
+
+  unsigned char* m_pSeqParamSet;
+  unsigned m_uiSeqParamSetLen;
+  unsigned char* m_pPicParamSet;
+  unsigned m_uiPicParamSetLen;
 
   unsigned m_uiCurrentBufferSize;
   unsigned char* m_pBuffer;
