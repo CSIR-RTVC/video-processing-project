@@ -155,6 +155,18 @@ protected:
 		}
   }
 
+  HRESULT setComboTextFromFilterParameter(const char* szParam, int iCmbId)
+  {
+    int nLength = 0;
+    char szBuffer[BUFFER_SIZE];
+    HRESULT hr = m_pSettingsInterface->GetParameter(szParam, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+    {
+      SendMessage(GetDlgItem(m_Dlg, iCmbId), CB_SELECTSTRING,  0, (LPARAM)szBuffer);
+    }
+    return hr;
+  }
+
   HRESULT setIntFilterParameterFromEditText(const char* szParam, int iEditId)
   {
     int nLength = 0;

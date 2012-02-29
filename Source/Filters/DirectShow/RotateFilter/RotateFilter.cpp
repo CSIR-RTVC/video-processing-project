@@ -302,7 +302,7 @@ STDMETHODIMP RotateFilter::SetParameter( const char* type, const char* value )
 	}
 }
 
-DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
+void RotateFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialise our converter
@@ -353,7 +353,7 @@ DWORD RotateFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 	{
 		DbgLog((LOG_TRACE, 0, TEXT("Rotator is not initialised - unable to rotate")));
 	}
-	return nTotalSize;
+	lOutActualDataLength = nTotalSize;
 }
 
 void RotateFilter::RecalculateFilterParameters()

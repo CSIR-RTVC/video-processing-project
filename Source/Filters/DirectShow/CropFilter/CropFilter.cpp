@@ -246,7 +246,7 @@ STDMETHODIMP CCropFilter::SetParameter( const char* type, const char* value )
 	}
 }
 
-DWORD CCropFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
+void CCropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialise our converter
@@ -285,7 +285,7 @@ DWORD CCropFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
 	{
 		DbgLog((LOG_TRACE, 0, TEXT("TestCropper: Cropper is not initialised - unable to transform")));
 	}
-	return nTotalSize;
+	lOutActualDataLength = nTotalSize;
 }
 
 void CCropFilter::RecalculateFilterParameters()

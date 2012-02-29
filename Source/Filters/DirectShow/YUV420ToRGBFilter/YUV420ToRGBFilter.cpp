@@ -198,7 +198,7 @@ HRESULT YUV420toRGBFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
   return S_OK;
 }
 
-DWORD YUV420toRGBFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
+void YUV420toRGBFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
   int nRet = 0;
 
@@ -221,7 +221,7 @@ DWORD YUV420toRGBFilter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
       nRet = m_nInPixels * BYTES_PER_PIXEL_RGB24;
     }
   }
-  return nRet;
+  lOutActualDataLength = nRet;
 }
 
 HRESULT YUV420toRGBFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )

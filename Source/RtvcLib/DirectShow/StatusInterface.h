@@ -78,4 +78,6 @@ DECLARE_INTERFACE_( IStatusInterface, IUnknown )
 	//We need an id for when we perform a callback
 	STDMETHOD(SetFriendlyID) ( long lId) = 0;
 	STDMETHOD(GetFriendlyID) ( long& lId) = 0;
+  STDMETHOD(GetNotificationMessage)( char* szError, int nBufferSize) = 0;
+  STDMETHOD(SetNotificationMessage)( const char* szError ) = 0;
 };

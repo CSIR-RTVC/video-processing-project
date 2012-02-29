@@ -44,8 +44,6 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 #ifndef _REALRGB24TOYUV420CONVERTERIMPL2_H
 #define _REALRGB24TOYUV420CONVERTERIMPL2_H
 
-#include "DllSetup.h"
-
 #include "RGBtoYUV420Converter.h"
 
 /*
@@ -53,21 +51,21 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
   Class definition.
 ===========================================================================
 */
-class IMAGE_API RealRGB24toYUV420ConverterImpl2: public RGBtoYUV420Converter
+class RealRGB24toYUV420ConverterImpl2: public RGBtoYUV420Converter
 {
 public:
 	/// Construction and destruction.
-	RealRGB24toYUV420ConverterImpl2(void) { _chrOff = 0; }
-	RealRGB24toYUV420ConverterImpl2(int width, int height): RGBtoYUV420Converter(width,height) { _chrOff = 0; }
-	RealRGB24toYUV420ConverterImpl2(int width, int height, int chrOff): RGBtoYUV420Converter(width,height) { _chrOff = chrOff; }
+	RealRGB24toYUV420ConverterImpl2(void) { }
+	RealRGB24toYUV420ConverterImpl2(int width, int height);
+	RealRGB24toYUV420ConverterImpl2(int width, int height, int chrOff);
 	virtual ~RealRGB24toYUV420ConverterImpl2(void) {}
 
 	/// Interface.
 	void Convert(void* pRgb, void* pY, void* pU, void* pV);
 
-protected:
-	/// Offset added to the chr values. Typically = 128 to shift all values to positive.
-	yuvType _chrOff;
+private:
+  void FlipConvert(void* pRgb, void* pY, void* pU, void* pV);
+  void NonFlipConvert(void* pRgb, void* pY, void* pU, void* pV);
 
 };//end _REALRGB24TOYUV420CONVERTERIMPL2_H.
 

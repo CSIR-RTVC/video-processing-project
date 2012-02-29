@@ -44,8 +44,6 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 #ifndef _REALYUV420TORGB24CONVERTERIMPL2_H
 #define _REALYUV420TORGB24CONVERTERIMPL2_H
 
-#include "DllSetup.h"
-
 #include "YUV420toRGBConverter.h"
 
 /*
@@ -53,29 +51,33 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
   Class definition.
 ===========================================================================
 */
-class IMAGE_API RealYUV420toRGB24ConverterImpl2: public YUV420toRGBConverter
+class RealYUV420toRGB24ConverterImpl2: public YUV420toRGBConverter
 {
 public:
 	// Construction and destruction.
-	RealYUV420toRGB24ConverterImpl2(void) { _chrOff = 0; }
-	RealYUV420toRGB24ConverterImpl2(int width, int height): YUV420toRGBConverter(width,height) { _chrOff = 0; }
-	RealYUV420toRGB24ConverterImpl2(int width, int height, int chrOff): YUV420toRGBConverter(width,height) { _chrOff = chrOff; }
-	virtual ~RealYUV420toRGB24ConverterImpl2(void) {}
+	RealYUV420toRGB24ConverterImpl2(void) { }
+	RealYUV420toRGB24ConverterImpl2(int width, int height);
+	RealYUV420toRGB24ConverterImpl2(int width, int height, int chrOff);
+	virtual ~RealYUV420toRGB24ConverterImpl2(void) { }
 
 	// Interface.
 	virtual void Convert(void* pY, void* pU, void* pV, void* pRgb) 
 	{
-		if(_rotate) RotateConvert(pY, pU, pV, pRgb);
-		else				NonRotateConvert(pY, pU, pV, pRgb);
+    if (_flip)
+    {
+      FlipConvert(pY, pU, pV, pRgb);
+    }
+    else
+    {
+      if(_rotate) RotateConvert(pY, pU, pV, pRgb);
+      else				NonRotateConvert(pY, pU, pV, pRgb);
+    }
 	};
 
 protected:
-	virtual void NonRotateConvert(void* pY, void* pU, void* pV, void* pRgb);
+  virtual void FlipConvert(void* pY, void* pU, void* pV, void* pRgb);
+  virtual void NonRotateConvert(void* pY, void* pU, void* pV, void* pRgb);
 	virtual void RotateConvert(void* pY, void* pU, void* pV, void* pRgb);
-
-protected:
-	/// Offset subtracted from the chr values. Typically = 128 to shift values from all positive.
-	yuvType _chrOff;
 
 };//end RealYUV420toRGB24ConverterImpl2.
 

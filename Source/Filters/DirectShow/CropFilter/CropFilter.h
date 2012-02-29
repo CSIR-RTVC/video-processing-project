@@ -143,7 +143,7 @@ private:
 	* @param pSource The source buffer
 	* @param pDest The destination buffer
 	*/
-	DWORD ApplyTransform(BYTE* pBufferIn, BYTE* pBufferOut);
+  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
 	/// Sets crop if values are valid
 	HRESULT SetCropIfValid(int nTotalDimensionImage, int nNewCrop, int& nOldCrop, int nOppositeCrop  );

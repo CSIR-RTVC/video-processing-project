@@ -223,7 +223,7 @@ HRESULT RGBtoYUV420Filter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
 	return S_OK;
 }
 
-DWORD RGBtoYUV420Filter::ApplyTransform( BYTE* pBufferIn, BYTE* pBufferOut )
+void RGBtoYUV420Filter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialise our converter
