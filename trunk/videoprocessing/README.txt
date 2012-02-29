@@ -12,23 +12,35 @@ Base classes and interfaces that have been developed during the course of the pr
 Library:
 - ImageUtils - a library containing various video processing utilities
 - DirectShow - DirectShow utility classes
+- CodecUtils - Encoding/decoding related classes
+- H264v2     - H264 codec implementation
 
 --------------------------------------------------------------------------------------------------
 Released multimedia plug-ins:
 
-DirectShow:
+DirectShow filters:
+- Audio mixing filter
+- Crop filter
+- Framerate display
+- H264 decoder
+- H264 encoder
+- H264 source filter
+- Pic in pic filter
+- RGB to YUV420 Planar color converter
+- Rotate filter
+- RTSP/RTP Source filter (8/16 bit PCM AMR MP3, H264)
+- Scale filter
+- Tee
+- Timestamp logger
+- Video mixing filter
+- YUV420 Planar to RGB color converter
+- YUV source
 
-Filter configuration:
-Note: 
+Filter configuration: 
 - Use the property pages to configure the crop, scale or RTSP source filter from graph edit.
 The RTSP source filter can be tested using the GraphEdit like GraphStudio tool which has the ability to open a URL source address. 
 - Use the COM interface ISettingsInterface to configure the filters programmatically.
 
-- Crop filter
-- Scale filter
-- RGB to YUV420 Planar color converter
-- YUV420 Planar to RGB color converter
-- 8/16 bit PCM AMR MP3 RTSP/RTP Source filter
 
 GStreamer:
 N/A

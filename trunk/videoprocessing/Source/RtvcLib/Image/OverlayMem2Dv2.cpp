@@ -8,8 +8,9 @@ FILE NAME			: OverlayMem2Dv2.cpp
 
 DESCRIPTION		: A class to overlay a two-dimensional mem structure onto
 								a contiguous block (usually larger) of memory and provide
-								several operations on 2-D blocks. Static proxies are used
-								to reduce the memory footprint of the class.
+								several operations on 2-D blocks where the data type is
+								short (16-bit variables). Static proxies are used	to reduce 
+								the memory footprint of the class.
 
 COPYRIGHT			: (c)CSIR 2007-2010 all rights resevered
 
@@ -62,6 +63,20 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 ---------------------------------------------------------------------------
 */
 #define OM2DV2_UNROLL_INNER_LOOP
+
+int OverlayMem2Dv2::OM2DV2_Sp[17] = {0, 0, 2, 2, 0, 1, 3, 3, 1, 1, 3, 0, 2, 3, 1, 2, 0};
+int OverlayMem2Dv2::OM2DV2_Tp[17] = {0, 0, 2, 0, 2, 1, 3, 1, 3, 0, 2, 1, 3, 0, 2, 1, 3};
+
+/*
+---------------------------------------------------------------------------
+	Macros.
+---------------------------------------------------------------------------
+*/
+#define OM2DV2_FAST_ABS32(x) ( ((x)^((x)>>31))-((x)>>31) )
+#define OM2DV2_FAST_ABS16(x) ( ((x)^((x)>>15))-((x)>>15) )
+
+#define OM2DV2_CLIP255(x)	( (((x) <= 255)&&((x) >= 0))? (x) : ( ((x) < 0)? 0:255 ) )
+
 /*
 ---------------------------------------------------------------------------
 	Construction, initialisation and destruction.
@@ -100,13 +115,13 @@ OverlayMem2Dv2::OverlayMem2Dv2(void* srcPtr, int srcWidth, int srcHeight, int wi
 	_height			= height;
 	_srcWidth		= srcWidth;
 	_srcHeight	= srcHeight;
-	_pMem				= (OM2DV2_PTYPE)srcPtr;
+	_pMem				= (short *)srcPtr;
 
 	/// Potentially dangerous to alloc mem in a constructor as there is no way 
 	/// of determining failure.
 
 	/// Alloc the mem block row addresses.
-	_pBlock = new OM2DV2_PTYPE[srcHeight];
+	_pBlock = new short *[srcHeight];
 	if(_pBlock == NULL)
 		return;
 
@@ -145,7 +160,7 @@ int OverlayMem2Dv2::SetMem(void* srcPtr, int srcWidth, int srcHeight)
 
 	_srcWidth		= srcWidth;
 	_srcHeight	= srcHeight;
-	_pMem				= (OM2DV2_PTYPE)srcPtr;
+	_pMem				= (short *)srcPtr;
 
 	// 2-Dim ptr must be recreated.
 	if(_pBlock != NULL)
@@ -153,7 +168,7 @@ int OverlayMem2Dv2::SetMem(void* srcPtr, int srcWidth, int srcHeight)
 	_pBlock = NULL;
 
 	// Alloc the mem block row addresses.
-	_pBlock = new OM2DV2_PTYPE[srcHeight];
+	_pBlock = new short *[srcHeight];
 	if(_pBlock == NULL)
 		return(0);
 
@@ -190,14 +205,10 @@ void OverlayMem2Dv2::SetOrigin(int x, int y)
 Copy all values from the top left of the source into this block starting
 at the input specified offset. Return if it will not fit or if this block
 does not exist.
-
 @param srcBlock		: The block to copy. The sum of atCol and the input block
 										width must be less than this width. Similarly for atRow. 
-
 @param toCol			: Column offset to match zero column of input block.
-
 @param toRow			: Row offset to match zero row of input block.
-
 @return 					: 0 = failure, 1 = success.
 */
 int OverlayMem2Dv2::Write(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock, int toCol, int toRow)
@@ -226,21 +237,13 @@ int OverlayMem2Dv2::Write(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock, int toCo
 /** Transfer from a source block into an offset within this block.
 Transfer all values that will fit. Existance of the source is assumed.
 Return if this block does not exist.
-
 @param srcBlock	: The block to transfer from. 
-
 @param srcCol		: Source column offset.
-
 @param srcRow		: Source row offset.
-
 @param toCol		: Destination column offset.
-
 @param toRow		: Destination row offset.
-
 @param cols			: Columns to transfer.
-
 @param rows			: Rows to transfer.
-
 @return 				: 0 = failure, 1 = success.
 */
 int OverlayMem2Dv2::Write(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock, 
@@ -276,9 +279,7 @@ int OverlayMem2Dv2::Write(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock,
 Copy all values from the top left of the source into this block. Return if 
 the source does not have the same dimensions as this block.
 does not exist.
-
 @param srcBlock		: The block to copy. 
-
 @return 					: 0 = failure, 1 = success.
 */
 int OverlayMem2Dv2::Write(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock)
@@ -294,24 +295,85 @@ int OverlayMem2Dv2::Write(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock)
 	return(1);
 }//end Write.
 
+/** Write the entire 4x4 source block into this block.
+Copy all values from the top left of the source into this block. The source
+block must have 4x4 dimensions. Note that no dimension checking is done.
+does not exist.
+@param srcBlock		: The 8x8 block to copy. 
+@return 					: 0 = failure, 1 = success.
+*/
+int OverlayMem2Dv2::Write4x4(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock)
+{
+	register int row,y,srcy;
+
+	int			meOffX	= me._xPos;
+	short**	srcPtr	= srcBlock.Get2DSrcPtr();
+	int			srcOffX	= srcBlock._xPos;
+
+	for(row = 0, y = me._yPos, srcy = srcBlock._yPos; row < 4; row++, y++, srcy++)
+	{
+		memcpy((void *)(&(me._pBlock[y][meOffX])), (const void *)(&(srcPtr[srcy][srcOffX])), 8);
+	}//end for row...
+
+	return(1);
+}//end Write4x4.
+
+/** Write the entire 8x8 source block into this block.
+Copy all values from the top left of the source into this block. The source
+block must have 8x8 dimensions. Note that no dimension checking is done.
+does not exist.
+@param srcBlock		: The 8x8 block to copy. 
+@return 					: 0 = failure, 1 = success.
+*/
+int OverlayMem2Dv2::Write8x8(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock)
+{
+	register int row,y,srcy;
+
+	int			meOffX	= me._xPos;
+	short**	srcPtr	= srcBlock.Get2DSrcPtr();
+	int			srcOffX	= srcBlock._xPos;
+
+	for(row = 0, y = me._yPos, srcy = srcBlock._yPos; row < 8; row++, y++, srcy++)
+	{
+		memcpy((void *)(&(me._pBlock[y][meOffX])), (const void *)(&(srcPtr[srcy][srcOffX])), 16);
+	}//end for row...
+
+	return(1);
+}//end Write8x8.
+
+/** Write the entire 16x16 source block into this block.
+Copy all values from the top left of the source into this block. The source
+block must have 16x16 dimensions. Note that no dimension checking is done.
+does not exist.
+@param srcBlock		: The 16x16 block to copy. 
+@return 					: 0 = failure, 1 = success.
+*/
+int OverlayMem2Dv2::Write16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& srcBlock)
+{
+	register int row,y,srcy;
+
+	int			meOffX	= me._xPos;
+	short**	srcPtr	= srcBlock.Get2DSrcPtr();
+	int			srcOffX	= srcBlock._xPos;
+
+	for(row = 0, y = me._yPos, srcy = srcBlock._yPos; row < 16; row++, y++, srcy++)
+	{
+		memcpy((void *)(&(me._pBlock[y][meOffX])), (const void *)(&(srcPtr[srcy][srcOffX])), 32);
+	}//end for row...
+
+	return(1);
+}//end Write16x16.
+
 /** Read from an offset within this block to a destination block.
 No mem column or row overflow checking is done during the read process. Use
 this method with caution.
-
 @param dstBlock		: Destination to read to.
-
 @param toCol			: Destination col.
-
 @param toRow			: Destination row.
-
 @param fromCol		: Block source column offset.
-
 @param fromRow		: Block source row offset.
-
 @param cols				: Columns to read.
-
 @param rows				: Rows to read.
-
 @return 					: None.
 */
 void OverlayMem2Dv2::Read(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, 
@@ -336,9 +398,7 @@ void OverlayMem2Dv2::Read(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock,
 /** Read from this block to a destination block.
 No mem column or row overflow checking is done during the read process. Use
 this method with caution. Return if the dimensions are not equal.
-
 @param dstBlock		: Destination to read to.
-
 @return 					: 0 = failure, 1 = success.
 */
 int OverlayMem2Dv2::Read(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock)
@@ -374,45 +434,137 @@ void OverlayMem2Dv2::HalfRead(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, int 
 	short**	pLcl = dstBlock.Get2DSrcPtr();
 	int	row,col,srcRow,dstRow;
 
-	// Half location calc has 3 cases: 1 x [0,0], 4 x Diag. and 4 x Linear.
+	/// Half location calc has 3 cases: 1 x [0,0], 4 x Diag. and 4 x Linear.
 
-	if(halfColOff && halfRowOff)			// Diagonal case.
+#ifdef OM2DV2_UNROLL_INNER_LOOP
+	if( (halfColOff == 1) && halfRowOff )			///< Diagonal cases [1,1], [1,-1].
 	{
 		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
 		{
+			int srcRowHalf = srcRow + halfRowOff;
+			int srcCol,dstCol,y,z;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col += 2)	///< 2 at a time.
+			{
+				/// Loop 1.
+				z =	(int)me._pBlock[srcRow][srcCol] +	(int)me._pBlock[srcRowHalf][srcCol];
+				srcCol++;
+				y = (int)me._pBlock[srcRow][srcCol] + (int)me._pBlock[srcRowHalf][srcCol];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 2)/4;
+
+				/// Loop 2.
+				srcCol++;
+				z = (int)me._pBlock[srcRow][srcCol] + (int)me._pBlock[srcRowHalf][srcCol];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 2)/4;
+			}//end for col...
+		}//end for row...
+	}//end if halfColOff...
+	else if( (halfColOff == -1) && halfRowOff )			///< Diagonal cases [-1,1], [-1,-1].
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcRowHalf = srcRow + halfRowOff;
+			int srcCol,dstCol,y,z;
+			for(col = 0, srcCol = (me._xPos-1), dstCol = dstBlock._xPos; col < me._width; col += 2)	///< 2 at a time.
+			{
+				/// Loop 1.
+				z =	(int)me._pBlock[srcRow][srcCol] + (int)me._pBlock[srcRowHalf][srcCol];
+				srcCol++;
+				y =	(int)me._pBlock[srcRow][srcCol] +	(int)me._pBlock[srcRowHalf][srcCol];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 2)/4;
+
+				/// Loop 2.
+				srcCol++;
+				z = (int)me._pBlock[srcRow][srcCol] + (int)me._pBlock[srcRowHalf][srcCol];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 2)/4;
+			}//end for col...
+		}//end for row...
+	}//end else if halfColOff...
+	else if( halfColOff && (halfRowOff == 0) )	///< Linear cases [1,0], [-1,0].
+	{
+		int start = me._xPos;
+		if(halfColOff < 0)
+			start--;
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol,y,z;
+			for(col = 0, srcCol = start, dstCol = dstBlock._xPos; col < me._width; col += 2)
+			{
+				/// Loop 1.
+				z =	(int)me._pBlock[srcRow][srcCol];
+				srcCol++;
+				y = (int)me._pBlock[srcRow][srcCol];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 1)/2;
+
+				/// Loop 2.
+				srcCol++;
+				z =	(int)me._pBlock[srcRow][srcCol];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 1)/2;
+			}//end for col...
+		}//end for row...
+	}//end else if halfColOff...
+	else if( (halfColOff == 0) && halfRowOff )	///< Linear cases [0,1], [0,-1].
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcRowHalf = srcRow + halfRowOff;
+			int srcCol,dstCol,y,z;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col += 2)
+			{
+				/// Loop 1.
+				z =	(int)me._pBlock[srcRow][srcCol];
+				y = (int)me._pBlock[srcRowHalf][srcCol++];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 1)/2;
+
+				/// Loop 2.
+				z =	(int)me._pBlock[srcRow][srcCol];
+				y = (int)me._pBlock[srcRowHalf][srcCol++];
+
+				pLcl[dstRow][dstCol++] = (short)(z + y + 1)/2;
+			}//end for col...
+		}//end for row...
+	}//end else if halfColOff...
+#else
+	if(halfColOff && halfRowOff)			///< Diagonal case.
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcRowHalf = srcRow + halfRowOff;
 			int srcCol,dstCol;
 			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
 			{
-				int z =	(int)me._pBlock[srcRow           ][srcCol] +	
-								(int)me._pBlock[srcRow           ][srcCol+halfColOff] +
-								(int)me._pBlock[srcRow+halfRowOff][srcCol] + 
-								(int)me._pBlock[srcRow+halfRowOff][srcCol+halfColOff];
-				if(z >= 0)
-					z = (z + 2) >> 2;
-				else
-					z = (z - 2)/4;
+				int z =	((int)me._pBlock[srcRow    ][srcCol] +	
+								 (int)me._pBlock[srcRow    ][srcCol+halfColOff] +
+								 (int)me._pBlock[srcRowHalf][srcCol] + 
+								 (int)me._pBlock[srcRowHalf][srcCol+halfColOff] + 2)/4;
+		
 				pLcl[dstRow][dstCol] = (short)z;
 			}//end for col...
 		}//end for row...
 	}//end if halfColOff...
-	else if(halfColOff || halfRowOff)	// Linear case.
+	else if(halfColOff || halfRowOff)	///< Linear case.
 	{
 		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
 		{
+			int srcRowHalf = srcRow + halfRowOff;
 			int srcCol,dstCol;
 			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
 			{
-				int z =	(int)me._pBlock[srcRow           ][srcCol] +	
-								(int)me._pBlock[srcRow+halfRowOff][srcCol+halfColOff];
-				if(z >= 0)
-					z = (z + 1) >> 1;
-				else
-					z = (z - 1)/2;
+				int z =	((int)me._pBlock[srcRow    ][srcCol] +	
+								 (int)me._pBlock[srcRowHalf][srcCol+halfColOff] + 1)/2;
+
 				pLcl[dstRow][dstCol] = (short)z;
 			}//end for col...
 		}//end for row...
 	}//end else if halfColOff...
-	else															// Origin case (Shouldn't ever be used).
+#endif
+	else															///< Origin case (Shouldn't ever be used).
 	{
 		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
 		{
@@ -423,6 +575,630 @@ void OverlayMem2Dv2::HalfRead(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, int 
 	}//end else...
 }//end HalfRead.
 
+/** Read from a half location offset around this block to a destination block.
+No mem column or row overflow checking is done during the read process. Use
+this method with caution. Note that values outside of the _width and _height
+need to be valid for the half calculation.
+@param dstBlock		: Destination to read to.
+@param halfColOff	: Half location offset from fromCol.
+@param halfRowOff	: Half location offset from fromRow.
+@return 					: None.
+*/
+void OverlayMem2Dv2::HalfReadv2(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, int halfColOff,	int halfRowOff)
+{
+	short**	pLcl = dstBlock.Get2DSrcPtr();
+	int	row,col,srcRow,dstRow;
+
+	/// Half location calc has 3 cases: 1 x [0,0], 4 x Diag. (square) and 4 x Linear (cross).
+
+	if(halfColOff && halfRowOff)			///< Diagonal case.
+	{
+		int offsetX = halfColOff; ///< Either a -1 or +1.
+		if(halfColOff == 1)
+			offsetX = 0;
+		int offsetY = halfRowOff; ///< Either a -1 or +1.
+		if(halfRowOff == 1)
+			offsetY = 0;
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+			{
+				int lclOffY = srcRow + offsetY - 2;
+				int lclOffX = srcCol + offsetX;
+				int lclTemp[6];
+
+				/// Step through 6 rows to produce the temp intermediate values of aa, bb, b, s, gg, hh into lclTmp[].
+				for(int tmp = 0; tmp < 6; tmp++, lclOffY++)
+				{
+					lclTemp[tmp] =		 (int)me._pBlock[lclOffY][lclOffX - 2] -  5*(int)me._pBlock[lclOffY][lclOffX - 1] +
+													20*(int)me._pBlock[lclOffY][lclOffX]     + 20*(int)me._pBlock[lclOffY][lclOffX + 1] -
+													 5*(int)me._pBlock[lclOffY][lclOffX + 2] +    (int)me._pBlock[lclOffY][lclOffX + 3];
+				}//end for tmp...
+
+				int j = lclTemp[0] - 5*lclTemp[1] + 20*lclTemp[2] + 20*lclTemp[3] - 5*lclTemp[4] + lclTemp[5];
+
+				int x = (j + 512) >> 10;
+				pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+			}//end for col...
+		}//end for row...
+	}//end if halfColOff...
+	else if(halfColOff)	///< Linear horizontal case.
+	{
+		int offset = halfColOff; ///< Either a -1 or +1.
+		if(halfColOff == 1)
+			offset = 0;
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+			{
+				int z =		 (int)me._pBlock[srcRow][srcCol + offset - 2] -  5*(int)me._pBlock[srcRow][srcCol + offset - 1] +
+								20*(int)me._pBlock[srcRow][srcCol + offset]     + 20*(int)me._pBlock[srcRow][srcCol + offset + 1] -
+								 5*(int)me._pBlock[srcRow][srcCol + offset + 2] +    (int)me._pBlock[srcRow][srcCol + offset + 3];
+
+				int x = (z + 16) >> 5;
+				pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+			}//end for col...
+		}//end for row...
+	}//end else if halfColOff...
+	else if(halfRowOff)	///< Linear vertical case.
+	{
+		int offset = halfRowOff; ///< Either a -1 or +1.
+		if(halfRowOff == 1)
+			offset = 0;
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+			{
+				int z =	   (int)me._pBlock[srcRow + offset - 2][srcCol] -  5*(int)me._pBlock[srcRow + offset - 1][srcCol] +	
+								20*(int)me._pBlock[srcRow + offset][srcCol]     + 20*(int)me._pBlock[srcRow + offset + 1][srcCol] - 
+								 5*(int)me._pBlock[srcRow + offset + 2][srcCol] +    (int)me._pBlock[srcRow + offset + 3][srcCol];
+
+				int x = (z + 16) >> 5;
+				pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+			}//end for col...
+		}//end for row...
+	}//end else if halfRowOff...
+	else															///< Origin case (Shouldn't ever be used).
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+				pLcl[dstRow][dstCol] = me._pBlock[srcRow][srcCol];
+		}//end for row...
+	}//end else...
+}//end HalfReadv2.
+
+/** Read from an 1/4 location offset around this block to a destination block.
+No mem column or row overflow checking is done during the read process. Use
+this method with caution. Note that values outside of the _width and _height
+need to be valid for the 1/4 calculation.
+@param dstBlock				: Destination to read to.
+@param quarterColOff	: 1/4 location offset from fromCol.
+@param quarterRowOff	: 1/4 location offset from fromRow.
+@return 							: None.
+*/
+void OverlayMem2Dv2::QuarterRead(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, int quarterColOff,	int quarterRowOff)
+{
+	short**	pLcl = dstBlock.Get2DSrcPtr();
+	int	row,col,srcRow,dstRow;
+
+	/// Offsets are only positive numbers from the top left position so all -ve offsets are reflected
+	/// to full pel locations to the left or above the current block position.
+	int fullOffX	= 0;
+	int xFrac			= quarterColOff;
+	if(quarterColOff < 0)
+	{
+		fullOffX	= -1;
+		xFrac			= 4 + quarterColOff;	///< e.g. -1 from full pel offset 0 = +3 from full pel offset -1. 
+	}//end if quarterColOff...
+	int fullOffY	= 0;
+	int yFrac			= quarterRowOff;
+	if(quarterRowOff < 0)
+	{
+		fullOffY	= -1;
+		yFrac			= 4 + quarterRowOff;	 
+	}//end if quarterRowOff...
+
+	/// The quarter fractions are in the range [0..3] and for every frac value pair there is a unique calculation. The
+	/// half pel positions are required first before the 1/4 and 3/4 positions can be calculated.
+	int selection = (xFrac & 3) | ((yFrac << 2) & 12);
+	switch(selection)
+	{
+		case 2:	///< = b.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int b =		 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3];
+
+						int x = (b + 16) >> 5;
+						pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 8:	///< = h.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int h =		 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										5*(int)me._pBlock[lclOffY+2][lclOffX]  +    (int)me._pBlock[lclOffY+3][lclOffX];
+
+						int x = (h + 16) >> 5;
+						pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 10:	///< = j.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY - 2;
+						int lclOffX = srcCol + fullOffX;
+						int lclTemp[6];
+
+						/// Step through 6 rows to produce the temp intermediate values of aa, bb, b, s, gg, hh into lclTmp[].
+						for(int tmp = 0; tmp < 6; tmp++, lclOffY++)
+						{
+							lclTemp[tmp] =		 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+															20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+															5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3];
+						}//end for tmp...
+
+						int j = lclTemp[0] - 5*lclTemp[1] + 20*lclTemp[2] + 20*lclTemp[3] - 5*lclTemp[4] + lclTemp[5];
+
+						int x = (j + 512) >> 10;
+						pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 1:	///< = a.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int b =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3] + 16) >> 5;
+
+						int a = ((int)me._pBlock[lclOffY][lclOffX] + OM2DV2_CLIP255(b) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)a;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 3:	///< = c.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int b =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3] + 16) >> 5;
+
+						int c = ((int)me._pBlock[lclOffY][lclOffX+1] + OM2DV2_CLIP255(b) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)c;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 4:	///< = d.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int h =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										5*(int)me._pBlock[lclOffY+2][lclOffX]  +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						int d = ((int)me._pBlock[lclOffY][lclOffX] + OM2DV2_CLIP255(h) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)d;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 12:	///< = n.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int h =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										5*(int)me._pBlock[lclOffY+2][lclOffX]  +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						int n = ((int)me._pBlock[lclOffY+1][lclOffX] + OM2DV2_CLIP255(h) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)n;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 6:	///< = f.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY - 2;
+						int lclOffX = srcCol + fullOffX;
+						int lclTemp[6];
+
+						/// Step through 6 rows to produce the temp intermediate values of aa, bb, b, s, gg, hh into lclTmp[].
+						for(int tmp = 0; tmp < 6; tmp++, lclOffY++)
+						{
+							lclTemp[tmp] =		 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+															20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+															5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3];
+						}//end for tmp...
+						int j = (lclTemp[0] - 5*lclTemp[1] + 20*lclTemp[2] + 20*lclTemp[3] - 5*lclTemp[4] + lclTemp[5] + 512) >> 10;
+
+						lclOffY = srcRow + fullOffY;
+						int b =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3] + 16) >> 5;
+
+						int f = (OM2DV2_CLIP255(j) + OM2DV2_CLIP255(b) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)f;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 14:	///< = q.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY - 2;
+						int lclOffX = srcCol + fullOffX;
+						int lclTemp[6];
+
+						/// Step through 6 rows to produce the temp intermediate values of aa, bb, b, s, gg, hh into lclTmp[].
+						for(int tmp = 0; tmp < 6; tmp++, lclOffY++)
+						{
+							lclTemp[tmp] =		 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+															20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+															5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3];
+						}//end for tmp...
+						int j = (lclTemp[0] - 5*lclTemp[1] + 20*lclTemp[2] + 20*lclTemp[3] - 5*lclTemp[4] + lclTemp[5] + 512) >> 10;
+
+						lclOffY = srcRow + fullOffY + 1;
+						int s =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3] + 16) >> 5;
+
+						int q = (OM2DV2_CLIP255(j) + OM2DV2_CLIP255(s) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)q;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 9:	///< = i.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY - 2;
+						int lclOffX = srcCol + fullOffX;
+						int lclTemp[6];
+
+						/// Step through 6 rows to produce the temp intermediate values of aa, bb, b, s, gg, hh into lclTmp[].
+						for(int tmp = 0; tmp < 6; tmp++, lclOffY++)
+						{
+							lclTemp[tmp] =		 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+															20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+															5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3];
+						}//end for tmp...
+						int j = (lclTemp[0] - 5*lclTemp[1] + 20*lclTemp[2] + 20*lclTemp[3] - 5*lclTemp[4] + lclTemp[5] + 512) >> 10;
+
+						lclOffY = srcRow + fullOffY;
+						int h =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										 5*(int)me._pBlock[lclOffY+2][lclOffX] +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						int i = (OM2DV2_CLIP255(j) + OM2DV2_CLIP255(h) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)i;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 11:	///< = k.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY - 2;
+						int lclOffX = srcCol + fullOffX;
+						int lclTemp[6];
+
+						/// Step through 6 rows to produce the temp intermediate values of aa, bb, b, s, gg, hh into lclTmp[].
+						for(int tmp = 0; tmp < 6; tmp++, lclOffY++)
+						{
+							lclTemp[tmp] =		 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+															20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+															5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3];
+						}//end for tmp...
+						int j = (lclTemp[0] - 5*lclTemp[1] + 20*lclTemp[2] + 20*lclTemp[3] - 5*lclTemp[4] + lclTemp[5] + 512) >> 10;
+
+						lclOffY = srcRow + fullOffY;
+						lclOffX++;
+						int m =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										 5*(int)me._pBlock[lclOffY+2][lclOffX] +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						int k = (OM2DV2_CLIP255(j) + OM2DV2_CLIP255(m) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)k;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 5:	///< = e.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int b =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3]+ 16) >> 5;
+
+						int h =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										 5*(int)me._pBlock[lclOffY+2][lclOffX] +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						int e = (OM2DV2_CLIP255(b) + OM2DV2_CLIP255(h) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)e;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 7:	///< = g.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffX = srcCol + fullOffX;
+
+						int b =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3]+ 16) >> 5;
+
+						lclOffX++;
+						int m =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										 5*(int)me._pBlock[lclOffY+2][lclOffX] +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						int g = (OM2DV2_CLIP255(b) + OM2DV2_CLIP255(m) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)g;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 13:	///< = p.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY;
+						int lclOffX = srcCol + fullOffX;
+
+						int h =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										 5*(int)me._pBlock[lclOffY+2][lclOffX] +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						lclOffY++;
+						int s =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3]+ 16) >> 5;
+
+						int p = (OM2DV2_CLIP255(h) + OM2DV2_CLIP255(s) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)p;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 15:	///< = r.
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					int lclOffY = srcRow + fullOffY;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+					{
+						int lclOffY = srcRow + fullOffY;
+						int lclOffX = srcCol + fullOffX + 1;
+
+						int m =	(	 (int)me._pBlock[lclOffY-2][lclOffX] -  5*(int)me._pBlock[lclOffY-1][lclOffX] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY+1][lclOffX] -
+										 5*(int)me._pBlock[lclOffY+2][lclOffX] +    (int)me._pBlock[lclOffY+3][lclOffX] + 16) >> 5;
+
+						lclOffY++;
+						lclOffX--;
+						int s =	(	 (int)me._pBlock[lclOffY][lclOffX-2] -  5*(int)me._pBlock[lclOffY][lclOffX-1] +
+										20*(int)me._pBlock[lclOffY][lclOffX]   + 20*(int)me._pBlock[lclOffY][lclOffX+1] -
+										5*(int)me._pBlock[lclOffY][lclOffX+2]  +    (int)me._pBlock[lclOffY][lclOffX+3]+ 16) >> 5;
+
+						int r = (OM2DV2_CLIP255(m) + OM2DV2_CLIP255(s) + 1) >> 1;
+
+						pLcl[dstRow][dstCol] = (short)r;
+					}//end for col...
+				}//end for row...
+			}
+			break;
+		case 0:	///< Origin case (Shouldn't ever be used).
+		default:
+			{
+				for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+				{
+					int srcCol,dstCol;
+					for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+						pLcl[dstRow][dstCol] = me._pBlock[srcRow][srcCol];
+				}//end for row...
+			}//end default...
+			break;
+	}//end switch selection...
+/*
+	if(xFrac || yFrac)
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+			{
+				int lclOffY = srcRow + fullOffY;
+				int lclOffX = srcCol + fullOffX;
+
+				int z = (8-xFracC)*(8-yFracC)*(int)me._pBlock[lclOffY][lclOffX]     + xFracC*(8-yFracC)*(int)me._pBlock[lclOffY][lclOffX + 1] +
+								(8-xFracC)*yFracC    *(int)me._pBlock[lclOffY + 1][lclOffX] + xFracC*yFracC    *(int)me._pBlock[lclOffY + 1][lclOffX + 1];
+
+				int x = (z + 32) >> 6;
+				pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+			}//end for col...
+		}//end for row...
+	}//end if xFrac...
+	else															///< Origin case (Shouldn't ever be used).
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+				pLcl[dstRow][dstCol] = me._pBlock[srcRow][srcCol];
+		}//end for row...
+	}//end else...
+*/
+}//end QuarterRead.
+
+/** Read from an 1/8th location offset around this block to a destination block.
+No mem column or row overflow checking is done during the read process. Use
+this method with caution. Note that values outside of the _width and _height
+need to be valid for the 1/8th calculation.
+@param dstBlock			: Destination to read to.
+@param eighthColOff	: 1/8th location offset from fromCol.
+@param eighthRowOff	: 1/8th location offset from fromRow.
+@return 						: None.
+*/
+void OverlayMem2Dv2::EighthRead(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, int eighthColOff,	int eighthRowOff)
+{
+	short**	pLcl = dstBlock.Get2DSrcPtr();
+	int	row,col,srcRow,dstRow;
+
+	/// Offsets are only positive numbers from the top left position so all -ve offsets are reflected
+	/// to full pel locations to the left or above the current block position.
+	int fullOffX	= 0;
+	int xFracC			= eighthColOff;
+	if(eighthColOff < 0)
+	{
+		fullOffX	= -1;
+		xFracC			= 8 + eighthColOff;	///< e.g. -1 from full pel offset 0 = +7 from full pel offset -1. 
+	}//end if eighthColOff...
+	int fullOffY	= 0;
+	int yFracC			= eighthRowOff;
+	if(eighthRowOff < 0)
+	{
+		fullOffY	= -1;
+		yFracC			= 8 + eighthRowOff;	 
+	}//end if eighthRowOff...
+
+	if(xFracC || yFracC)
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int lclOffY = srcRow + fullOffY;
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+			{
+				int lclOffX = srcCol + fullOffX;
+
+				int z = (8-xFracC)*(8-yFracC)*(int)me._pBlock[lclOffY][lclOffX]     + xFracC*(8-yFracC)*(int)me._pBlock[lclOffY][lclOffX + 1] +
+								(8-xFracC)*yFracC    *(int)me._pBlock[lclOffY + 1][lclOffX] + xFracC*yFracC    *(int)me._pBlock[lclOffY + 1][lclOffX + 1];
+
+				int x = (z + 32) >> 6;
+				/// pLcl[dstRow][dstCol] = (short)OM2DV2_CLIP255(x);
+				pLcl[dstRow][dstCol] = (short)x;
+			}//end for col...
+		}//end for row...
+	}//end if xFracC...
+	else															///< Origin case (Shouldn't ever be used).
+	{
+		for(row = 0, srcRow = me._yPos, dstRow = dstBlock._yPos; row < me._height; row++, srcRow++, dstRow++)
+		{
+			int srcCol,dstCol;
+			for(col = 0, srcCol = me._xPos, dstCol = dstBlock._xPos; col < me._width; col++, srcCol++, dstCol++)
+				pLcl[dstRow][dstCol] = me._pBlock[srcRow][srcCol];
+		}//end for row...
+	}//end else...
+
+}//end EighthRead.
+
 /*
 ---------------------------------------------------------------------------
 	Public block operations interface.
@@ -431,7 +1207,6 @@ void OverlayMem2Dv2::HalfRead(OverlayMem2Dv2& me, OverlayMem2Dv2& dstBlock, int 
 
 /** Clear the block values to zero.
 Fast value zero-ing function.
-
 @return:	none
 */
 void OverlayMem2Dv2::Clear(OverlayMem2Dv2& me)
@@ -445,7 +1220,6 @@ void OverlayMem2Dv2::Clear(OverlayMem2Dv2& me)
 
 /** Fill the block values.
 Fast value set function.
-
 @return:	none
 */
 void OverlayMem2Dv2::Fill(OverlayMem2Dv2& me, int value)
@@ -459,14 +1233,13 @@ void OverlayMem2Dv2::Fill(OverlayMem2Dv2& me, int value)
 
 /** Sum all the block values.
 Arithmetic sum of all values.
-
 @return:	sum
 */
 int OverlayMem2Dv2::Sum(OverlayMem2Dv2& me)
 {
-	int					row,col;
+	int			row,col;
 	short*	pP;
-	int					sum = 0;
+	int			sum = 0;
 	for(row = 0; row < me._height; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -481,7 +1254,6 @@ int OverlayMem2Dv2::Sum(OverlayMem2Dv2& me)
 
 /** Subtract the input block from this.
 The block dimensions must match else return 0.
-
 @param b	: Input block that is subtracted.
 @return		: Success = 1, fail = 0;	
 */
@@ -489,7 +1261,8 @@ int OverlayMem2Dv2::Sub(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 {
 	if( (me._width != b._width)||(me._height != b._height) )
 		return(0);
-	// Subtraction.
+
+	/// Subtraction.
 	int row,col,x,y,bx,by;
 	short**	bPtr = b.Get2DSrcPtr();
 	for(row = 0, y = me._yPos, by = b._yPos; row < me._height; row++, y++, by++)
@@ -499,9 +1272,85 @@ int OverlayMem2Dv2::Sub(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 	return(1);
 }//end Sub.
 
+/** Subtract the 16x16 input block from this 8x8 block.
+The block dimensions must be 16x16 and are therefore not checked
+within the method. Fast version of subtract
+@param b	: Input block that is subtracted.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Sub16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	register int row,y,by;
+
+	int			meOffX	= me._xPos;
+	short**	bPtr		= b.Get2DSrcPtr();
+	int			bOffX		= b._xPos;
+
+	for(row = 0, y = me._yPos, by = b._yPos; row < 16; row++, y++, by++)
+	{
+		short* pMe = &(me._pBlock[y][meOffX]);
+		short* pb  = &(bPtr[by][bOffX]);
+
+		pMe[0] -= pb[0]; pMe[8]  -= pb[8];
+		pMe[1] -= pb[1]; pMe[9]  -= pb[9];
+		pMe[2] -= pb[2]; pMe[10] -= pb[10];
+		pMe[3] -= pb[3]; pMe[11] -= pb[11];
+		pMe[4] -= pb[4]; pMe[12] -= pb[12];
+		pMe[5] -= pb[5]; pMe[13] -= pb[13];
+		pMe[6] -= pb[6]; pMe[14] -= pb[14];
+		pMe[7] -= pb[7]; pMe[15] -= pb[15];
+
+	}//end for row...
+
+	return(1);
+}//end Sub16x16.
+
+/** Subtract the 8x8 input block from this 8x8 block.
+The block dimensions must be 8x8 and are therefore not checked
+within the method. Fast version of subtract
+@param b	: Input block that is subtracted.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Sub8x8(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	register int row,y,by;
+
+	int			meOffX	= me._xPos;
+	short**	bPtr		= b.Get2DSrcPtr();
+	int			bOffX		= b._xPos;
+
+	for(row = 0, y = me._yPos, by = b._yPos; row < 8; row++, y++, by++)
+	{
+		short* pMe = &(me._pBlock[y][meOffX]);
+		short* pb  = &(bPtr[by][bOffX]);
+
+		pMe[0] -= pb[0]; pMe[4] -= pb[4];
+		pMe[1] -= pb[1]; pMe[5] -= pb[5];
+		pMe[2] -= pb[2]; pMe[6] -= pb[6];
+		pMe[3] -= pb[3]; pMe[7] -= pb[7];
+
+	}//end for row...
+
+	return(1);
+}//end Sub8x8.
+
+/** Subtract the input constant from this.
+@param x	: Input constant that is subtracted.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Sub(OverlayMem2Dv2& me, short z)
+{
+	/// Subtraction.
+	int row,col,x,y;
+	for(row = 0, y = me._yPos; row < me._height; row++, y++)
+		for(col = 0, x = me._xPos; col < me._width; col++, x++)
+			me._pBlock[y][x] -= z;
+
+	return(1);
+}//end Sub.
+
 /** Add the input block to this.
 The block dimensions must match else return 0.
-
 @param b	: Input block to add to.
 @return		: Success = 1, fail = 0;	
 */
@@ -519,9 +1368,211 @@ int OverlayMem2Dv2::Add(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 	return(1);
 }//end Add.
 
+/** Add the input block to this and clip values to [0...255].
+The block dimensions must match else return 0.
+@param b	: Input block to add to.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::AddWithClip255(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	if( (me._width != b._width)||(me._height != b._height) )
+		return(0);
+	/// Addition.
+	int row,col,x,y,bx,by;
+	short**	bPtr = b.Get2DSrcPtr();
+	for(row = 0, y = me._yPos, by = b._yPos; row < me._height; row++, y++, by++)
+		for(col = 0, x = me._xPos, bx = b._xPos; col < me._width; col++, x++, bx++)
+			me._pBlock[y][x] = OM2DV2_CLIP255(me._pBlock[y][x] + bPtr[by][bx]);
+
+	return(1);
+}//end AddWithClip255.
+
+/** Add the 16x16 input block to this 16x16 block.
+The block dimensions must be 16x16 and are therefore not checked
+within the method. Fast version of addition
+@param b	: Input block that is to be added.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Add16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	register int row,y,by;
+
+	int			meOffX	= me._xPos;
+	short**	bPtr		= b.Get2DSrcPtr();
+	int			bOffX		= b._xPos;
+
+	for(row = 0, y = me._yPos, by = b._yPos; row < 16; row++, y++, by++)
+	{
+		short* pMe = &(me._pBlock[y][meOffX]);
+		short* pb  = &(bPtr[by][bOffX]);
+
+		pMe[0] += pb[0]; pMe[8]  += pb[8];
+		pMe[1] += pb[1]; pMe[9]  += pb[9];
+		pMe[2] += pb[2]; pMe[10] += pb[10];
+		pMe[3] += pb[3]; pMe[11] += pb[11];
+		pMe[4] += pb[4]; pMe[12] += pb[12];
+		pMe[5] += pb[5]; pMe[13] += pb[13];
+		pMe[6] += pb[6]; pMe[14] += pb[14];
+		pMe[7] += pb[7]; pMe[15] += pb[15];
+
+	}//end for row...
+
+	return(1);
+}//end Add16x16.
+
+/** Add the 16x16 input block to this 16x16 block and clip values to [0...255].
+The block dimensions must be 16x16 and are therefore not checked
+within the method. Fast version of addition
+@param b	: Input block that is to be added.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Add16x16WithClip255(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	register int row,y,by;
+
+	int			meOffX	= me._xPos;
+	short**	bPtr		= b.Get2DSrcPtr();
+	int			bOffX		= b._xPos;
+
+	for(row = 0, y = me._yPos, by = b._yPos; row < 16; row++, y++, by++)
+	{
+		short* pMe = &(me._pBlock[y][meOffX]);
+		short* pb  = &(bPtr[by][bOffX]);
+
+		pMe[0] = OM2DV2_CLIP255(pMe[0] + pb[0]); pMe[8]  = OM2DV2_CLIP255(pMe[8]  + pb[8]);
+		pMe[1] = OM2DV2_CLIP255(pMe[1] + pb[1]); pMe[9]  = OM2DV2_CLIP255(pMe[9]  + pb[9]);
+		pMe[2] = OM2DV2_CLIP255(pMe[2] + pb[2]); pMe[10] = OM2DV2_CLIP255(pMe[10] + pb[10]);
+		pMe[3] = OM2DV2_CLIP255(pMe[3] + pb[3]); pMe[11] = OM2DV2_CLIP255(pMe[11] + pb[11]);
+		pMe[4] = OM2DV2_CLIP255(pMe[4] + pb[4]); pMe[12] = OM2DV2_CLIP255(pMe[12] + pb[12]);
+		pMe[5] = OM2DV2_CLIP255(pMe[5] + pb[5]); pMe[13] = OM2DV2_CLIP255(pMe[13] + pb[13]);
+		pMe[6] = OM2DV2_CLIP255(pMe[6] + pb[6]); pMe[14] = OM2DV2_CLIP255(pMe[14] + pb[14]);
+		pMe[7] = OM2DV2_CLIP255(pMe[7] + pb[7]); pMe[15] = OM2DV2_CLIP255(pMe[15] + pb[15]);
+
+	}//end for row...
+
+	return(1);
+}//end Add16x16WithClip255.
+
+/** Add the 8x8 input block to this 8x8 block.
+The block dimensions must be 8x8 and are therefore not checked
+within the method. Fast version of addition
+@param b	: Input block that is to be added.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Add8x8(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	register int row,y,by;
+
+	int			meOffX	= me._xPos;
+	short**	bPtr		= b.Get2DSrcPtr();
+	int			bOffX		= b._xPos;
+
+	for(row = 0, y = me._yPos, by = b._yPos; row < 8; row++, y++, by++)
+	{
+		short* pMe = &(me._pBlock[y][meOffX]);
+		short* pb  = &(bPtr[by][bOffX]);
+
+		pMe[0] += pb[0]; pMe[4] += pb[4];
+		pMe[1] += pb[1]; pMe[5] += pb[5];
+		pMe[2] += pb[2]; pMe[6] += pb[6];
+		pMe[3] += pb[3]; pMe[7] += pb[7];
+
+	}//end for row...
+
+	return(1);
+}//end Add8x8.
+
+/** Add the 8x8 input block to this 8x8 block and clip values to [0...255].
+The block dimensions must be 8x8 and are therefore not checked
+within the method. Fast version of addition
+@param b	: Input block that is to be added.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Add8x8WithClip255(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
+{
+	register int row,y,by;
+
+	int			meOffX	= me._xPos;
+	short**	bPtr		= b.Get2DSrcPtr();
+	int			bOffX		= b._xPos;
+
+	for(row = 0, y = me._yPos, by = b._yPos; row < 8; row++, y++, by++)
+	{
+		short* pMe = &(me._pBlock[y][meOffX]);
+		short* pb  = &(bPtr[by][bOffX]);
+
+		pMe[0] = OM2DV2_CLIP255(pMe[0] + pb[0]); pMe[4] = OM2DV2_CLIP255(pMe[4] + pb[4]);
+		pMe[1] = OM2DV2_CLIP255(pMe[1] + pb[1]); pMe[5] = OM2DV2_CLIP255(pMe[5] + pb[5]);
+		pMe[2] = OM2DV2_CLIP255(pMe[2] + pb[2]); pMe[6] = OM2DV2_CLIP255(pMe[6] + pb[6]);
+		pMe[3] = OM2DV2_CLIP255(pMe[3] + pb[3]); pMe[7] = OM2DV2_CLIP255(pMe[7] + pb[7]);
+
+	}//end for row...
+
+	return(1);
+}//end Add8x8WithClip255.
+
+/** Shift the values in this block up.
+@param z	: Shift up by.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::ScaleUp(OverlayMem2Dv2& me, short z)
+{
+	/// Subtraction.
+	int row,col,x,y;
+	for(row = 0, y = me._yPos; row < me._height; row++, y++)
+		for(col = 0, x = me._xPos; col < me._width; col++, x++)
+			me._pBlock[y][x] = me._pBlock[y][x] << z;
+
+	return(1);
+}//end ScaleUp.
+
+/** Shift the values in this block down.
+@param z	: Shift down by.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::ScaleDown(OverlayMem2Dv2& me, short z)
+{
+	/// Subtraction.
+	int row,col,x,y;
+	for(row = 0, y = me._yPos; row < me._height; row++, y++)
+		for(col = 0, x = me._xPos; col < me._width; col++, x++)
+			me._pBlock[y][x] = me._pBlock[y][x] >> z;
+
+	return(1);
+}//end ScaleDown.
+
+/** Multiply the values in this block by a constant.
+@param z	: Multiply by.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Multiply(OverlayMem2Dv2& me, short z)
+{
+	/// Subtraction.
+	int row,col,x,y;
+	for(row = 0, y = me._yPos; row < me._height; row++, y++)
+		for(col = 0, x = me._xPos; col < me._width; col++, x++)
+			me._pBlock[y][x] = me._pBlock[y][x] * z;
+
+	return(1);
+}//end Multiply.
+
+/** Divide the values in this block by a constant.
+@param z	: Divide by.
+@return		: Success = 1, fail = 0;	
+*/
+int OverlayMem2Dv2::Divide(OverlayMem2Dv2& me, short z)
+{
+	/// Subtraction.
+	int row,col,x,y;
+	for(row = 0, y = me._yPos; row < me._height; row++, y++)
+		for(col = 0, x = me._xPos; col < me._width; col++, x++)
+			me._pBlock[y][x] = me._pBlock[y][x] / z;
+
+	return(1);
+}//end Divide.
+
 /** Calc the total square difference with the input block.
 The block dimensions must match else return INF.
-
 @param b	: Input block.
 @return		: Total square diff.	
 */
@@ -552,7 +1603,6 @@ int OverlayMem2Dv2::Tsd(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 /** Calc the total square difference with the 4x4 input block.
 The block dimensions must both be 4x4 and no checking is done
 so use with caution.
-
 @param b	: 4x4 input block.
 @return		: Total square diff.	
 */
@@ -597,7 +1647,6 @@ int OverlayMem2Dv2::Tsd4x4(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 /** Calc the total square difference with the 8x8 input block.
 The block dimensions must both be 8x8 and no checking is done
 so use with caution.
-
 @param b	: 8x8 input block.
 @return		: Total square diff.	
 */
@@ -654,7 +1703,6 @@ int OverlayMem2Dv2::Tsd8x8(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 /** Calc the total square difference with the 16x16 input block.
 The block dimensions must both be 16x16 and no checking is done
 so use with caution.
-
 @param b	: 16x16 input block.
 @return		: Total square diff.	
 */
@@ -736,7 +1784,6 @@ int OverlayMem2Dv2::Tsd16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 Exit early if the accumulated square diff becomes larger
 than the specified input value. The block dimensions must 
 match else return INF.
-
 @param b		: Input block.
 @param min	:	The min value to improve on.
 @return			: Total square diff to the point of early exit.	
@@ -771,7 +1818,6 @@ int OverlayMem2Dv2::TsdLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
 Exit early if the accumulated square error becomes larger	than the specified 
 input value. The block dimensions must be 4x4 and no checking is done. Use
 with caution for speed with unrolled inner loop.
-
 @param b		: 4x4 input block.
 @param min	:	The min value to improve on.
 @return			: Total square diff to the point of early exit.	
@@ -781,7 +1827,7 @@ int OverlayMem2Dv2::Tsd4x4LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(int row = 0; row < 4; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -819,11 +1865,47 @@ int OverlayMem2Dv2::Tsd4x4LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 	return(acc);
 }//end Tsd4x4LessThan.
 
+/** The total square difference with 4x4 blocks to improve on input value.
+Exit early if the accumulated partial square error becomes larger	than the specified 
+partial input value. The block dimensions must be 4x4 and no checking is done. Use
+with caution for speed with unrolled inner loop.
+@param b		: 4x4 input block.
+@param min	:	The min value to improve on.
+@return			: Total square diff to the point of early exit.	
+*/
+int OverlayMem2Dv2::Tsd4x4PartialLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
+{
+	short**	bPtr	= b.Get2DSrcPtr();
+	short*	pP;
+	short*	pI;
+	int Dp = 0;	///< Accumulated partial square error.
+
+	for(int row = 0; row < 4; row++)
+	{
+		pP = &(me._pBlock[me._yPos + row][me._xPos]);
+		pI = &(bPtr[b._yPos + row][b._xPos]);
+
+		int pd = 0;
+		for(int col = 0; col < 4; col++)
+		{
+      int diff = *(pP++) - *(pI++);
+			pd += (diff * diff);
+		}//end for col...
+
+		/// Accumulated partial sqr err.
+		Dp += pd;
+
+		if( (Dp << 2) > ((row+1) * min) )
+			return( Dp << 2 );	///< Early exit because exceeded min.
+	}//end for row...
+
+	return(Dp);
+}//end Tsd4x4PartialLessThan.
+
 /** The total square difference with 8x8 blocks to improve on input value.
 Exit early if the accumulated square error becomes larger	than the specified 
 input value. The block dimensions must be 8x8 and no checking is done. Use
 with caution for speed with unrolled inner loop.
-
 @param b		: 8x8 input block.
 @param min	:	The min value to improve on.
 @return			: Total square diff to the point of early exit.	
@@ -887,6 +1969,35 @@ int OverlayMem2Dv2::Tsd8x8LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 	return(acc);
 }//end Tsd8x8LessThan.
 
+int OverlayMem2Dv2::Tsd8x8PartialLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
+{
+	short**	bPtr	= b.Get2DSrcPtr();
+	int Dp = 0;	/// Accumulated partial sqare error.
+
+	for(int p = 1; p <= 16; p++)
+	{
+		int pd = 0;
+		int meY = me._yPos + OM2DV2_Tp[p];
+		int meX = me._xPos + OM2DV2_Sp[p];
+		int bY = b._yPos + OM2DV2_Tp[p];
+		int bX = b._xPos + OM2DV2_Sp[p];
+		for(int i = 0; i < 8; i += 4)
+			for(int j = 0; j < 8; j += 4)
+			{
+				int diff = (int)me._pBlock[meY + i][meX + j] - (int)bPtr[bY + i][bX + j];
+				pd += (diff * diff);	///< pth partial sqr err
+			}//end for i & j...
+
+		/// Accumulated partial sqr err.
+		Dp += pd;
+
+		if( (Dp << 4) > (p * min) )
+			return( Dp << 4 );	///< Early exit because exceeded min.
+	}//end for p...
+
+	return(Dp);
+}//end Tsd8x8PartialLessThan.
+
 /** The total square difference with 16x16 blocks to improve on input value.
 Exit early if the accumulated square error becomes larger	than the specified 
 input value. The block dimensions must be 16x16 and no checking is done. Use
@@ -900,7 +2011,7 @@ int OverlayMem2Dv2::Tsd16x16LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int 
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(int row = 0; row < 16; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -986,9 +2097,45 @@ int OverlayMem2Dv2::Tsd16x16LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int 
 	return(acc);
 }//end Tsd16x16LessThan.
 
+/** The total square difference with 16x16 blocks to improve on input value.
+Exit early if the partial accumulated square error becomes larger	than the specified 
+normalised input value. The block dimensions must be 16x16 and no checking is done. Use
+with caution for speed with unrolled inner loop.
+@param b		: 16x16 input block.
+@param min	:	The min value to improve on.
+@return			: Total square error to the point of early exit.	
+*/
+int OverlayMem2Dv2::Tsd16x16PartialLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
+{
+	short**	bPtr	= b.Get2DSrcPtr();
+	int Dp = 0;	/// Accumulated partial square error.
+
+	for(int p = 1; p <= 16; p++)
+	{
+		int pd = 0;
+		int meY = me._yPos + OM2DV2_Tp[p];
+		int meX = me._xPos + OM2DV2_Sp[p];
+		int bY = b._yPos + OM2DV2_Tp[p];
+		int bX = b._xPos + OM2DV2_Sp[p];
+		for(int i = 0; i < 16; i += 4)
+			for(int j = 0; j < 16; j += 4)
+			{
+				int diff = (int)me._pBlock[meY + i][meX + j] - (int)bPtr[bY + i][bX + j];
+				pd += (diff * diff);	///< pth partial sqr err
+			}//end for i & j...
+
+		/// Accumulated partial sqr err.
+		Dp += pd;
+
+		if( (Dp << 4) > (p * min) )
+			return( Dp << 4 );	///< Early exit because exceeded min.
+	}//end for p...
+
+	return(Dp);
+}//end Tsd16x16PartialLessThan.
+
 /** Calc the total absolute difference with the input block.
 The block dimensions must match else return INF.
-
 @param b	: Input block.
 @return		: Total absolute diff.	
 */
@@ -1001,7 +2148,7 @@ int OverlayMem2Dv2::Tad(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(row = 0; row < me._height; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -1009,8 +2156,7 @@ int OverlayMem2Dv2::Tad(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 		for(col = 0; col < me._width; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 		}//end for col...
 	}//end for row...
 
@@ -1020,7 +2166,6 @@ int OverlayMem2Dv2::Tad(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 /** Calc the total absolute difference with the 4x4 input block.
 The block dimensions must both be 4x4 and no checking is done
 so use with caution.
-
 @param b	: 4x4 input block.
 @return		: Total absolute diff.	
 */
@@ -1038,27 +2183,22 @@ int OverlayMem2Dv2::Tad4x4(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 #ifdef OM2DV2_UNROLL_INNER_LOOP
 		// [row][0]
     int diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][1]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][2]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][3]
     diff = *(pP) - *(pI);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 
 #else
 		for(int col = 0; col < 4; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 		}//end for col...
 #endif
 
@@ -1070,7 +2210,6 @@ int OverlayMem2Dv2::Tad4x4(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 /** Calc the total absolute difference with the 8x8 input block.
 The block dimensions must both be 8x8 and no checking is done
 so use with caution.
-
 @param b	: 8x8 input block.
 @return		: Total absolute diff.	
 */
@@ -1088,43 +2227,34 @@ int OverlayMem2Dv2::Tad8x8(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 #ifdef OM2DV2_UNROLL_INNER_LOOP
 		// [row][0]
     int diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][1]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][2]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][3]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][4]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][5]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][6]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][7]
     diff = *(pP) - *(pI);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 
 #else
 		for(int col = 0; col < 8; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 		}//end for col...
 #endif
 
@@ -1136,7 +2266,6 @@ int OverlayMem2Dv2::Tad8x8(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 /** Calc the total absolute difference with the 16x16 input block.
 The block dimensions must both be 16x16 and no checking is done
 so use with caution.
-
 @param b	: 16x16 input block.
 @return		: Total absolute diff.	
 */
@@ -1145,7 +2274,7 @@ int OverlayMem2Dv2::Tad16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(int row = 0; row < 16; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -1154,75 +2283,58 @@ int OverlayMem2Dv2::Tad16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 #ifdef OM2DV2_UNROLL_INNER_LOOP
 		// [row][0]
     int diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][1]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][2]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][3]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][4]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][5]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][6]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][7]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][8]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][9]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][10]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][11]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][12]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][13]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][14]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		// [row][15]
     diff = *(pP) - *(pI);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 
 #else
 		for(int col = 0; col < 16; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 		}//end for col...
 #endif
 
@@ -1235,7 +2347,6 @@ int OverlayMem2Dv2::Tad16x16(OverlayMem2Dv2& me, OverlayMem2Dv2& b)
 Exit early if the accumulated absolute error becomes larger
 than the specified input value. The block dimensions must 
 match else return INF.
-
 @param b		: Input block.
 @param min	:	The min value to improve on.
 @return			: Total absolute diff to the point of early exit.	
@@ -1249,7 +2360,7 @@ int OverlayMem2Dv2::TadLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(row = 0; row < me._height; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -1257,8 +2368,7 @@ int OverlayMem2Dv2::TadLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
 		for(col = 0; col < me._width; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 			if(acc > min)
 				return(acc);	// Early exit because exceeded min.
 		}//end for col...
@@ -1271,7 +2381,6 @@ int OverlayMem2Dv2::TadLessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int min)
 Exit early if the accumulated absolute error becomes larger	than the specified 
 input value. The block dimensions must be 4x4 and no checking is done. Use
 with caution for speed with unrolled inner loop.
-
 @param b		: 4x4 input block.
 @param min	:	The min value to improve on.
 @return			: Total absolute diff to the point of early exit.	
@@ -1281,7 +2390,7 @@ int OverlayMem2Dv2::Tad4x4LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(int row = 0; row < 4; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -1290,30 +2399,25 @@ int OverlayMem2Dv2::Tad4x4LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 #ifdef OM2DV2_UNROLL_INNER_LOOP
 		// [row][0]
     int diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);	// Early exit because exceeded min.
 		// [row][1]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][2]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][3]
     diff = *(pP) - *(pI);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 
 #else
 		for(int col = 0; col < 4; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 			if(acc > min)
 				return(acc);	// Early exit because exceeded min.
 		}//end for col...
@@ -1328,7 +2432,6 @@ int OverlayMem2Dv2::Tad4x4LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 Exit early if the accumulated absolute error becomes larger	than the specified 
 input value. The block dimensions must be 8x8 and no checking is done. Use
 with caution for speed with unrolled inner loop.
-
 @param b		: 8x8 input block.
 @param min	:	The min value to improve on.
 @return			: Total absolute diff to the point of early exit.	
@@ -1338,7 +2441,7 @@ int OverlayMem2Dv2::Tad8x8LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(int row = 0; row < 8; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -1347,50 +2450,41 @@ int OverlayMem2Dv2::Tad8x8LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int mi
 #ifdef OM2DV2_UNROLL_INNER_LOOP
 		// [row][0]
     int diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);	// Early exit because exceeded min.
 		// [row][1]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][2]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][3]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][4]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][5]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][6]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][7]
     diff = *(pP) - *(pI);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 
 #else
 		for(int col = 0; col < 8; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 			if(acc > min)
 				return(acc);	// Early exit because exceeded min.
 		}//end for col...
@@ -1414,7 +2508,7 @@ int OverlayMem2Dv2::Tad16x16LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int 
 	short**	bPtr	= b.Get2DSrcPtr();
 	short*	pP;
 	short*	pI;
-	int					acc		= 0;
+	int			acc		= 0;
 	for(int row = 0; row < 16; row++)
 	{
 		pP = &(me._pBlock[me._yPos + row][me._xPos]);
@@ -1423,90 +2517,73 @@ int OverlayMem2Dv2::Tad16x16LessThan(OverlayMem2Dv2& me, OverlayMem2Dv2& b, int 
 #ifdef OM2DV2_UNROLL_INNER_LOOP
 		// [row][0]
     int diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);	// Early exit because exceeded min.
 		// [row][1]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][2]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][3]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][4]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][5]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][6]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][7]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][8]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][9]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][10]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][11]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][12]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][13]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][14]
     diff = *(pP++) - *(pI++);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 		if(acc > min)	return(acc);
 		// [row][15]
     diff = *(pP) - *(pI);
-		if(diff >= 0)	acc += diff;
-		else					acc -= diff;
+		acc += OM2DV2_FAST_ABS32(diff);
 
 #else
 		for(int col = 0; col < 16; col++)
 		{
       int diff = *(pP++) - *(pI++);
-			if(diff >= 0)	acc += diff;
-			else					acc -= diff;
+			acc += OM2DV2_FAST_ABS32(diff);
 			if(acc > min)
 				return(acc);	// Early exit because exceeded min.
 		}//end for col...

@@ -49,6 +49,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/StatusInterface.h>
 #include <Windows.h>
 
+#define MAX_MESSAGE_LENGTH 256
+
 /**
 * \ingroup DirectShowLib
 *  IStatusInterface implementation.
@@ -69,6 +71,9 @@ public:
 	/// Accessor for friendly ID
 	STDMETHODIMP GetFriendlyID( long& lId );
 
+  STDMETHODIMP GetNotificationMessage( char* szMessage, int nBufferSize );
+  STDMETHODIMP SetNotificationMessage( const char* szMessage );
+
 protected:
 	/// This method notifies the application with the specified params
 	void NotifyApplication(long lEventCode, LONG_PTR lEventParam1);
@@ -79,4 +84,7 @@ protected:
 	IMediaEventSink* m_pMediaEventSink;
 	/// Friendly id of the filter
 	long m_lFriendlyId;
+  /// String to store last error
+  char m_szNotification[MAX_MESSAGE_LENGTH];
+
 };

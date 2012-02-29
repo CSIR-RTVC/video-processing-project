@@ -75,6 +75,19 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 
 /*
 ===========================================================================
+	Constructor Methods.
+===========================================================================
+*/
+RealRGB24toYUV420ConverterImpl2::RealRGB24toYUV420ConverterImpl2(int width, int height): RGBtoYUV420Converter(width, height)
+{ 
+}//end constructor.
+
+RealRGB24toYUV420ConverterImpl2::RealRGB24toYUV420ConverterImpl2(int width, int height, int chrOff): RGBtoYUV420Converter(width, height, chrOff)
+{
+}//end constructor.
+
+/*
+===========================================================================
 	Interface Methods.
 ===========================================================================
 */
@@ -90,78 +103,160 @@ to 0..255.
 */
 void RealRGB24toYUV420ConverterImpl2::Convert(void* pRgb, void* pY, void* pU, void* pV)
 {
-	yuvType*	py = (yuvType *)pY;
-	yuvType*	pu = (yuvType *)pU;
-	yuvType*	pv = (yuvType *)pV;
-	unsigned char* src = (unsigned char *)pRgb;
-
-	/// Y have range 0..255, U & V have range -128..127.
-	double	u,v;
-	double	r,g,b;
-
-	/// Step in 2x2 pel blocks. (4 pels per block).
-	int xBlks = _width >> 1;
-	int yBlks = _height >> 1;
-	for(int yb = 0; yb < yBlks; yb++)
-   for(int xb = 0; xb < xBlks; xb++)
-	{
-    int							chrOff	= yb*xBlks + xb;
-    int							lumOff	= (yb*_width + xb) << 1;
-    unsigned char*	t				= src + lumOff*3;
-
-		/// Top left pel.
-		b = (double)(*t++);
-		g = (double)(*t++);
-		r = (double)(*t++);
-		py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
-
-		u = RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
-		v = RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
-
-		/// Top right pel.
-		b = (double)(*t++);
-		g = (double)(*t++);
-		r = (double)(*t++);
-		py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
-
-		u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
-		v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
-
-    lumOff += _width;
-    t = t + _width*3 - 6;
-		/// Bottom left pel.
-		b = (double)(*t++);
-		g = (double)(*t++);
-		r = (double)(*t++);
-		py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
-
-		u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
-		v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
-
-		/// Bottom right pel.
-		b = (double)(*t++);
-		g = (double)(*t++);
-		r = (double)(*t++);
-		py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
-
-		u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
-		v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
-
-		/// Average the 4 chr values.
-		int iu = (int)u;
-		int iv = (int)v;
-		if(iu < 0)	///< Rounding.
-			iu -= 2;
-		else
-			iu += 2;
-		if(iv < 0)	///< Rounding.
-			iv -= 2;
-		else
-			iv += 2;
-
-		pu[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127(iu/4) );
-		pv[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127(iv/4) );
- 	}//end for xb & yb...
-
+  if (_flip)
+    FlipConvert(pRgb, pY, pU, pV);
+  else
+    NonFlipConvert(pRgb, pY, pU, pV);
 }//end Convert.
+
+void RealRGB24toYUV420ConverterImpl2::FlipConvert( void* pRgb, void* pY, void* pU, void* pV )
+{
+  yuvType*	py = (yuvType *)pY;
+  yuvType*	pu = (yuvType *)pU;
+  yuvType*	pv = (yuvType *)pV;
+  unsigned char* src = (unsigned char *)pRgb;
+
+  /// Y have range 0..255, U & V have range -128..127.
+  double	u,v;
+  double	r,g,b;
+
+  /// Step in 2x2 pel blocks. (4 pels per block).
+  int xBlks = _width >> 1;
+  int yBlks = _height >> 1;
+  for(int yb = 0; yb < yBlks; yb++)
+    for(int xb = 0; xb < xBlks; xb++)
+    {
+      int							chrOff	= yb*xBlks + xb;
+      int							lumOff	= (yb*_width + xb) << 1;
+      //unsigned char*	t				= src + lumOff*3;
+      unsigned char*	t				= src + ((((_height - (yb * 2) - 1) * _width) + (xb * 2)) * 3);
+
+      /// Top left pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u = RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v = RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      /// Top right pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      lumOff += _width;
+      //t = t + _width*3 - 6;
+      t = t - _width*3 - 6;
+
+      /// Bottom left pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      /// Bottom right pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      /// Average the 4 chr values.
+      if(u < 0.0)
+        u = (u/4) - 0.5;
+      else
+        u = (u/4) + 0.5;
+      if(v < 0.0)
+        v = (v/4) - 0.5;
+      else
+        v = (v/4) + 0.5;
+
+      pu[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127((int)(u)) );
+      pv[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127((int)(v)) );
+    }//end for xb & yb...
+}
+
+void RealRGB24toYUV420ConverterImpl2::NonFlipConvert( void* pRgb, void* pY, void* pU, void* pV )
+{
+  yuvType*	py = (yuvType *)pY;
+  yuvType*	pu = (yuvType *)pU;
+  yuvType*	pv = (yuvType *)pV;
+  unsigned char* src = (unsigned char *)pRgb;
+
+  /// Y have range 0..255, U & V have range -128..127.
+  double	u,v;
+  double	r,g,b;
+
+  /// Step in 2x2 pel blocks. (4 pels per block).
+  int xBlks = _width >> 1;
+  int yBlks = _height >> 1;
+  for(int yb = 0; yb < yBlks; yb++)
+    for(int xb = 0; xb < xBlks; xb++)
+    {
+      int							chrOff	= yb*xBlks + xb;
+      int							lumOff	= (yb*_width + xb) << 1;
+      unsigned char*	t				= src + lumOff*3;
+
+      /// Top left pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u = RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v = RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      /// Top right pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      lumOff += _width;
+      t = t + _width*3 - 6;
+      /// Bottom left pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      /// Bottom right pel.
+      b = (double)(*t++);
+      g = (double)(*t++);
+      r = (double)(*t++);
+      py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255((int)(0.5 + RRGB24YUVCI2_00*r + RRGB24YUVCI2_01*g + RRGB24YUVCI2_02*b));
+
+      u += RRGB24YUVCI2_10*r + RRGB24YUVCI2_11*g + RRGB24YUVCI2_12*b;
+      v += RRGB24YUVCI2_20*r + RRGB24YUVCI2_21*g + RRGB24YUVCI2_22*b;
+
+      /// Average the 4 chr values.
+      if(u < 0.0)
+        u = (u/4) - 0.5;
+      else
+        u = (u/4) + 0.5;
+      if(v < 0.0)
+        v = (v/4) - 0.5;
+      else
+        v = (v/4) + 0.5;
+
+      pu[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127((int)(u)) );
+      pv[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127((int)(v)) );
+    }//end for xb & yb...
+}
 

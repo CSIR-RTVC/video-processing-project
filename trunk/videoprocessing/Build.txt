@@ -3,8 +3,8 @@ Build instructions:
 The batch files setup the Visual Studio environments. Follow the instructions below:
 --------------------------------------------------------------------------------------------------
 Windows - Microsoft Visual Studio
-1) VS2005 and 2008 solutions have been provided. 
-2) Edit the following files to setup the build environement: 
+1) VS2005 and 2008 and 2010 solutions have been provided. 
+2) Edit the following files to setup the build environment: 
 - Projects\Win32\Launch\VsVersion.bat - update the Visual Studio version and paths
 - Projects\Win32\Launch\User.bat - set DirectShow base classes path and Windows SDK path
 

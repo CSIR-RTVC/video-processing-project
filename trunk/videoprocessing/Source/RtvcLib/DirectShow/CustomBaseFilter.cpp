@@ -120,6 +120,8 @@ HRESULT CCustomBaseFilter::Transform( IMediaSample *pSource, IMediaSample *pDest
 	// Get pointers to the underlying buffers.
 	long lSrcDataLen = pSource->GetSize();
 	long lDestDataLen = pDest->GetSize();
+  long lSrcActualLen = pSource->GetActualDataLength();
+  long lDestActualLen = 0; 
 
 	BYTE *pBufferIn, *pBufferOut;
 	HRESULT hr = pSource->GetPointer(&pBufferIn);
@@ -135,11 +137,10 @@ HRESULT CCustomBaseFilter::Transform( IMediaSample *pSource, IMediaSample *pDest
 	}
 	// Process the data.
 
-	DWORD cbDest = ApplyTransform(pBufferIn, pBufferOut);
-	
-	KASSERT((long)cbDest <= pDest->GetSize());
+  ApplyTransform(pBufferIn, lSrcDataLen, lSrcActualLen, pBufferOut, lDestDataLen, lDestActualLen);	
+	KASSERT((long)lDestActualLen <= pDest->GetSize());
 
-	pDest->SetActualDataLength(cbDest);
+	pDest->SetActualDataLength(lDestActualLen);
 	pDest->SetSyncPoint(TRUE);
 	return S_OK;
 }

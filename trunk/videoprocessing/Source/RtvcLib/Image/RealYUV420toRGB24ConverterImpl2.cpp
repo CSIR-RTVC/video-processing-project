@@ -68,6 +68,19 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 
 /*
 ===========================================================================
+	Constructors.
+===========================================================================
+*/
+RealYUV420toRGB24ConverterImpl2::RealYUV420toRGB24ConverterImpl2(int width, int height): YUV420toRGBConverter(width, height)
+{ 
+}//end constructor.
+
+RealYUV420toRGB24ConverterImpl2::RealYUV420toRGB24ConverterImpl2(int width, int height, int chrOff): YUV420toRGBConverter(width, height, chrOff)
+{ 
+}//end constructor.
+
+/*
+===========================================================================
 	Private Methods.
 ===========================================================================
 */
@@ -103,13 +116,9 @@ void RealYUV420toRGB24ConverterImpl2::NonRotateConvert(void* pY, void* pU, void*
 		for(x = 0; x < lumX; x += 2)
 		{
 			double lum00 = (double)((int)(py[lumpos0++]));
-			double u		 = (double)(((int)(pu[uvpos])) - _chrOff);
-			double v		 = (double)(((int)(pv[uvpos++])) - _chrOff);
-//************************************************************************************
-//			double lum00 = (double)((unsigned int)(py[lumpos0++]));
-//			double u		 = (double)((int)(pu[uvpos]));
-//			double v		 = (double)((int)(pv[uvpos++]));
-//************************************************************************************
+			double u		 = (double)(((int)(pu[uvpos])) - 128);
+			double v		 = (double)(((int)(pv[uvpos++])) - 128);
+
 			/// Lum00, u and v.
 
   		/// Fast calculation intermediate variables. 
@@ -128,9 +137,6 @@ void RealYUV420toRGB24ConverterImpl2::NonRotateConvert(void* pY, void* pU, void*
 
 			/// Lum01.
 			double lum01 = (double)((int)(py[lumpos0++]));
-//************************************************************************************
-//			double lum01 = (double)((unsigned int)(py[lumpos0++]));
-//************************************************************************************
 
 			b = (int)(lum01 + cc);
 			g = (int)(lum01 + cb);
@@ -142,9 +148,6 @@ void RealYUV420toRGB24ConverterImpl2::NonRotateConvert(void* pY, void* pU, void*
 
 			/// Lum10.
 			double lum10 = (double)((int)(py[lumpos1++]));
-//************************************************************************************
-//			double lum10 = (double)((unsigned int)(py[lumpos1++]));
-//************************************************************************************
 
 			b = (int)(lum10 + cc);
 			g = (int)(lum10 + cb);
@@ -156,9 +159,6 @@ void RealYUV420toRGB24ConverterImpl2::NonRotateConvert(void* pY, void* pU, void*
 
 			/// Lum11.
 			double lum11 = (double)((int)(py[lumpos1++]));
-//************************************************************************************
-//			double lum11 = (double)((unsigned int)(py[lumpos1++]));
-//************************************************************************************
 
 			b = (int)(lum11 + cc);
 			g = (int)(lum11 + cb);
@@ -206,8 +206,8 @@ void RealYUV420toRGB24ConverterImpl2::RotateConvert(void* pY, void* pU, void* pV
 		for(x = 0; x < lumX; x += 2)
 		{
 			double lum00 = (double)((int)(py[lumpos0++]));
-			double u		 = (double)(((int)(pu[uvpos])) - _chrOff);
-			double v		 = (double)(((int)(pv[uvpos++])) - _chrOff);
+			double u		 = (double)(((int)(pu[uvpos])) - 128);
+			double v		 = (double)(((int)(pv[uvpos++])) - 128);
 
 			/// Lum00, u and v.
 
@@ -268,6 +268,96 @@ void RealYUV420toRGB24ConverterImpl2::RotateConvert(void* pY, void* pU, void* pV
 
 }//end RotateConvert.
 
+void RealYUV420toRGB24ConverterImpl2::FlipConvert( void* pY, void* pU, void* pV, void* pRgb )
+{
+  unsigned char* 	optr	=	(unsigned char *)pRgb;
+  yuvType*				py		= (yuvType *)pY;
+  yuvType*				pu		= (yuvType *)pU;
+  yuvType*				pv		= (yuvType *)pV;
+  int		lumX	= _width;
+  int		lumY	= _height;
+  int		uvX		= _width >> 1;
+
+  int x,y;
+  int lumposy;
+  int rgbposy;
+  int uvposy;
+  int r,b,g;
+
+  int tworows  = lumX << 1;
+  int rgb1row  = (_width * 3);
+  int rgb2rows = (_width * 3) << 1;
+  int lastrow = _width * (_height - 1) * 3;
+
+  //for(y = 0,lumposy = 0,uvposy = 0,rgbposy = 0;	y < lumY;	y += 2,lumposy += tworows,uvposy += uvX,rgbposy += rgb2rows)
+  for(y = 0,lumposy = 0,uvposy = 0,rgbposy = lastrow;	y < lumY;	y += 2,lumposy += tworows,uvposy += uvX,rgbposy -= rgb2rows)
+  {
+    int lumpos0 = lumposy;					///< Reset to start of rows.
+    int lumpos1 = lumposy + lumX;
+    int uvpos	 = uvposy;
+
+    int rgbpos0 = rgbposy;
+    int rgbpos1 = rgbposy - rgb1row;
+
+    for(x = 0; x < lumX; x += 2)
+    {
+      double lum00 = (double)((int)(py[lumpos0++]));
+      double u		 = (double)(((int)(pu[uvpos])) - 128);
+      double v		 = (double)(((int)(pv[uvpos++])) - 128);
+
+      /// Lum00, u and v.
+
+      /// Fast calculation intermediate variables. 
+      double cc = (RYUVRGB24CI2_U0 * u) + 0.5;
+      double cb = (RYUVRGB24CI2_U1 * u) + (RYUVRGB24CI2_V1 * v) + 0.5;
+      double ca = (RYUVRGB24CI2_V0 * v) + 0.5;
+
+      b = (int)(lum00 + cc);
+      g = (int)(lum00 + cb);
+      r = (int)(lum00 + ca);
+
+      /// R, G & B have range 0..255.
+      optr[rgbpos0++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(b));
+      optr[rgbpos0++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(g));
+      optr[rgbpos0++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(r));
+
+      /// Lum01.
+      double lum01 = (double)((int)(py[lumpos0++]));
+
+      b = (int)(lum01 + cc);
+      g = (int)(lum01 + cb);
+      r = (int)(lum01 + ca);
+
+      optr[rgbpos0++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(b));
+      optr[rgbpos0++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(g));
+      optr[rgbpos0++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(r));
+
+      /// Lum10.
+      double lum10 = (double)((int)(py[lumpos1++]));
+
+      b = (int)(lum10 + cc);
+      g = (int)(lum10 + cb);
+      r = (int)(lum10 + ca);
+
+      optr[rgbpos1++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(b));
+      optr[rgbpos1++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(g));
+      optr[rgbpos1++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(r));
+
+      /// Lum11.
+      double lum11 = (double)((int)(py[lumpos1++]));
+
+      b = (int)(lum11 + cc);
+      g = (int)(lum11 + cb);
+      r = (int)(lum11 + ca);
+
+      optr[rgbpos1++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(b));
+      optr[rgbpos1++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(g));
+      optr[rgbpos1++] = (unsigned char)(RYUVRGB24CI2_RANGECHECK_0TO255(r));
+
+    }//end for x...
+
+  }//end for y...
+}
 
 
 

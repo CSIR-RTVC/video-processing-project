@@ -102,7 +102,7 @@ protected:
 	* This method must be overridden in the sub class to apply the filter specific transformation
 	* It must return the size of the resulting transformed output buffer
 	*/
-	virtual DWORD ApplyTransform(BYTE* pBufferIn, BYTE* pBufferOut) PURE;
+  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength) PURE;
 
 	/// Video header of input
 	VIDEOINFOHEADER m_videoInHeader;

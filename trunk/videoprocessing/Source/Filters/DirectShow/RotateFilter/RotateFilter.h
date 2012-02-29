@@ -139,7 +139,7 @@ private:
 	* @param pSource The source buffer
 	* @param pDest The destination buffer
 	*/
-	DWORD ApplyTransform(BYTE* pBufferIn, BYTE* pBufferOut);
+  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
 	void RecalculateFilterParameters();
 
