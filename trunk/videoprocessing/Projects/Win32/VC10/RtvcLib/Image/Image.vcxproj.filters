@@ -60,6 +60,18 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayExtMem2Dv2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayMem2Dv2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatBase.h">
@@ -129,6 +141,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayExtMem2Dv2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayMem2Dv2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
