@@ -84,6 +84,11 @@ public:
 	*/
 	virtual void SetStream(void* stream, int bitSize) = 0;	
 
+	/** Get the stream used.
+	@return	:	stream pointer.
+	*/
+  virtual void* GetStream(void) = 0;
+  
 	/** Reset position.
 	Reset the bit position to the front of the stream.
 	@return	:	none.
@@ -99,9 +104,10 @@ public:
 	virtual int Seek(int streamBitPos) = 0;
 
 	/** Get the current position.
-	@return	:	none.
+	@return	:	bit/byte position.
 	*/
 	virtual int GetStreamBitPos(void) = 0;
+	virtual int GetStreamBytePos(void) = 0;
 
 	/** Set/change the bit length of the stream.
 	@param bitSize	: New size in bits.

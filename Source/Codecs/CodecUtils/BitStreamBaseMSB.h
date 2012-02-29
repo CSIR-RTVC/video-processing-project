@@ -11,7 +11,7 @@ DESCRIPTION		: A base class to contain a contiguous mem array to be
 								Derived classes handle the reading and writing, 
 								BitStreamReaderMSB and BitStreamWriterMSB.
 
-COPYRIGHT			: (c)CSIR 2007-2010 all rights resevered
+COPYRIGHT			: (c)CSIR 2007-2011 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -56,7 +56,7 @@ class BitStreamBaseMSB
 {
 public:
 	BitStreamBaseMSB()	
-		{_bitStream = NULL; _bitSize = 0; _bytePos = 7; _bitPos = 0; }
+		{_bitStream = NULL; _bitSize = 0; _bytePos = 0; _bitPos = 7; }
 	virtual ~BitStreamBaseMSB()	{ }
 
 	virtual void SetStream(void* stream, int bitSize)	
@@ -64,6 +64,8 @@ public:
 			_bitSize = bitSize; 
 			_bytePos = 0; _bitPos = 7; 
 		}//end SetStream.
+
+  virtual void* GetStream(void) { return( (void *)_bitStream ); }
 
 public:
 	/// Interface implementation.
@@ -79,14 +81,15 @@ public:
 		}//end Seek.
 
 	virtual int		GetStreamBitPos(void)					{ return( (_bytePos << 3) +  _bitPos ); }
+	virtual int		GetStreamBytePos(void)				{ return(_bytePos); }
 	virtual void	SetStreamBitSize(int bitSize) { _bitSize = bitSize; }
 	virtual int		GetStreamBitSize(void)				{ return(_bitSize); }
-	virtual int		GetStreamBitsRemaining(void)	{ return(_bitSize - ((_bytePos << 3) +  _bitPos)); }
+	virtual int		GetStreamBitsRemaining(void)	{ return(_bitSize - ((_bytePos << 3) +  (7 - _bitPos))); }
 
 protected:
 	unsigned char*	_bitStream;		///< Reference to byte array.
 	int							_bitSize;			///< Bits in stream.
-	/// Current location that act like a cursor in the stream.
+	/// Current location that acts like a cursor in the stream.
 	int							_bytePos;
 	int							_bitPos;
 

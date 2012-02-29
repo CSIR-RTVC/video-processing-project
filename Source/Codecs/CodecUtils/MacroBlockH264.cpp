@@ -11,7 +11,7 @@ DESCRIPTION		: A class to hold H.264 macroblock specific data. Only static
 								expected that there will be one MacroBlockH264() instantiation
 								per overlay position on the picture.
 
-COPYRIGHT			:	(c)CSIR 2007-2009 all rights resevered
+COPYRIGHT			:	(c)CSIR 2007-2012 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -48,7 +48,9 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 #include <stdio.h>
 #endif
 
+#include <string.h>
 #include "MacroBlockH264.h"
+#include "MeasurementTable.h"
 
 /// It is simpler to derive neighbourhoods of macroblocks if they are left in 
 /// rater scanning order right up until their encodings are written onto the
@@ -136,7 +138,8 @@ MacroBlockH264::MacroBlockH264(void)
 	_aboveRightMb	= NULL;		///< mbAddrC.
 
 	/// Macroblock quantisation parameter derived from delta qp values.
-	_mbQP = 1;
+	_mbQP     = 1;
+  _mbEncQP  = 1;  ///< QP used to store the _mbQP value that was used for the encoding.
 
 	/// The macroblock type coded value mb_type is constructed from combinations 
 	/// of the following modes.
@@ -187,14 +190,20 @@ MacroBlockH264::MacroBlockH264(void)
 	/// to 2x2.
 	_cbDcBlk.SetDim(2,2);
 	_crDcBlk.SetDim(2,2);
+	_cbDcBlkTmp.SetDim(2,2);
+	_crDcBlkTmp.SetDim(2,2);
 
 	/// Load the block parameter structure and the block types.
 	/// Block num = -1 (Lum DC block);
 	_blkParam[0].pBlk								= &_lumDcBlk;
+	_blkParam[0].pBlkTmp						= &_lumDcBlkTmp;
+	_blkParam[0].rasterIndex				= 0;
 	_blkParam[0].dcSkipFlag					= 0;
 	_blkParam[0].neighbourIndicator	= 1;
 	_lumDcBlk.SetColour(BlockH264::LUM);
 	_lumDcBlk.SetDcFlag(1);
+	_lumDcBlkTmp.SetColour(BlockH264::LUM);
+	_lumDcBlkTmp.SetDcFlag(1);
 	///< 16 Lum blocks without DC value. Block num = 0..15
 	int blkNum = 1;
 	for(i = 0; i < 4; i++)	
@@ -203,34 +212,50 @@ MacroBlockH264::MacroBlockH264(void)
 			int blkY = mbCodingOrderY[i][j];
 			int blkX = mbCodingOrderX[i][j];
 			_blkParam[blkNum].pBlk								= &(_lumBlk[blkY][blkX]);
+			_blkParam[blkNum].pBlkTmp							= &(_lumBlkTmp[blkY][blkX]);
+			_blkParam[blkNum].rasterIndex					= (4*blkY) + blkX;
 			_blkParam[blkNum].dcSkipFlag					= 1;	///< Initialise assuming Intra macroblock.
 			_blkParam[blkNum].neighbourIndicator	= 1;
 			_lumBlk[blkY][blkX].SetColour(BlockH264::LUM);
 			_lumBlk[blkY][blkX].SetDcFlag(0);
+			_lumBlkTmp[blkY][blkX].SetColour(BlockH264::LUM);
+			_lumBlkTmp[blkY][blkX].SetDcFlag(0);
 			blkNum++;
 		}//end for i & j...
 	/// Chr DC next. Block num = 16 & 17.
 	_blkParam[blkNum].pBlk								= &_cbDcBlk;
+	_blkParam[blkNum].pBlkTmp							= &_cbDcBlkTmp;
+	_blkParam[blkNum].rasterIndex					= 0;
 	_blkParam[blkNum].dcSkipFlag					= 0;
 	_blkParam[blkNum].neighbourIndicator	= -1;
 	_cbDcBlk.SetColour(BlockH264::CB);
 	_cbDcBlk.SetDcFlag(1);
+	_cbDcBlkTmp.SetColour(BlockH264::CB);
+	_cbDcBlkTmp.SetDcFlag(1);
 	blkNum++;
 	_blkParam[blkNum].pBlk								= &_crDcBlk;
+	_blkParam[blkNum].pBlkTmp							= &_crDcBlkTmp;
+	_blkParam[blkNum].rasterIndex					= 0;
 	_blkParam[blkNum].dcSkipFlag					= 0;
 	_blkParam[blkNum].neighbourIndicator	= -1;
 	_crDcBlk.SetColour(BlockH264::CR);
 	_crDcBlk.SetDcFlag(1);
+	_crDcBlkTmp.SetColour(BlockH264::CR);
+	_crDcBlkTmp.SetDcFlag(1);
 	blkNum++;
 	///< 4 Cb Chr blocks without DC value. Block num = 18..21
 	for(i = 0; i < 2; i++)	
 		for(j = 0; j < 2; j++)	
 		{
 			_blkParam[blkNum].pBlk								= &(_cbBlk[i][j]);
+			_blkParam[blkNum].pBlkTmp							= &(_cbBlkTmp[i][j]);
+			_blkParam[blkNum].rasterIndex					= (2*i) + j;
 			_blkParam[blkNum].dcSkipFlag					= 1;
 			_blkParam[blkNum].neighbourIndicator	= 1;
 			_cbBlk[i][j].SetColour(BlockH264::CB);
 			_cbBlk[i][j].SetDcFlag(0);
+			_cbBlkTmp[i][j].SetColour(BlockH264::CB);
+			_cbBlkTmp[i][j].SetDcFlag(0);
 			blkNum++;
 		}//end for i & j...
 	///< 4 Cr Chr blocks without DC value. Block num = 22..25
@@ -238,10 +263,14 @@ MacroBlockH264::MacroBlockH264(void)
 		for(j = 0; j < 2; j++)	
 		{
 			_blkParam[blkNum].pBlk								= &(_crBlk[i][j]);
+			_blkParam[blkNum].pBlkTmp							= &(_crBlkTmp[i][j]);
+			_blkParam[blkNum].rasterIndex					= (2*i) + j;
 			_blkParam[blkNum].dcSkipFlag					= 1;
 			_blkParam[blkNum].neighbourIndicator	= 1;
 			_crBlk[i][j].SetColour(BlockH264::CR);
 			_crBlk[i][j].SetDcFlag(0);
+			_crBlkTmp[i][j].SetColour(BlockH264::CR);
+			_crBlkTmp[i][j].SetDcFlag(0);
 			blkNum++;
 		}//end for i & j...
 
@@ -317,10 +346,10 @@ int MacroBlockH264::Initialise(int numMbRows, int numMbCols, int startMbIndex, i
 			if(y >= 0)	
 			{
 				if(mb[y][col]._slice == slice)
-					mb[row][col]._aboveLeftMb = &(mb[y][col]);
+					mb[row][col]._aboveMb = &(mb[y][col]);
 			}//end if y...
 			mb[row][col]._aboveRightMb	= NULL;	///< Above right.
-			if((z >= 0)&&(y >= 0))	
+			if((z >= 0)&&(z < numMbCols)&&(y >= 0))	
 			{
 				if(mb[y][z]._slice == slice)
 					mb[row][col]._aboveRightMb = &(mb[y][z]);
@@ -586,7 +615,17 @@ return						: None.
 */
 void MacroBlockH264::SetType(MacroBlockH264* mb, int sliceType)
 {
-	/// Slice type: 0 = I_Slice, 1 = P_Slice.
+	/// Slice type values:
+	/// P_Slice		    = 0;
+	/// B_Slice		    = 1;
+	/// I_Slice		    = 2;
+	/// SP_Slice	    = 3;
+	/// SI_Slice	    = 4;
+	/// P_Slice_All		= 5;
+	/// B_Slice_All		= 6;
+	/// I_Slice_All		= 7;
+	/// SP_Slice_All	= 8;
+	/// SI_Slice_All	= 9;
 	int type = 0;
 	if(mb->_intraFlag)
 	{
@@ -599,7 +638,7 @@ void MacroBlockH264::SetType(MacroBlockH264* mb, int sliceType)
 		}//end if Intra_16x16...
 	}//end if _intraFlag...
 	
-	if(sliceType == 1)	///< P_Slice
+	if((sliceType == 0)||(sliceType == 5))	///< P_Slice
 	{
 		if(!mb->_intraFlag)
 			type = mb->_mbPartPredMode;
@@ -613,7 +652,7 @@ void MacroBlockH264::SetType(MacroBlockH264* mb, int sliceType)
 /** Get the prediction modes.
 Pull out and set the _intraFlag, _mbPartPredMode and, if Intra_16x16 mode 
 then also set the _coded_blk_pattern member	from the _mb_type member decoded 
-from the stream. If Intra_16x16 then GetCodedBlockPattern() should be called 
+from the stream. If not Intra_16x16 then GetCodedBlockPattern() should be called 
 after this method.
 @param mb					: Macroblock to set.
 @param sliceType	: Slice type that this macroblock belongs to.
@@ -621,14 +660,24 @@ return						: None.
 */
 void MacroBlockH264::UnpackMbType(MacroBlockH264* mb, int sliceType)
 {
+	/// Slice type values:
+	/// P_Slice		    = 0;
+	/// B_Slice		    = 1;
+	/// I_Slice		    = 2;
+	/// SP_Slice	    = 3;
+	/// SI_Slice	    = 4;
+	/// P_Slice_All		= 5;
+	/// B_Slice_All		= 6;
+	/// I_Slice_All		= 7;
+	/// SP_Slice_All	= 8;
+	/// SI_Slice_All	= 9;
 	int type = mb->_mb_type;
-	/// Slice type: 0 = I_Slice, 1 = P_Slice.
 	mb->_intraFlag = 0;
-	if(sliceType == 0)	///< I_Slice
+	if((sliceType == 2)||(sliceType == 7))	///< I_Slice
 	{
 		mb->_intraFlag = 1;
 	}//end if I_Slice...
-	else								///< P_Slice
+	else								                    ///< P_Slice
 	{
 		if(type > 4)
 		{
@@ -654,16 +703,39 @@ void MacroBlockH264::UnpackMbType(MacroBlockH264* mb, int sliceType)
 
 }//end UnpackMbType.
 
+/** Test condition where skipped macroblock will force the motion vector to zero.
+The prediction for the macroblock motion vector is either the median of the 
+neighbouring macroblock vectors or (0,0) under some conditions of the macroblock 
+neighbourhood. 
+@param mb					: Macroblock to set.
+return						: Condition for forcing the zero vector.
+*/
+bool MacroBlockH264::SkippedZeroMotionPredCondition(MacroBlockH264* mb)
+{
+	bool ret = false;
+
+  if( (mb->_leftMb == NULL)||(mb->_aboveMb == NULL) )
+    ret = true;
+  else  ///< Both left and above exist.
+  {
+		if( ( (mb->_leftMb->_mvX[MacroBlockH264::_16x16] == 0) && (mb->_leftMb->_mvY[MacroBlockH264::_16x16] == 0)) ||
+        ( (mb->_aboveMb->_mvX[MacroBlockH264::_16x16] == 0) && (mb->_aboveMb->_mvY[MacroBlockH264::_16x16] == 0)) )
+        ret = true;
+  }//end else...
+
+  return(ret);
+}//end SkippedZeroMotionPredCondition.
+
 /** Predict the macroblock motion vector.
 The prediction for the macroblock motion vector is the median of the 
 neighbouring macroblock vectors. Special conditions apply when the
-neighbours are outside of the image space or in another slice.
+neighbours are outside of the image space or in another slice. 
 @param mb					: Macroblock to set.
 @param mvpx				: Reference to returned predicted horiz component.
 @param mvpy				: Reference to returned predicted vert component.
 return						: None.
 */
-void MacroBlockH264::GetMbMotionPred(MacroBlockH264* mb, int* mvpx, int* mvpy)
+void MacroBlockH264::GetMbMotionMedianPred(MacroBlockH264* mb, int* mvpx, int* mvpy)
 {
 	// TODO: Only the 16x16 prediction case is considered here. All other cases still to be coded.
 
@@ -722,7 +794,7 @@ void MacroBlockH264::GetMbMotionPred(MacroBlockH264* mb, int* mvpx, int* mvpy)
 
 	*mvpx = mb->Median(Ax, Bx, Cx);
 	*mvpy = mb->Median(Ay, By, Cy);
-}//end GetMbMotionPred.
+}//end GetMbMotionMedianPred.
 
 /** Calc the median of 3 numbers.
 @param x	:	1st num.
@@ -745,5 +817,382 @@ int MacroBlockH264::Median(int x, int y, int z)
 	return(result);
 }//end Median.
 
+/** Copy the contents of blocks to the temp blocks.
+The block numbers in the parameter list refer to their array position.
+@param mb				: Macroblock to process.
+@param startBlk	: Position of first block to copy.
+@param endBlk		: Position of last block to copy.
+@return					: none.
+*/
+void MacroBlockH264::CopyBlksToTmpBlks(MacroBlockH264* mb, int startBlk, int endBlk)
+{
+	if( (endBlk < MBH264_NUM_BLKS) && (startBlk >= 0) ) ///< Array range check.
+	{
+		for(int i = startBlk; i <= endBlk; i++)
+			mb->_blkParam[i].pBlkTmp->CopyBlock(mb->_blkParam[i].pBlk);
+	}//end if endBlk...
+}//end CopyBlksToTmpBlks.
+
+/** Copy the coeff mem of blocks to the temp blocks.
+The block numbers in the parameter list refer to their array position. No bounds range
+checking is done.
+@param mb				: Macroblock to process.
+@param startBlk	: Position of first block to copy.
+@param endBlk		: Position of last block to copy.
+@return					: none.
+*/
+void MacroBlockH264::CopyBlksToTmpBlksCoeffOnly(MacroBlockH264* mb, int startBlk, int endBlk)
+{
+	for(int i = startBlk; i <= endBlk; i++)
+    mb->_blkParam[i].pBlk->Copy((void *)(mb->_blkParam[i].pBlkTmp->GetBlk()));
+}//end CopyBlksToTmpBlks.
+
+/** Load macroblock from image.
+Copy the YCbCr values from the image colour components specified in the parameter list
+into the macroblock. It assumes that the image overlay is of appropriate size.
+@param mb				:	Macroblock to load.
+@param lum			: Lum img overlay.
+@param lumoffx	: X fffset for the Lum overlay.
+@param lumoffy	: Y offset for the Lum overlay.
+@param cb				: Cb img overlay.
+@param cr				: Cb img overlay.
+@param chroffx	: X offset for the Chr overlay.
+@param chroffy	: Y offset for the Chr overlay.
+*/
+void MacroBlockH264::LoadBlks(MacroBlockH264* mb, OverlayMem2Dv2* lum, int lumoffx, int lumoffy, OverlayMem2Dv2* cb, OverlayMem2Dv2* cr, int chroffx, int chroffy)
+{
+	int blk;
+
+	/// Fill all the non-DC 4x4 blks (Not blks = -1, 17, 18) of the macroblock blocks with 
+	/// each image colour component.
+
+	lum->SetOverlayDim(4, 4);
+	for(blk = MBH264_LUM_0_0; blk <= MBH264_LUM_3_3; blk++)
+	{
+		BlockH264* pBlk = mb->_blkParam[blk].pBlk;
+		/// Align the block with the image space.
+		lum->SetOrigin(lumoffx + pBlk->_offX, lumoffy + pBlk->_offY);
+		/// Read from the image mem into the block.
+		lum->Read(*(pBlk->GetBlkOverlay()));
+	}//end for blk...
+
+	cb->SetOverlayDim(4, 4);
+	for(blk = MBH264_CB_0_0; blk <= MBH264_CB_1_1; blk++)
+	{
+		BlockH264* pBlk = mb->_blkParam[blk].pBlk;
+		/// Align the block with the image space.
+		cb->SetOrigin(chroffx + pBlk->_offX, chroffy + pBlk->_offY);
+		/// Read from the image mem into the block.
+		cb->Read(*(pBlk->GetBlkOverlay()));
+	}//end for blk...
+
+	cr->SetOverlayDim(4, 4);
+	for(blk = MBH264_CR_0_0; blk <= MBH264_CR_1_1; blk++)
+	{
+		BlockH264* pBlk = mb->_blkParam[blk].pBlk;
+		/// Align the block with the image space.
+		cr->SetOrigin(chroffx + pBlk->_offX, chroffy + pBlk->_offY);
+		/// Read from the image mem into the block.
+		cr->Read(*(pBlk->GetBlkOverlay()));
+	}//end for blk...
+
+}//end LoadBlks.
+
+/** Store macroblock to image.
+Copy the YCbCr values from the macroblock into the image colour components specified in the 
+parameter list. It assumes that the image overlay is of appropriate size.
+@param mb					:	Macroblock to store.
+@param lum				: Lum img overlay.
+@param lumoffx		: X offset for the Lum overlay.
+@param lumoffy		: Y offset for the Lum overlay.
+@param cb					: Cb img overlay.
+@param cr					: Cb img overlay.
+@param chroffx		: X offset for the Chr overlay.
+@param chroffy		: Y offset for the Chr overlay.
+@param tmpBlkFlag	: Store from temp blocks.
+*/
+void MacroBlockH264::StoreBlks(MacroBlockH264* mb, OverlayMem2Dv2* lum, int lumoffx, int lumoffy, OverlayMem2Dv2* cb, OverlayMem2Dv2* cr, int chroffx, int chroffy, int tmpBlkFlag)
+{
+
+	int					i;
+	BlockH264*	pLumBlk;
+	BlockH264*	pCbBlk;
+	BlockH264*	pCrBlk;
+	if(tmpBlkFlag)
+	{
+		pLumBlk = &(mb->_lumBlkTmp[0][0]);
+		pCbBlk	= &(mb->_cbBlkTmp[0][0]);
+		pCrBlk	= &(mb->_crBlkTmp[0][0]);
+	}//end if tmpBlkFlag...
+	else
+	{
+		pLumBlk = &(mb->_lumBlk[0][0]);
+		pCbBlk	= &(mb->_cbBlk[0][0]);
+		pCrBlk	= &(mb->_crBlk[0][0]);
+	}//end else...
+
+	/// Store all the non-DC 4x4 blks (Not blks = -1, 17, 18) of the macroblock blocks into 
+	/// each image colour component.
+
+	lum->SetOverlayDim(4, 4);
+	for(i = 0; i < 16; i++)
+	{
+		/// Align the block with the image space.
+		lum->SetOrigin(lumoffx + pLumBlk->_offX, lumoffy + pLumBlk->_offY);
+		/// Read from the image mem into the block.
+		lum->Write4x4(*(pLumBlk->GetBlkOverlay()));
+		/// Next block.
+		pLumBlk++;
+	}//end for i...
+
+	cb->SetOverlayDim(4, 4);
+	for(i = 0; i < 4; i++)
+	{
+		cb->SetOrigin(chroffx + pCbBlk->_offX, chroffy + pCbBlk->_offY);
+		cb->Write4x4(*(pCbBlk->GetBlkOverlay()));
+		pCbBlk++;
+	}//end for i...
+
+	cr->SetOverlayDim(4, 4);
+	for(i = 0; i < 4; i++)
+	{
+		cr->SetOrigin(chroffx + pCrBlk->_offX, chroffy + pCrBlk->_offY);
+		cr->Write4x4(*(pCrBlk->GetBlkOverlay()));
+		pCrBlk++;
+	}//end for i...
+
+}//end StoreBlks.
+
+/** Copy from another macroblock.
+Match the mem size and copy all members and macroblock
+data.
+@param pMbInto	: Macroblock to copy into.
+@param pMbFrom	: Macroblock to copy from.
+@return					: 1/0 = success/failure.
+*/
+int MacroBlockH264::CopyMarcoBlockProxy(MacroBlockH264* pMbInto, MacroBlockH264* pMbFrom)
+{
+	pMbInto->_offLumX				= pMbFrom->_offLumX;
+	pMbInto->_offLumY				= pMbFrom->_offLumY;
+	pMbInto->_offChrX				= pMbFrom->_offChrX;
+	pMbInto->_offChrY				= pMbFrom->_offChrY;
+	pMbInto->_mbIndex				= pMbFrom->_mbIndex;
+	pMbInto->_slice					= pMbFrom->_slice;
+	pMbInto->_leftMb				= pMbFrom->_leftMb;
+	pMbInto->_aboveLeftMb		= pMbFrom->_aboveLeftMb;
+	pMbInto->_aboveMb				= pMbFrom->_aboveMb;
+	pMbInto->_aboveRightMb	= pMbFrom->_aboveRightMb;
+	pMbInto->_mbQP					= pMbFrom->_mbQP;
+	pMbInto->_mbEncQP				= pMbFrom->_mbEncQP;
+
+	memcpy((void *)(&pMbInto->_mvX[0]), (const void *)(&pMbFrom->_mvX[0]), 16 * sizeof(int));
+	memcpy((void *)(&pMbInto->_mvY[0]), (const void *)(&pMbFrom->_mvY[0]), 16 * sizeof(int));
+
+	pMbInto->_intraFlag						= pMbFrom->_intraFlag;
+	pMbInto->_mbPartPredMode			= pMbFrom->_mbPartPredMode;
+	pMbInto->_mbSubPartPredMode		= pMbFrom->_mbSubPartPredMode;
+	pMbInto->_intra16x16PredMode	= pMbFrom->_intra16x16PredMode;
+	pMbInto->_intraChrPredMode		= pMbFrom->_intraChrPredMode;
+	pMbInto->_codedBlkPatternChr	= pMbFrom->_codedBlkPatternChr;
+	pMbInto->_codedBlkPatternLum	= pMbFrom->_codedBlkPatternLum;
+
+	pMbInto->_mvDistortion	= pMbFrom->_mvDistortion;
+	pMbInto->_mvRate				= pMbFrom->_mvRate;
+	pMbInto->_include				= pMbFrom->_include;
+	memcpy((void *)(&pMbInto->_distortion[0]), (const void *)(&pMbFrom->_distortion[0]), 52 * sizeof(int));
+	memcpy((void *)(&pMbInto->_rate[0]), (const void *)(&pMbFrom->_rate[0]), 52 * sizeof(int));
+
+	pMbInto->_skip							= pMbFrom->_skip;
+	pMbInto->_mb_type						= pMbFrom->_mb_type;
+	pMbInto->_sub_mb_type				= pMbFrom->_sub_mb_type;
+	pMbInto->_coded_blk_pattern = pMbFrom->_coded_blk_pattern;
+	pMbInto->_mb_qp_delta				= pMbFrom->_mb_qp_delta;
+
+	memcpy((void *)(&pMbInto->_mvdX[0]), (const void *)(&pMbFrom->_mvdX[0]), 16 * sizeof(int));
+	memcpy((void *)(&pMbInto->_mvdY[0]), (const void *)(&pMbFrom->_mvdY[0]), 16 * sizeof(int));
+
+	for(int i = 0; i < MBH264_NUM_BLKS; i++)
+	{
+		pMbInto->_blkParam[i].pBlk->CopyBlock(pMbFrom->_blkParam[i].pBlk);
+		pMbInto->_blkParam[i].pBlkTmp->CopyBlock(pMbFrom->_blkParam[i].pBlkTmp);
+		pMbInto->_blkParam[i].rasterIndex					= pMbFrom->_blkParam[i].rasterIndex;
+		pMbInto->_blkParam[i].neighbourIndicator	= pMbFrom->_blkParam[i].neighbourIndicator;
+		pMbInto->_blkParam[i].dcSkipFlag					= pMbFrom->_blkParam[i].dcSkipFlag;
+	}//end for i...
+
+	return(1);
+}//end CopyMarcoBlockProxy;
+
+/** Check for equality with another macroblock.
+Check all key members and main coeff blocks.
+@param me	: Macroblock to compare.
+@param mb	: Macroblock from which to compare.
+@return		: 1/0 = equal/not equal.
+*/
+int MacroBlockH264::EqualsProxy(MacroBlockH264* me, MacroBlockH264* mb)
+{
+	if( (me->_mbQP != mb->_mbQP) ||
+			(me->_mbEncQP != mb->_mbEncQP) ||
+			(me->_mb_qp_delta != mb->_mb_qp_delta) ||
+			(me->_mb_type != mb->_mb_type) ||
+			(me->_sub_mb_type != mb->_sub_mb_type) ||
+			(me->_skip != mb->_skip) ||
+			(me->_intraFlag != mb->_intraFlag) ||
+			(me->_coded_blk_pattern != mb->_coded_blk_pattern) ||
+			(me->_codedBlkPatternLum != mb->_codedBlkPatternLum) ||
+			(me->_codedBlkPatternChr != mb->_codedBlkPatternChr) ||
+			(me->_mbPartPredMode != mb->_mbPartPredMode) ||
+			(me->_mbSubPartPredMode != mb->_mbSubPartPredMode) )
+		return(0);
+
+	if(me->_intraFlag)
+	{
+		if(	(me->_intraChrPredMode != mb->_intraChrPredMode) ||
+				(me->_intra16x16PredMode != mb->_intra16x16PredMode) )
+			return(0);
+
+		if(me->_mbPartPredMode == MacroBlockH264::Intra_16x16)
+		{
+		}//end if _mbPartPredMode...
+	}//end if _intraFlag...
+	else
+	{
+	}//end else...
+
+	for(int i = 0; i < MBH264_NUM_BLKS; i++)
+	{
+		if( (!me->_blkParam[i].pBlk->Equals(mb->_blkParam[i].pBlk)) ||
+				(me->_blkParam[i].rasterIndex					!= mb->_blkParam[i].rasterIndex) ||
+				(me->_blkParam[i].neighbourIndicator	!= mb->_blkParam[i].neighbourIndicator) ||
+				(me->_blkParam[i].dcSkipFlag					!= mb->_blkParam[i].dcSkipFlag) )
+				return(0);
+	}//end for i...
+
+	return(1);
+}//end EqualsProxy.
+
+/** Check for coded coeff.
+After SetCodedBlockPattern() method has been called the _coded_blk_pattern
+member reflects the 8x8 block group coded coeff status. However, for Intra
+macroblocks in Intra_16x16 modes, the Lum Dc block is not included and must
+be done seperately. NB: THIS METHOD MUST ONLY BE CALLED AFTER SetCodedBlockPattern()
+HAS BEEN CALLED ON THE MACROBLOCK. I.e. _coded_blk_pattern is valid.
+@param mb	: Macroblock to test.
+return		: 0/1 = All zero coeffs/At least one non-zero coeff.
+*/
+int MacroBlockH264::HasNonZeroCoeffsProxy(MacroBlockH264* mb)
+{
+	if(mb->_intraFlag && (mb->_mbPartPredMode == MacroBlockH264::Intra_16x16))
+	{
+		if(!mb->_lumDcBlk.IsZero2())
+			return(1);
+	}//end if _intraFlag...
+
+	if(mb->_coded_blk_pattern)	///< SetCodedBlockPattern() must have been called for _coded_blk_pattern to be valid.
+		return(1);
+
+	return(0);
+}//end HasNonZeroCoeffsProxy.
+
+/** Mark this macroblock onto the image.
+For debugging.
+@param  mb  : Macroblock to mark
+@param  lum : Lum image space.
+@param  cb  : Cb image space.
+@param  cr  : Cr image space.
+@return     : none.
+*/
+void MacroBlockH264::Mark(MacroBlockH264* mb, OverlayMem2Dv2* lum, OverlayMem2Dv2* cb, OverlayMem2Dv2* cr)
+{
+  int i;
+
+ 	lum->SetOverlayDim(16, 16);
+  lum->SetOrigin(mb->_offLumX, mb->_offLumY);
+  for(i = 0; i < 16; i++)
+  {
+    lum->Write(i,0,0);      ///< Top row.
+    lum->Write(i,15,0);     ///< Bottom row.
+    lum->Write(0,i,0);      ///< Left col.
+    lum->Write(15,i,0);     ///< Right col.
+  }//end for i...
+
+ 	cb->SetOverlayDim(8, 8);
+  cb->SetOrigin(mb->_offChrX, mb->_offChrY);
+ 	cr->SetOverlayDim(8, 8);
+  cr->SetOrigin(mb->_offChrX, mb->_offChrY);
+  for(i = 0; i < 8; i++)
+  {
+    cb->Write(i,0,127);     ///< Top row.
+    cr->Write(i,0,127);     ///< Top row.
+    cb->Write(i,7,127);     ///< Bottom row.
+    cr->Write(i,7,127);     ///< Bottom row.
+    cb->Write(0,i,127);     ///< Left col.
+    cr->Write(0,i,127);     ///< Left col.
+    cb->Write(7,i,127);     ///< Right col.
+    cr->Write(7,i,127);     ///< Right col.
+  }//end for i...
+
+}//end Mark.
+
+/** Dump the state variables of the macroblock to file.
+For debugging.
+@param  mb  : Macroblock to dump
+@param  filename  : File to write into
+@param  title     : Title of stored table data
+@return     : none.
+*/
+void MacroBlockH264::Dump(MacroBlockH264* mb, char* filename, const char* title)
+{
+  int j; 
+
+  MeasurementTable* pT = new MeasurementTable();
+	pT->SetTitle(title);
+	pT->Create(18, 1);
+  
+  pT->SetHeading(0, "Index");
+  pT->SetHeading(1, "Type");
+  pT->SetHeading(2, "SubType");
+  pT->SetHeading(3, "Skip");
+  pT->SetHeading(4, "QP");
+  pT->SetHeading(5, "DeltaQP");
+  pT->SetHeading(6, "IntraFlg");
+  pT->SetHeading(7, "PartPredMode");
+  pT->SetHeading(8, "SubPartPredMode");
+  pT->SetHeading(9, "Intra16x16PartPredMode");
+  pT->SetHeading(10, "IntraChrPredMode");
+  pT->SetHeading(11, "mvX[0]");
+  pT->SetHeading(12, "mvY[0]");
+  pT->SetHeading(13, "mvdX[0]");
+  pT->SetHeading(14, "mvdY[0]");
+  pT->SetHeading(15, "CodeBlkPattern");
+  pT->SetHeading(16, "CodeBlkPatternLum");
+  pT->SetHeading(17, "CodeBlkPatternChr");
+
+  for(j = 0; j < 18; j++)
+    pT->SetDataType(j, MeasurementTable::INT);
+
+	pT->WriteItem(0, 0, mb->_mbIndex);
+	pT->WriteItem(1, 0, mb->_mb_type);
+	pT->WriteItem(2, 0, mb->_sub_mb_type);
+	pT->WriteItem(3, 0, mb->_skip);
+	pT->WriteItem(4, 0, mb->_mbQP);
+	pT->WriteItem(5, 0, mb->_mb_qp_delta);
+	pT->WriteItem(6, 0, mb->_intraFlag);
+	pT->WriteItem(7, 0, mb->_mbPartPredMode);
+	pT->WriteItem(8, 0, mb->_mbSubPartPredMode);
+	pT->WriteItem(9, 0, mb->_intra16x16PredMode);
+	pT->WriteItem(10, 0, mb->_intraChrPredMode);
+	pT->WriteItem(11, 0, mb->_mvX[0]);
+	pT->WriteItem(12, 0, mb->_mvY[0]);
+	pT->WriteItem(13, 0, mb->_mvdX[0]);
+	pT->WriteItem(14, 0, mb->_mvdY[0]);
+	pT->WriteItem(15, 0, mb->_coded_blk_pattern);
+	pT->WriteItem(16, 0, mb->_codedBlkPatternLum);
+	pT->WriteItem(17, 0, mb->_codedBlkPatternChr);
+
+  pT->Save(filename, ",");
+
+  delete pT;
+}//end Dump.
 
 
