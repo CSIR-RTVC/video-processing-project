@@ -1,0 +1,191 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup Label="ProjectConfigurations">
+    <ProjectConfiguration Include="Debug|Win32">
+      <Configuration>Debug</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Release|Win32">
+      <Configuration>Release</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamBase.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamBaseMSB.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamReader.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamReaderMSB.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamWriter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamWriterMSB.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BlockH264.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CoeffTokenH264VlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CoeffTokenH264VlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombSignedVlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombSignedVlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombTruncVlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombTruncVlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombUnsignedVlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombUnsignedVlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForward4x4ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForward4x4ITImpl2.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForward4x4On16x16ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForwardDC2x2ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForwardDC4x4ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverse4x4ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverse4x4On16x16ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverseDC2x2ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverseDC4x4ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IBitStreamReader.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IBitStreamWriter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ICodecInnerAccess.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ICodecv2.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IContextAwareRunLevelCodec.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IForwardTransform.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IInverseTransform.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IMotionCompensator.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IMotionEstimator.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IRunLengthCodec.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IStreamHeaderReader.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IVlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IVlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MacroBlockH264.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionCompensatorH264ImplStd.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultires.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultiresCross.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\NalHeaderH264.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\PicParamSetH264.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\PrefixH264VlcDecoderImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\PrefixH264VlcEncoderImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\RunBeforeH264VlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\RunBeforeH264VlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\SeqParamSetH264.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\SliceHeaderH264.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x2H264VlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x2H264VlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x4H264VlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x4H264VlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros4x4H264VlcDecoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros4x4H264VlcEncoder.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\VectorStructList.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamReader.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamReaderMSB.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamWriter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamWriterMSB.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BlockH264.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CoeffTokenH264VlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CoeffTokenH264VlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombUnsignedVlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\ExpGolombUnsignedVlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForward4x4ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForward4x4ITImpl2.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForward4x4On16x16ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForwardDC2x2ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastForwardDC4x4ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverse4x4ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverse4x4On16x16ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverseDC2x2ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverseDC4x4ITImpl1.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MacroBlockH264.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionCompensatorH264ImplStd.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultires.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultiresCross.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\NalHeaderH264.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\PicParamSetH264.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\RunBeforeH264VlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\RunBeforeH264VlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\SeqParamSetH264.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\SliceHeaderH264.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x2H264VlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x2H264VlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x4H264VlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros2x4H264VlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros4x4H264VlcDecoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\TotalZeros4x4H264VlcEncoder.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\VectorStructList.cpp" />
+  </ItemGroup>
+  <PropertyGroup Label="Globals">
+    <ProjectGuid>{17550F11-33B8-4454-80BC-EE7177D39752}</ProjectGuid>
+    <RootNamespace>CodecUtils</RootNamespace>
+    <Keyword>Win32Proj</Keyword>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <CharacterSet>MultiByte</CharacterSet>
+  </PropertyGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
+  <ImportGroup Label="ExtensionSettings">
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <PropertyGroup Label="UserMacros" />
+  <PropertyGroup>
+    <_ProjectFileVersion>10.0.30319.1</_ProjectFileVersion>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(LibDir)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(Configuration)\</IntDir>
+    <OutDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(LibDir)\</OutDir>
+    <IntDir Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(Configuration)\</IntDir>
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" />
+    <CodeAnalysisRuleSet Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">AllRules.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRules Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <CodeAnalysisRuleAssemblies Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" />
+    <TargetName Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(ProjectName)D</TargetName>
+  </PropertyGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
+    <ClCompile>
+      <Optimization>Disabled</Optimization>
+      <AdditionalIncludeDirectories>$(RtvcLibDir)/Image;$(RtvcLibDir)/GeneralUtils;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;_DEBUG;_WINDOWS;_USRDLL;CODEC_EXPORTS;_BUILD_FOR_SHORT;_CRT_SECURE_NO_DEPRECATE;_CRT_SECURE_NO_WARNINGS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <MinimalRebuild>true</MinimalRebuild>
+      <BasicRuntimeChecks>EnableFastChecks</BasicRuntimeChecks>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>CodecUtilsPch.h</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
+      <CallingConvention>Cdecl</CallingConvention>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(LibDir)\libRtvc$(ProjectName)D.lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
+    <ClCompile>
+      <AdditionalIncludeDirectories>$(RtvcLibDir)/Image;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CODEC_EXPORTS;_CRT_SECURE_NO_WARNINGS;_BUILD_FOR_SHORT;_CRT_SECURE_NO_DEPRECATE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <RuntimeLibrary>MultiThreadedDLL</RuntimeLibrary>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
+      <PrecompiledHeaderFile>CodecUtilsPch</PrecompiledHeaderFile>
+      <WarningLevel>Level3</WarningLevel>
+      <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
+      <ForcedIncludeFiles>%(ForcedIncludeFiles)</ForcedIncludeFiles>
+      <Optimization>MaxSpeed</Optimization>
+      <FavorSizeOrSpeed>Speed</FavorSizeOrSpeed>
+    </ClCompile>
+    <Lib>
+      <OutputFile>$(LibDir)\libRtvc$(ProjectName).lib</OutputFile>
+    </Lib>
+  </ItemDefinitionGroup>
+  <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
+  <ImportGroup Label="ExtensionTargets">
+  </ImportGroup>
+</Project>

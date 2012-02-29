@@ -10,10 +10,9 @@
 @rem %2 = cmd (commandline)
 
 @echo -- Exec Visual Studio
-@call "%VisualStudioPath%\%VC_EXE%" /UseEnv %SolutionFile%
+@call "%VisualStudio%" /UseEnv %SolutionFile%
 
 @echo -- Exec CMD
 @call "%SystemRoot%\system32\cmd.exe"
 
 @:END
-

@@ -1,6 +1,6 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual C++ Express 2010
+# Visual Studio 2010
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CropFilter", "DirectShowFilters\CropFilter\CropFilter.vcxproj", "{420C1281-9A86-4F5F-B36F-686138A54592}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RGBtoYUV420Filter", "DirectShowFilters\RGBtoYUV420Filter\RGBtoYUV420Filter.vcxproj", "{0259B0A2-D2A1-4F9E-B702-2BF27119BDB7}"
@@ -40,6 +40,16 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FrameGrabber", "Apps\FrameG
 		{00930375-8B79-4D36-9B1F-E45D3EAC51A0} = {00930375-8B79-4D36-9B1F-E45D3EAC51A0}
 		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264Source", "DirectShowFilters\H264Source\H264Source.vcxproj", "{32555076-FCD7-4C50-890C-B28C7880E3D4}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264EncoderFilter", "DirectShowFilters\H264EncoderFilter\H264EncoderFilter.vcxproj", "{593034DE-A5B8-4E71-BBC5-BC8DE613C21B}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264DecoderFilter", "DirectShowFilters\H264DecoderFilter\H264DecoderFilter.vcxproj", "{8FFD8294-95E2-42F2-AF34-3BB5C5044F7C}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecUtils", "Codecs\CodecUtils\CodecUtils.vcxproj", "{17550F11-33B8-4454-80BC-EE7177D39752}"
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264v2", "Codecs\H264v2\H264v2.vcxproj", "{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -119,6 +129,26 @@ Global
 		{693AED67-96CD-4230-8FCA-ADF1C756ABA1}.Debug|Win32.Build.0 = Debug|Win32
 		{693AED67-96CD-4230-8FCA-ADF1C756ABA1}.Release|Win32.ActiveCfg = Release|Win32
 		{693AED67-96CD-4230-8FCA-ADF1C756ABA1}.Release|Win32.Build.0 = Release|Win32
+		{32555076-FCD7-4C50-890C-B28C7880E3D4}.Debug|Win32.ActiveCfg = Debug|Win32
+		{32555076-FCD7-4C50-890C-B28C7880E3D4}.Debug|Win32.Build.0 = Debug|Win32
+		{32555076-FCD7-4C50-890C-B28C7880E3D4}.Release|Win32.ActiveCfg = Release|Win32
+		{32555076-FCD7-4C50-890C-B28C7880E3D4}.Release|Win32.Build.0 = Release|Win32
+		{593034DE-A5B8-4E71-BBC5-BC8DE613C21B}.Debug|Win32.ActiveCfg = Debug|Win32
+		{593034DE-A5B8-4E71-BBC5-BC8DE613C21B}.Debug|Win32.Build.0 = Debug|Win32
+		{593034DE-A5B8-4E71-BBC5-BC8DE613C21B}.Release|Win32.ActiveCfg = Release|Win32
+		{593034DE-A5B8-4E71-BBC5-BC8DE613C21B}.Release|Win32.Build.0 = Release|Win32
+		{8FFD8294-95E2-42F2-AF34-3BB5C5044F7C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8FFD8294-95E2-42F2-AF34-3BB5C5044F7C}.Debug|Win32.Build.0 = Debug|Win32
+		{8FFD8294-95E2-42F2-AF34-3BB5C5044F7C}.Release|Win32.ActiveCfg = Release|Win32
+		{8FFD8294-95E2-42F2-AF34-3BB5C5044F7C}.Release|Win32.Build.0 = Release|Win32
+		{17550F11-33B8-4454-80BC-EE7177D39752}.Debug|Win32.ActiveCfg = Debug|Win32
+		{17550F11-33B8-4454-80BC-EE7177D39752}.Debug|Win32.Build.0 = Debug|Win32
+		{17550F11-33B8-4454-80BC-EE7177D39752}.Release|Win32.ActiveCfg = Release|Win32
+		{17550F11-33B8-4454-80BC-EE7177D39752}.Release|Win32.Build.0 = Release|Win32
+		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Debug|Win32.ActiveCfg = Debug|Win32
+		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Debug|Win32.Build.0 = Debug|Win32
+		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Release|Win32.ActiveCfg = Release|Win32
+		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

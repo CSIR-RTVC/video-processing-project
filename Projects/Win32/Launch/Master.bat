@@ -38,40 +38,36 @@
 @set LIVEMEDIAROOT=%RTVCRootDir%\Source\3rdParty\LiveMedia\live
 @echo -- LIVEMEDIAROOT set to %LIVEMEDIAROOT%
 
-@set DevEnvDir=%VisualStudioRoot%\Common7\IDE
-
-@echo Setting up System PATH...
-@set PATH=%VisualStudioRoot%\VC\bin;
-@set PATH=%WindowsSDKDir%\Bin;%PATH%
-@set PATH=%VisualStudioRoot%\Common7\IDE;%PATH%
-@set PATH=%VisualStudioRoot%\Common7\Tools\Bin;%PATH%
-@set PATH=C:\Windows\System32;%PATH%
-
-REM @set PATH=%VisualStudioRoot%\Common7\Tools;%PATH%
-REM @set PATH=C:\Program Files (x86)\Microsoft Visual Studio 10.0\VC\bin;
-
-@echo Setting up System INCLUDE...
-@set INCLUDE=%VCInstallDir%\include;
-@set INCLUDE=%VCInstallDir%\atlmfc\include;%INCLUDE%
-@set INCLUDE=%WindowsSDKDir%\Include;%INCLUDE%
-REM @set INCLUDE=$(VCInstallDir)PlatformSDK\include;%INCLUDE%
-@set INCLUDE=$(FrameworkSDKDir)include;%INCLUDE%
-
-@set INCLUDE=%DSHOWBASECLASSES%;%INCLUDE%
-@set INCLUDE=%SourceDir%;%INCLUDE%
-@set INCLUDE=%RTVCLibDir%;%INCLUDE%
-
 @echo Setting up 3rd Party INCLUDE...
 @set INCLUDE=%LIVEMEDIAROOT%\groupsock\include;%INCLUDE%
 @set INCLUDE=%LIVEMEDIAROOT%\BasicUsageEnvironment\include;%INCLUDE%
 @set INCLUDE=%LIVEMEDIAROOT%\liveMedia\include;%INCLUDE%
 @set INCLUDE=%LIVEMEDIAROOT%\UsageEnvironment\include;%INCLUDE%
 
+@set DevEnvDir=%VisualStudioRoot%\Common7\IDE
+
+@echo Setting up System PATH...
+@set PATH=%VisualStudioRoot%\Common7\Tools\Bin;%PATH%
+@set PATH=%VisualStudioRoot%\Common7\IDE;%PATH%
+@set PATH=%VisualStudioRoot%\Common7\Tools;%PATH%
+@set PATH=%VisualStudioRoot%\VC\bin;%PATH%
+@set PATH=%WindowsSDKDir%\Bin;%PATH%
+
+@echo Setting up System INCLUDE...
+@set INCLUDE=$(VCInstallDir)PlatformSDK\include;%INCLUDE%
+@set INCLUDE=%WindowsSDKDir%\Include;%INCLUDE%
+@set INCLUDE=%VCInstallDir%\include;%INCLUDE%
+@set INCLUDE=%FrameworkSDKDir%\include;%INCLUDE%
+@set INCLUDE=%VCInstallDir%\atlmfc\include;%INCLUDE%
+
+@set INCLUDE=%DSHOWBASECLASSES%;%INCLUDE%
+@set INCLUDE=%SourceDir%;%INCLUDE%
+@set INCLUDE=%RTVCLibDir%;%INCLUDE%
+
 @echo Setting up System LIB...
 @set LIB=%VCInstallDir%\lib;
 @set LIB=%VCInstallDir%\atlmfc\lib;%LIB%
-REM @set LIB=$(VSInstallDir);%LIB%
-REM @set LIB=%DXSDKDir%\lib;%LIB%
+@set LIB=%VSInstallDir%;%LIB%
+@set LIB=%DXSDKDir%\lib;%LIB%
 @set LIB=%WindowsSDKDir%\lib;%LIB%
 @set LIB=%LibDir%;%LIB%
-
