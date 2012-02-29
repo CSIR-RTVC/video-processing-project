@@ -46,6 +46,7 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 #include <windows.h>
 #else
 #include <stdio.h>
+#include <string.h>
 #endif
 
 #include <memory.h>
@@ -168,6 +169,34 @@ void BlockH264::InverseQuantise(IInverseTransform* pQ, int q)
 	pQ->SetMode(mode);								///< Restore previous mode.
 }//end InverseQuantise.
 
+/** Copy from another block.
+Match the mem size and copy all members and block
+data.
+@param pBlk	: Block to copy from.
+@return			: 1/0 = success/failure.
+*/
+int BlockH264::CopyBlock(BlockH264* pBlk)
+{
+	/// Set memory members.
+	SetDim(pBlk->GetWidth(), pBlk->GetHeight());
+	if(!_ready)
+		return(0);
+	pBlk->Copy( (void *)_pBlk );
+
+	/// Private members.
+	SetCoded(pBlk->IsCoded());
+	SetNumCoeffs(pBlk->GetNumCoeffs());
+	SetColour(pBlk->GetColour());
+	SetDcFlag(pBlk->IsDc());
+	/// Public members.
+	_offX			= pBlk->_offX;
+	_offY			= pBlk->_offY;
+	_blkAbove	= pBlk->_blkAbove;
+	_blkLeft	= pBlk->_blkLeft;
+
+	return(1);
+}//end CopyBlock.
+
 /** Get the number of neighbourhood coeffs
 Assume that all the neighbourhood references above and left have
 been pre-defined before calling this method. Find the average if
@@ -189,6 +218,34 @@ int BlockH264::GetNumNeighbourCoeffs(BlockH264* pBlk)
 
 	return(neighCoeffs);
 }//end GetNumNeighbourCoeffs.
+
+/** Check for content equality with another block.
+Only check the members that relates to the state of the block
+and its contents not its position.
+@param me		: This block.
+@param pBlk	: Block to test against.
+@return			: 1/0 = equals/not equals.
+*/
+int BlockH264::EqualsProxy(BlockH264* me, BlockH264* pBlk)
+{
+	for(int i = 0; i < me->_length; i++)
+	{
+		if(me->_pBlk[i] != pBlk->_pBlk[i])
+			return(0);
+	}//end for i...
+
+	if( (me->_coded != pBlk->_coded) ||
+			(me->_width != pBlk->_width) ||
+			(me->_height != pBlk->_height) ||
+			(me->_length != pBlk->_length) ||
+			(me->_colour != pBlk->_colour) ||
+			(me->_dcFlag != pBlk->_dcFlag) ||
+			(me->_ready != pBlk->_ready) ||
+			(me->_numCoeffs != pBlk->_numCoeffs) )
+		return(0);
+
+	return(1);
+}//end Equals.
 
 /*
 ---------------------------------------------------------------------------
@@ -233,9 +290,8 @@ be _length * short in size.
 */
 void BlockH264::Copy(void* buff)
 {
-	if(buff == NULL)
-		return;
-	memcpy(buff, (const void *)_pBlk, _length * sizeof(short));
+	if(buff != NULL)
+  	memcpy(buff, (const void *)_pBlk, _length * sizeof(short));
 }//end Copy.
 
 /** Copy a row from the blk into the buffer.

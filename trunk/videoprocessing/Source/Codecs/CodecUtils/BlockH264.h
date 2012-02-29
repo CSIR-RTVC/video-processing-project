@@ -10,7 +10,7 @@ DESCRIPTION		: A class to hold H.264 block data and define all block
 								operations. This is a container class on which to "hang"
 								the processing functions.
 
-COPYRIGHT			:	(c)CSIR 2007-2009 all rights resevered
+COPYRIGHT			:	(c)CSIR 2007-2010 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -86,8 +86,17 @@ public:
 	@param q	: Quantisation parameter.
 	@return		: None.
 	*/
-	void Quantise(IForwardTransform* pQ, int q);
-	void InverseQuantise(IInverseTransform* pQ, int q);
+	virtual void Quantise(IForwardTransform* pQ, int q);
+	virtual void InverseQuantise(IInverseTransform* pQ, int q);
+	/** Simple quantisation and inverse quantisation of block coeffs.
+	Assume the transform mode is set to QuantOnly and the quant parameter is set
+	prior to calling these simplified methods. These are used for cases where the 
+	quant parameter is const over multiple calls.
+	@param pQ	: A forward transform object to use.
+	@return		: None.
+	*/
+	virtual void Quantise(IForwardTransform* pQ) { pQ->Transform(_pBlk); }
+	virtual void InverseQuantise(IInverseTransform* pQ) { pQ->InverseTransform(_pBlk); }
 
 	/** Run-Level encode and decode to and from a stream.
 	The set up of the run-level codec must be done outside of
@@ -120,6 +129,24 @@ public:
 		_coded = 0;
 		return(1);
 	}//end IsZero.
+	/// Version without setting _coded flag.
+	int IsZero2(void)
+	{
+		for(int i = 0; i < _length; i++)
+		{
+			if(_pBlk[i] != 0)
+				return(0);	///< Early exit.
+		}//end for i...
+		return(1);
+	}//end IsZero2.
+
+	/** Copy from another block.
+	Match the mem size and copy all members and block
+	data.
+	@param pBlk	: Block to copy from.
+	@return			: 1/0 = success/failure.
+	*/
+	int CopyBlock(BlockH264* pBlk);
 
 /// Interface implementation.
 public:
@@ -132,6 +159,15 @@ public:
 	@return				: Number of neighbourhood coeffs.
 	*/
 	static int GetNumNeighbourCoeffs(BlockH264* pBlk);
+
+	/** Check for content equality with another block.
+	Only check the members that relates to the state of the block
+	and its contents not its position.
+	@param pBlk	: Block to test against.
+	@return			: 1/0 = equals/not equals.
+	*/
+	int Equals(BlockH264* pBlk) { return(EqualsProxy(this, pBlk)); }
+	static int EqualsProxy(BlockH264* me, BlockH264* pBlk);
 
 /// Member access.
 public:

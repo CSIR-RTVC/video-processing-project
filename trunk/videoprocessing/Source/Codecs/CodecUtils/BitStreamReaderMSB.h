@@ -98,11 +98,15 @@ public:
 public:
 	void SetStream(void* stream, int bitSize) { BitStreamBaseMSB::SetStream(stream, bitSize); }	
 
+	void* GetStream(void) { return(BitStreamBaseMSB::GetStream()); }	
+
 	void Reset(void) { BitStreamBaseMSB::Reset(); }
 
 	int Seek(int streamBitPos) { return(BitStreamBaseMSB::Seek(streamBitPos)); }
 
 	int GetStreamBitPos(void) { return(BitStreamBaseMSB::GetStreamBitPos()); }
+
+	int GetStreamBytePos(void) { return(BitStreamBaseMSB::GetStreamBytePos()); }
 
 	void SetStreamBitSize(int bitSize) { BitStreamBaseMSB::SetStreamBitSize(bitSize); }
 

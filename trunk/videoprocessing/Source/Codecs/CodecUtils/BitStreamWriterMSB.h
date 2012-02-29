@@ -18,7 +18,7 @@ DESCRIPTION		: A bit stream writer implementation of the extending the
 									.
 									delete pBsr;
 
-COPYRIGHT			: (c)CSIR 2007-2010 all rights resevered
+COPYRIGHT			: (c)CSIR 2007-2011 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -97,15 +97,19 @@ public:
 	*/
 	void Poke(int bitLoc, int numBits, int val);
 
-//	Use base class implementations.
+///	Use base class implementations.
 public:
 	void SetStream(void* stream, int bitSize) { BitStreamBaseMSB::SetStream(stream, bitSize); }	
+
+	void* GetStream(void) { return(BitStreamBaseMSB::GetStream()); }	
 
 	void Reset(void) { BitStreamBaseMSB::Reset(); }
 
 	int Seek(int streamBitPos) { return(BitStreamBaseMSB::Seek(streamBitPos)); }
 
 	int GetStreamBitPos(void) { return(BitStreamBaseMSB::GetStreamBitPos()); }
+
+	int GetStreamBytePos(void) { return(BitStreamBaseMSB::GetStreamBytePos()); }
 
 	void SetStreamBitSize(int bitSize) { BitStreamBaseMSB::SetStreamBitSize(bitSize); }
 
