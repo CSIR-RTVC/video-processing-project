@@ -74,19 +74,18 @@ public:
 	int	GetWidth(void)			{ return(_width); }
 	int	GetHeight(void)			{ return(_height); }
 	int	GetRotate(void)			{ return(_rotate); }
-	//int GetChrOffset(void)	{ return(_chrOff); }
+  int GetChrominanceOffset(void)	{ return(_chrOff); }
   bool GetFlip(void)      { return _flip; }
-
+	
   void SetDimensions(int width, int height)	{_width = width; _height = height;}
-	void SetRotate(int rotate)									{ _rotate = rotate;}
+  void SetRotate(int rotate)									{ _rotate = rotate;}
+  void SetChrominanceOffset(int val) { _chrOff = val; }
   void SetFlip(bool flip) { _flip = flip; }
-
 protected:
 	/// Members.
 	int	_width;
 	int	_height;
 	int	_rotate;
-	/// TOREMOVE
   /// Offset added to the chr values. Typically = 128 to shift all values to positive.
 	int	_chrOff;
   /// Windows bitmaps are bottom to top, standard YUV formats are top to bottom

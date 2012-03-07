@@ -58,7 +58,7 @@ public:
   virtual void Convert(void* pY, void* pU, void* pV, void* pRgb) 
   {
     // let invert take precedence, not catering for both
-    if(_invert) 
+    if(_flip) 
       InvertConvert(pY, pU, pV, pRgb);
     else				
     {

@@ -59,8 +59,8 @@ public:
     void Convert(void* pRgb, void* pY, void* pU, void* pV);
 
 protected:
-    void InvertConvert(void* pRgb, void* pY, void* pU, void* pV);
-    void NonInvertConvert(void* pRgb, void* pY, void* pU, void* pV);
+  void FlipConvert(void* pRgb, void* pY, void* pU, void* pV);
+  void NonFlipConvert(void* pRgb, void* pY, void* pU, void* pV);
 
 };//end _REALRGB24TOYUV420CONVERTERIMPL2_H.
 
