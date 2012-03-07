@@ -85,11 +85,12 @@ private:
 
 	struct TimeInfo
 	{
-		TimeInfo(REFERENCE_TIME tStart, REFERENCE_TIME tStop)
-			:StartTime(tStart), StopTime(tStop)
+		TimeInfo(REFERENCE_TIME tStart, REFERENCE_TIME tStop, unsigned uiSize)
+			:StartTime(tStart), StopTime(tStop), Size(uiSize)
 		{;}
 		REFERENCE_TIME StartTime;
 		REFERENCE_TIME StopTime;
+    unsigned Size;
 	};
 
 	std::vector<TimeInfo> m_vTimeInfo;
