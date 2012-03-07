@@ -54,7 +54,7 @@ YUV420toRGBFilter::YUV420toRGBFilter()
  
   // init converter
   m_pConverter = new RealYUV420toRGB24Converter(m_nInWidth, m_nInHeight);
-  m_pConverter->SetInvert(true);
+  m_pConverter->SetFlip(true);
   m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 }
 
@@ -332,7 +332,7 @@ STDMETHODIMP YUV420toRGBFilter::SetParameter( const char* type, const char* valu
     if (m_pConverter)
     {
       m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
-      m_pConverter->SetInvert(m_bInvert);
+      m_pConverter->SetFlip(m_bInvert);
     }
     return S_OK;
   }

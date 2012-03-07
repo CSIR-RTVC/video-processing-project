@@ -101,13 +101,13 @@ HRESULT RGBtoYUV420Filter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
 			if (pmt->subtype == MEDIASUBTYPE_RGB24)
 			{
 				m_pConverter = new RealRGB24toYUV420Converter(m_nInWidth, m_nInHeight, m_nChrominanceOffset);
-        m_pConverter->SetInvert(m_bInvert);
+        m_pConverter->SetFlip(m_bInvert);
         m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 			}
 			else if (pmt->subtype == MEDIASUBTYPE_RGB32)
 			{
 				m_pConverter = new RealRGB32toYUV420Converter(m_nInWidth, m_nInHeight);
-        m_pConverter->SetInvert(m_bInvert);
+        m_pConverter->SetFlip(m_bInvert);
         m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 			}
 		}
@@ -254,7 +254,7 @@ void RGBtoYUV420Filter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long
 		DbgLog((LOG_TRACE, 0, TEXT("RGB to YUV Converter is not initialised - unable to transform")));
 		//m_sLastError = "RGB to YUV Converter is not initialised - unable to transform";
 	}
-	return nTotalSize;
+	lOutActualDataLength = nTotalSize;
 }
 
 HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )
@@ -360,7 +360,7 @@ STDMETHODIMP RGBtoYUV420Filter::SetParameter( const char* type, const char* valu
     if (m_pConverter)
     {
       m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
-      m_pConverter->SetInvert(m_bInvert);
+      m_pConverter->SetFlip(m_bInvert);
     }
     return S_OK;
   }
