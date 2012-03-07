@@ -82,13 +82,13 @@ to 0..255.
 */
 void RealRGB24toYUV420Converter::Convert(void* pRgb, void* pY, void* pU, void* pV)
 {
-  if(_invert) 
-    InvertConvert(pRgb, pY, pU, pV );
+  if (_flip)
+    FlipConvert(pRgb, pY, pU, pV);
   else
-    NonInvertConvert(pRgb, pY, pU, pV);
+    NonFlipConvert(pRgb, pY, pU, pV);
 }
 
-void RealRGB24toYUV420Converter::InvertConvert(void* pRgb, void* pY, void* pU, void* pV)
+void RealRGB24toYUV420Converter::FlipConvert(void* pRgb, void* pY, void* pU, void* pV)
 {
   yuvType*	py = (yuvType *)pY;
   yuvType*	pu = (yuvType *)pU;
@@ -164,7 +164,7 @@ void RealRGB24toYUV420Converter::InvertConvert(void* pRgb, void* pY, void* pU, v
     }//end for xb & yb...
 }
 
-void RealRGB24toYUV420Converter::NonInvertConvert(void* pRgb, void* pY, void* pU, void* pV)
+void RealRGB24toYUV420Converter::NonFlipConvert(void* pRgb, void* pY, void* pU, void* pV)
 {
   yuvType*	py = (yuvType *)pY;
   yuvType*	pu = (yuvType *)pU;

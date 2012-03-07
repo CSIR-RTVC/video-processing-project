@@ -73,11 +73,13 @@ public:
 	/// Member interface.
 	int	GetWidth(void)			{ return(_width); }
 	int	GetHeight(void)			{ return(_height); }
-	int GetChrOffset(void)	{ return(_chrOff); }
+	int GetChrominanceOffset() const { return _chrOff; }
   bool GetFlip() const { return _flip; }
 
   void SetDimensions(int width, int height)	{_width = width; _height = height;}
+  void SetChrOffset(int chrOff){ _chrOff = chrOff; }
   void SetFlip(bool flip) { _flip = flip; }
+  void SetChrominanceOffset(int val) { _chrOff = val; }
 
 protected:
 	/// Members.
