@@ -64,7 +64,7 @@ CUnknown * WINAPI H264SourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
 
 const unsigned MINIMUM_BUFFER_SIZE = 1024;
 H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
-  : CSource(NAME("CSIR RTVC H264 Source"), pUnk, CLSID_H264Source),
+  : CSource(NAME("CSIR VPP H264 Source"), pUnk, CLSID_H264Source),
   m_iWidth(DEFAULT_WIDTH),
   m_iHeight(DEFAULT_HEIGHT),
   m_iFramesPerSecond(25),
