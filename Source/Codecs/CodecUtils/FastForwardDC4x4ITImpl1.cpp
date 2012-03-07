@@ -1,24 +1,46 @@
 /** @file
 
-MODULE						: FastForwardDC4x4ITImpl1
+MODULE				: FastForwardDC4x4ITImpl1
 
-TAG								: FFDC4ITI1
+TAG						: FFDC4ITI1
 
-FILE NAME					: FastForwardDC4x4ITImpl1.cpp
+FILE NAME			: FastForwardDC4x4ITImpl1.cpp
 
-DESCRIPTION				: A class to implement a fast forward 4x4 2-D integer
-										Hardamard transform defined by the H.264 (03/2005) 
-										standard on the input. It implements the 
-										IForwardTransform interface. The scaling is part of 
-										the quantisation process.
+DESCRIPTION		: A class to implement a fast forward 4x4 2-D integer
+								Hardamard transform defined by the H.264 (03/2005) 
+								standard on the input. It implements the 
+								IForwardTransform interface. The scaling is part of 
+								the quantisation process.
 
-REVISION HISTORY	:
+COPYRIGHT			:	(c)CSIR 2007-2009 all rights resevered
 
-COPYRIGHT					: (c)CSIR, Meraka Institute 2007-2009 all rights resevered
+LICENSE				: Software License Agreement (BSD License)
 
-RESTRICTIONS			: The information/data/code contained within this file is 
-										the property of CSIR and is released under the OPEN BSD
-										license.
+RESTRICTIONS	: Redistribution and use in source and binary forms, with or without 
+								modification, are permitted provided that the following conditions 
+								are met:
+
+								* Redistributions of source code must retain the above copyright notice, 
+								this list of conditions and the following disclaimer.
+								* Redistributions in binary form must reproduce the above copyright notice, 
+								this list of conditions and the following disclaimer in the documentation 
+								and/or other materials provided with the distribution.
+								* Neither the name of the CSIR nor the names of its contributors may be used 
+								to endorse or promote products derived from this software without specific 
+								prior written permission.
+
+								THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+								"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+								LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+								A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+								CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+								EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+								PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+								PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+								LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+								NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+								SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ===========================================================================
 */
 #ifdef _WINDOWS
@@ -58,8 +80,10 @@ FastForwardDC4x4ITImpl1::FastForwardDC4x4ITImpl1()
 	_q			= 1;
 	_qm			= _q % 6;
 	_qe			= _q/6;
-	_f			= (1 << (14+_qe))/6;
-	_scale	= 15+_qe;
+//	_f			= (1 << (15+_qe))/6;
+//	_scale	= 15+_qe;
+	_f			= 2 * ((1 << (15+_qe))/3);
+	_scale	= 16 + _qe;
 }//end constructor.
 
 /*
@@ -110,25 +134,25 @@ void FastForwardDC4x4ITImpl1::Transform(void* ptr)
 				int s2 = (int)block[j+4]	- (int)block[j+8];
 
 				/// 2nd stage transform with scaling and quantisation.
-				int x0 = s0 + s1;
+				int x0 = (s0 + s1) >> 1;
 				if(x0 < 0)
 					block[j] = (short)(-( (((-x0) * NormAdjust[_qm]) + _f) >> _scale ));
 				else
 					block[j] = (short)( ((x0 * NormAdjust[_qm]) + _f) >> _scale );
 
-				int x2 = s0 - s1;
+				int x2 = (s0 - s1) >> 1;
 				if(x2 < 0)
 					block[j+8] = (short)(-( (((-x2) * NormAdjust[_qm]) + _f) >> _scale ));
 				else
 					block[j+8] = (short)( ((x2 * NormAdjust[_qm]) + _f) >> _scale );
 
-				int x1 = s2 + s3;
+				int x1 = (s2 + s3) >> 1;
 				if(x1 < 0)
 					block[j+4] = (short)(-( (((-x1) * NormAdjust[_qm]) + _f) >> _scale ));
 				else
 					block[j+4] = (short)( ((x1 * NormAdjust[_qm]) + _f) >> _scale );
 
-				int x3 = s3 - s2;
+				int x3 = (s3 - s2) >> 1;
 				if(x3 < 0)
 					block[j+12] = (short)(-( (((-x3) * NormAdjust[_qm]) + _f) >> _scale ));
 				else
@@ -146,10 +170,10 @@ void FastForwardDC4x4ITImpl1::Transform(void* ptr)
 				int s2 = (int)(block[j+4] - block[j+8]);
 
 				/// 2nd stage transform.
-				block[j]		= (short)(s0 + s1);
-				block[j+8]	= (short)(s0 - s1);
-				block[j+4]	= (short)(s2 + s3);
-				block[j+12]	= (short)(s3 - s2);
+				block[j]		= (short)((s0 + s1) >> 1);
+				block[j+8]	= (short)((s0 - s1) >> 1);
+				block[j+4]	= (short)((s2 + s3) >> 1);
+				block[j+12]	= (short)((s3 - s2) >> 1);
 			}//end for j...
 		}//end else...
 	}//end if _mode != 2...
@@ -202,8 +226,10 @@ void FastForwardDC4x4ITImpl1::SetParameter(int paramID, int paramVal)
 				{
 					_qm			= paramVal % 6;
 					_qe			= paramVal/6;
-					_f			= (1 << (14+_qe))/6;
-					_scale	= 15+_qe;
+//					_f			= (1 << (15+_qe))/6;
+//					_scale	= 15+_qe;
+        	_f			= 2 * ((1 << (15+_qe))/3);
+	        _scale	= 16 + _qe;
 					_q			= paramVal;
 				}//end if q...
 			}//end case QUANT_ID...

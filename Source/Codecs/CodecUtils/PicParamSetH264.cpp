@@ -72,8 +72,8 @@ PicParamSetH264::PicParamSetH264(int pic_param_set_id)
 	_pic_size_in_map_units_minus1						= 395;							///< For 352x288 frame. Num of map units (macroblocks for frames) in the pic. Macroblock width * height.
 	/// Not initialised: _slice_group_id[7];										///< Slice group mapping.
 
-	_num_ref_idx_l0_active_minus1						= 0;								///< Max ref index for ref pic list0.
-	_num_ref_idx_l1_active_minus1						= 0;								///< Max ref index for ref pic list1. (For B-Slices)
+	_num_ref_idx_l0_active_minus1						= 1;								///< Max ref index for ref pic list0.
+	_num_ref_idx_l1_active_minus1						= 1;								///< Max ref index for ref pic list1. (For B-Slices)
 
 	_weighted_pred_flag											= 0;								///< Indicates weighted prediction applied to P-Slices.
 	_weighted_bipred_idc										= 0;								///< Weighted prediction type applied to B-Slices.

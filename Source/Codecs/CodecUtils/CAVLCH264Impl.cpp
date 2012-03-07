@@ -130,7 +130,7 @@ writing to stream. Error codes are:
 	-2 = Stream is full.
 @param in		:	Input block to encode.
 @param rle	:	Run-level encoded stream.
-@return			: Total num of decoded bits. Negative values for errors.
+@return			: Total num of encoded bits. Negative values for errors.
 */
 int CAVLCH264Impl::Encode(void* in, void* stream)
 {

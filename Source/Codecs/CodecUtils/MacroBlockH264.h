@@ -282,15 +282,6 @@ public:
   */
   static void Mark(MacroBlockH264* mb, OverlayMem2Dv2* lum, OverlayMem2Dv2* cb, OverlayMem2Dv2* cr);
 
-  /** Dump the state variables of the macroblock to file.
-  For debugging.
-  @param  mb  : Macroblock to dump
-  @param  filename  : File to write into
-  @param  title     : Title of stored table data
-  @return     : none.
-  */
-  static void Dump(MacroBlockH264* mb, char* filename, const char* title);
-
 /// Constants.
 public:
 	static const int mbCodingOrderY[4][4];	///< Row
@@ -307,16 +298,6 @@ public:
 	static const int Intra_4x4			= 8;
 	static const int Intra_8x8			= 9;
 	static const int Intra_16x16		= 10;
-	/// Intra _intra4x4PredMode values.
-	static const int Intra_4x4_Vert		          = 0;
-	static const int Intra_4x4_Horiz	          = 1;
-	static const int Intra_4x4_DC			          = 2;
-	static const int Intra_4x4_Diag_Down_Left	  = 3;
-	static const int Intra_4x4_Diag_Down_Right	= 4;
-	static const int Intra_4x4_Vert_Right	      = 5;
-	static const int Intra_4x4_Horiz_Down	      = 6;
-	static const int Intra_4x4_Vert_Left	      = 7;
-	static const int Intra_4x4_Horiz_Up	        = 8;
 	/// Intra _intra16x16PredMode values.
 	static const int Intra_16x16_Vert		= 0;
 	static const int Intra_16x16_Horiz	= 1;
