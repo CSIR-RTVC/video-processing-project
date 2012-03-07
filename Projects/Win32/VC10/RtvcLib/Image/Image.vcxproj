@@ -77,6 +77,10 @@
     </ClCompile>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastFixedPointRGB24toYUV420Converter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastGpuRGB24toYUV420Converter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastLookupTableRGB24toYUV420Converter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayExtMem2Dv2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayMem2Dv2.cpp" />
@@ -98,6 +102,10 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastFixedPointRGB24toYUV420Converter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastGpuRGB24toYUV420Converter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastLookupTableRGB24toYUV420Converter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayExtMem2Dv2.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayMem2Dv2.h" />
