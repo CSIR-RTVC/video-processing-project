@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //#include <strsafe.h>
 
 #include <fstream>
+#include <vector>
+
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
 
@@ -77,7 +79,8 @@ class H264SourceFilter :  public CSource,
                           public CSettingsInterface,  /* Rtvc Settings Interface */
                           public CStatusInterface,    /* Rtvc Status Interface */
                           public IFileSourceFilter,	  /* To facilitate loading of URL */
-                          public ISpecifyPropertyPages
+                          public ISpecifyPropertyPages,
+                          public IMediaSeeking
 {
   friend class H264OutputPin;
 
@@ -120,10 +123,31 @@ public:
     return S_OK;
   }
 
+  // IMediaSeeking
+  STDMETHODIMP CheckCapabilities( DWORD *pCapabilities );
+  STDMETHODIMP ConvertTimeFormat( LONGLONG *pTarget, const GUID *pTargetFormat, LONGLONG Source, const GUID *pSourceFormat);
+  STDMETHODIMP GetAvailable(LONGLONG *pEarliest,  LONGLONG *pLatest);
+  STDMETHODIMP GetCapabilities(DWORD *pCapabilities);
+  STDMETHODIMP GetCurrentPosition(LONGLONG *pCurrent);
+  STDMETHODIMP GetDuration(LONGLONG *pDuration);
+  STDMETHODIMP GetPositions( LONGLONG *pCurrent, LONGLONG *pStop);
+  STDMETHODIMP GetPreroll( LONGLONG *pllPreroll );
+  STDMETHODIMP GetRate( double *dRate );
+  STDMETHODIMP GetStopPosition( LONGLONG *pStop);
+  STDMETHODIMP GetTimeFormat( GUID *pFormat );
+  STDMETHODIMP IsFormatSupported( const GUID *pFormat );
+  STDMETHODIMP IsUsingTimeFormat( const GUID *pFormat );
+  STDMETHODIMP QueryPreferredFormat( GUID *pFormat );
+  STDMETHODIMP SetPositions(LONGLONG *pCurrent, DWORD dwCurrentFlags, LONGLONG *pStop, DWORD dwStopFlags);
+  STDMETHODIMP SetRate( double dRate );
+  STDMETHODIMP SetTimeFormat( const GUID *pFormat );
+
 private:
   // Constructor is private because you have to use CreateInstance
   H264SourceFilter(IUnknown *pUnk, HRESULT *phr);
   ~H264SourceFilter();
+
+  void skipToFrame(unsigned uiFrameNumber);
 
   bool isIdrFrame(unsigned char nalUnitHeader)
   {
@@ -199,10 +223,17 @@ private:
   unsigned char* m_pBuffer;
   unsigned m_uiBytesInBuffer;
   unsigned m_uiCurrentNalUnitSize;
+  unsigned m_uiCurrentNalUnitStartPos;
 
   int m_iFileSize;
   int m_iRead;
   std::ifstream m_in1;
+
+  // store byte indexes of various frames for IMediaSeeking implementation
+  bool m_bAnalyseOnLoad;
+  std::vector<unsigned> m_vParameterSets;
+  std::vector<unsigned> m_vIdrFrames;
+  std::vector<unsigned> m_vFrames;
 };
 
 
