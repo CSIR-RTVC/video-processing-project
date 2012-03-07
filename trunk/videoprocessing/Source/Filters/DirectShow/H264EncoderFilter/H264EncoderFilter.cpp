@@ -99,7 +99,10 @@ HRESULT H264EncoderFilter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
 		}
 		else if (pmt->subtype == MEDIASUBTYPE_YUV420P)
 		{
-			m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P);
+      // NOTE: RG: _BUILD_FOR_SHORT has been elminated outside of the H.264 codec
+      // We will only use 8 bit YUV outside of the codec!
+			//m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P);
+			m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P8);
 		}
     else if (pmt->subtype == MEDIASUBTYPE_I420)
     {
