@@ -10,7 +10,7 @@ DESCRIPTION		: A 2nd generation of video codecs based on the H.264 standard
 								implementation. The primary interface is ICodecv2 for access 
 								and configuration.
 
-COPYRIGHT			: (c)CSIR 2007-2011 all rights resevered
+COPYRIGHT			: (c)CSIR 2007-2012 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -89,9 +89,6 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 
 /// Use non-reversible CCIR-601 colour conversions.
 //#define _CCIR601
-
-/// Unit test code inclusion.
-//#define _INCLUDE_TEST_CODE
 
 /*
 ===========================================================================
@@ -210,61 +207,61 @@ private:
 	OverlayMem2Dv2*	_8x8_1;
 
 private:
-  void						ResetMembers(void);
-	int							CodeNonPicNALTypes(void* pCmp, int frameBitLimit);
+  void				ResetMembers(void);
+	int					CodeNonPicNALTypes(void* pCmp, int frameBitLimit);
 
-	int							SetSeqParamSet(int index);
-	int							WriteSeqParamSet(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed, int index);
-	int							ReadSeqParamSet(IBitStreamReader* bsr, int remainingBits, int* bitsUsed, int* idx, int* changedFlag);
-	int							SetPicParamSet(int index, int seqRef);
-	int							WritePicParamSet(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed, int index);
-	int							ReadPicParamSet(IBitStreamReader* bsr, int remainingBits, int* bitsUsed, int* idx, int* changedFlag);
-	int							GetCodecParams(int picParamSet);
+	int					SetSeqParamSet(int index);
+	int					WriteSeqParamSet(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed, int index);
+	int					ReadSeqParamSet(IBitStreamReader* bsr, int remainingBits, int* bitsUsed, int* idx, int* changedFlag);
+	int					SetPicParamSet(int index, int seqRef);
+	int					WritePicParamSet(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed, int index);
+	int					ReadPicParamSet(IBitStreamReader* bsr, int remainingBits, int* bitsUsed, int* idx, int* changedFlag);
+	int					GetCodecParams(int picParamSet);
 
-	int							WriteNALHeader(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
-	int							ReadNALHeader(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
-	int							WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
-	int							ReadSliceLayerHeader(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
+	int					WriteNALHeader(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
+	int					ReadNALHeader(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
+	int					WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
+	int					ReadSliceLayerHeader(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
 
-	int							WriteTrailingBits(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
-	int							ReadTrailingBits(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
+	int					WriteTrailingBits(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
+	int					ReadTrailingBits(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
 
-  int             InsertEmulationPrevention(IBitStreamWriter* bsw, int startOffset);
-  int             RemoveEmulationPrevention(IBitStreamReader* bsr);
+  int         InsertEmulationPrevention(IBitStreamWriter* bsw, int startOffset);
+  int         RemoveEmulationPrevention(IBitStreamReader* bsr);
 
-	int							WriteSliceDataLayer(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
-	int							ReadSliceDataLayer(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
+	int					WriteSliceDataLayer(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed);
+	int					ReadSliceDataLayer(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
 
-	int							WriteMacroBlockLayer(IBitStreamWriter* bsw, MacroBlockH264* pMb, int allowedBits, int* bitsUsed);
-	int							MacroBlockLayerBitCounter(MacroBlockH264* pMb);
-	int							ReadMacroBlockLayer(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
+	int					WriteMacroBlockLayer(IBitStreamWriter* bsw, MacroBlockH264* pMb, int allowedBits, int* bitsUsed);
+	int					MacroBlockLayerBitCounter(MacroBlockH264* pMb);
+	int					ReadMacroBlockLayer(IBitStreamReader* bsr, int remainingBits, int* bitsUsed);
 
-	void						ApplyLoopFilter(void);
-	void						VerticalFilter(MacroBlockH264* pMb, short** img, int lumFlag, int rowOff, int colOff, int iter, int boundaryStrength);
-	void						HorizontalFilter(MacroBlockH264* pMb, short** img, int lumFlag, int rowOff, int colOff, int iter, int boundaryStrength);
+	void				ApplyLoopFilter(void);
+	void				VerticalFilter(MacroBlockH264* pMb, short** img, int lumFlag, int rowOff, int colOff, int iter, int boundaryStrength);
+	void				HorizontalFilter(MacroBlockH264* pMb, short** img, int lumFlag, int rowOff, int colOff, int iter, int boundaryStrength);
 
-	void						TransAndQuantIntra16x16MBlk(MacroBlockH264* pMb);
-	void						TransAndQuantIntra16x16ModeBlk(IForwardTransform* pTQ, BlockH264* pBlk, short* pDcBlkCoeff);
-	void						InverseTransAndQuantIntra16x16MBlk(MacroBlockH264* pMb, int tmpBlkFlag);
-	void						InvTransAndQuantIntra16x16ModeBlk(IInverseTransform* pTQ, BlockH264* pBlk, short* pDcBlkCoeff);
+	void				TransAndQuantIntra16x16MBlk(MacroBlockH264* pMb);
+	void				TransAndQuantIntra16x16ModeBlk(IForwardTransform* pTQ, BlockH264* pBlk, short* pDcBlkCoeff);
+	void				InverseTransAndQuantIntra16x16MBlk(MacroBlockH264* pMb, int tmpBlkFlag);
+	void				InvTransAndQuantIntra16x16ModeBlk(IInverseTransform* pTQ, BlockH264* pBlk, short* pDcBlkCoeff);
 
-	void						TransAndQuantInter16x16MBlk(MacroBlockH264* pMb);
-	void						InverseTransAndQuantInter16x16MBlk(MacroBlockH264* pMb, int tmpBlkFlag);
+	void				TransAndQuantInter16x16MBlk(MacroBlockH264* pMb);
+	void				InverseTransAndQuantInter16x16MBlk(MacroBlockH264* pMb, int tmpBlkFlag);
 
-	int							GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* in, OverlayMem2Dv2* ref, OverlayMem2Dv2* pred);
-	int							GetIntra16x16LumPred(MacroBlockH264* pMb, OverlayMem2Dv2* ref, OverlayMem2Dv2* pred, int predMode);
-	void						GetIntra16x16LumDCPred(MacroBlockH264* pMb, OverlayMem2Dv2* lum, OverlayMem2Dv2* pred);
-	int							GetIntra16x16LumPlanePred(MacroBlockH264* pMb, OverlayMem2Dv2* lum, OverlayMem2Dv2* pred);
-	int							GetIntraVertPred(MacroBlockH264* pMb, OverlayMem2Dv2* img, OverlayMem2Dv2* pred, int lumFlag);
-	int							GetIntraHorizPred(MacroBlockH264* pMb, OverlayMem2Dv2* img, OverlayMem2Dv2* pred, int lumFlag);
-	void						GetIntra8x8ChrDCPred(MacroBlockH264* pMb, OverlayMem2Dv2* chr, OverlayMem2Dv2* pred);
-	int							GetIntra8x8ChrPlanePred(MacroBlockH264* pMb, OverlayMem2Dv2* chr, OverlayMem2Dv2* pred);
-	int							GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb,	OverlayMem2Dv2* cb,			OverlayMem2Dv2* cr,			 
+	int					GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* in, OverlayMem2Dv2* ref, OverlayMem2Dv2* pred);
+	int					GetIntra16x16LumPred(MacroBlockH264* pMb, OverlayMem2Dv2* ref, OverlayMem2Dv2* pred, int predMode);
+	void				GetIntra16x16LumDCPred(MacroBlockH264* pMb, OverlayMem2Dv2* lum, OverlayMem2Dv2* pred);
+	int					GetIntra16x16LumPlanePred(MacroBlockH264* pMb, OverlayMem2Dv2* lum, OverlayMem2Dv2* pred);
+	int					GetIntraVertPred(MacroBlockH264* pMb, OverlayMem2Dv2* img, OverlayMem2Dv2* pred, int lumFlag);
+	int					GetIntraHorizPred(MacroBlockH264* pMb, OverlayMem2Dv2* img, OverlayMem2Dv2* pred, int lumFlag);
+	void				GetIntra8x8ChrDCPred(MacroBlockH264* pMb, OverlayMem2Dv2* chr, OverlayMem2Dv2* pred);
+	int					GetIntra8x8ChrPlanePred(MacroBlockH264* pMb, OverlayMem2Dv2* chr, OverlayMem2Dv2* pred);
+	int					GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb,	OverlayMem2Dv2* cb,			OverlayMem2Dv2* cr,			 
 																																	OverlayMem2Dv2* refCb,	OverlayMem2Dv2* refCr, 
 																																	OverlayMem2Dv2* predCb, OverlayMem2Dv2* predCr);
 
-	int							Median(int x, int y, int z);
-  static void     DumpBlock(OverlayMem2Dv2* pBlk, char* filename, const char* title);
+	int					Median(int x, int y, int z);
+  static void DumpBlock(OverlayMem2Dv2* pBlk, char* filename, const char* title);
 
 /// The implementations of img plane encoders and decoders is done through a common
 /// interface and as private nested classes.
@@ -407,20 +404,7 @@ private:
   */
   inline int GetNextMbQP(MacroBlockH264* pMb);
 
-#ifdef _INCLUDE_TEST_CODE
-/// Test vector code.
-private:
-	int		TestMacroblockIT(void);
-	int		TestFastIT(void);
-	int		TestFast16x16IT(void);
-	int		TestCAVLC(void);
-	int   TestVlcCodecs(void);
-	int		TestBlockLayer(void);
-	int		TestMacroBlockLayer(void);
-
-#endif // _INCLUDE_TEST_CODE
-
-/// Status.
+/// Codec Status.
 private:
 	char*		_errorStr;
 	int			_codecIsOpen;

@@ -10,7 +10,7 @@ DESCRIPTIONS  : A 2nd generation of video codecs based on the H264 standard
 								implementation. The primary interface is ICodecv2 for access 
 								and configuration.
                   
-COPYRIGHT			: (c)CSIR 2007-2011 all rights resevered
+COPYRIGHT			: (c)CSIR 2007-2012 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -258,13 +258,6 @@ const int H264v2Codec::indexAbS[3][52]	= { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 			};
 #endif
 
-/////////////////////////////////////
-static MeasurementTable H264V2_T;
-//static int H264V2_ITER[64];
-//static int H264V2_MAX_ITER = 0;
-
-/////////////////////////////////////
-
 /*
 --------------------------------------------------------------------------
   Construction and destruction. 
@@ -278,83 +271,6 @@ H264v2Codec::H264v2Codec()
 
 void H264v2Codec::ResetMembers(void)
 {
-////////////////////////////////////////////////
-/*
-	for(int n = 0; n < 64; n++)
-		H264V2_P[n] = 0;
-	for(int m = 0; m < 32; m++)
-	{
-		H264V2_IP[m] = 0;
-	}
-*/
-/*
-	H264V2_T.Create(2, H264V2_TLEN);
-	H264V2_T.SetTitle("Macroblock QP vs D Model");
-	H264V2_T.SetHeading(0, "QP");
-	H264V2_T.SetHeading(1, "Distortion");
-	H264V2_T.SetDataType(0, MeasurementTable::INT);
-	H264V2_T.SetDataType(1, MeasurementTable::INT);
-	for(int i = 0; i < 2; i++)
-		for(int j = 0; j < H264V2_TLEN; j++)
-			H264V2_T.WriteItem(i, j, 0);
-
-	H264V2_POS = 0;
-*/
-/*
-	H264V2_T.Create(2, H264V2_TLEN);
-	H264V2_T.SetTitle("D vs R Model");
-	H264V2_T.SetHeading(0, "Distortion");
-	H264V2_T.SetHeading(1, "Rate");
-	H264V2_T.SetDataType(0, MeasurementTable::DOUBLE);
-	H264V2_T.SetDataType(1, MeasurementTable::DOUBLE);
-	for(int i = 0; i < 2; i++)
-		for(int j = 0; j < H264V2_TLEN; j++)
-			H264V2_T.WriteItem(i, j, 0);
-
-	H264V2_POS = 0;
-*/
-/*
-	H264V2_T.Create(2, H264V2_TLEN);
-	H264V2_T.SetTitle("Iteration Distribution");
-	H264V2_T.SetHeading(0, "Iter/frame");
-	H264V2_T.SetHeading(1, "Iterations");
-	H264V2_T.SetDataType(0, MeasurementTable::DOUBLE);
-	H264V2_T.SetDataType(1, MeasurementTable::DOUBLE);
-	for(int j = 0; j < H264V2_TLEN; j++)
-	{
-		H264V2_T.WriteItem(0, j, j);
-		H264V2_T.WriteItem(1, j, 0);
-	}//end for i...
-
-	H264V2_POS = 0;
-*/
-/*
-	H264V2_T.Create(4, H264V2_TLEN);
-	H264V2_T.SetTitle("Intra_16x16 mode selection");
-	H264V2_T.SetHeading(0, "MB num");
-	H264V2_T.SetHeading(1, "Distortion");
-	H264V2_T.SetHeading(2, "Mode");
-	H264V2_T.SetHeading(3, "Sample Pts");
-	H264V2_T.SetDataType(0, MeasurementTable::INT);
-	H264V2_T.SetDataType(1, MeasurementTable::INT);
-	H264V2_T.SetDataType(2, MeasurementTable::INT);
-	H264V2_T.SetDataType(3, MeasurementTable::INT);
-	for(int j = 0; j < H264V2_TLEN; j++)
-	{
-		H264V2_T.WriteItem(0, j, 0);
-		H264V2_T.WriteItem(1, j, 0);
-		H264V2_T.WriteItem(2, j, 0);
-		H264V2_T.WriteItem(3, j, 0);
-	}//end for i...
-
-	H264V2_POS = 0;
-*/
-/*
-  for(int i = 0; i < 64; i++)
-    H264V2_ITER[i] = 0;
-  H264V2_MAX_ITER = 0;
-*/
-////////////////////////////////////////////////
 	_errorStr			 = "[H264v2Codec::ResetMembers] No error";
 	_codecIsOpen	 = 0;
 	_bitStreamSize = 0;
@@ -702,7 +618,12 @@ int H264v2Codec::SetMember(const char* type, void* pValue)
   Public Implementation.                                
 -----------------------------------------------------------------------
 */
-
+/** Open the codec for encoding/decoding.
+The state of the codec and memory allocations are made in this method and are 
+entirely dependent on the codec parameters. Using SetParameter() all parmeters
+must be set prior to calling this methods.
+@return : 1 = success, 0 = failure.
+*/
 int H264v2Codec::Open(void)
 {
   int i;
@@ -896,18 +817,11 @@ int H264v2Codec::Open(void)
 	if(_outColour == H264V2_RGB24)
 	{
 		/// Decoder output.
-//		if((_OutPel_X < 0) || (_OutPel_Y < 0) || ((_OutPel_X == _Pel_X)&&(_OutPel_Y == _Pel_Y)))
 #ifdef _CCIR601
 			_pOutColourConverter = new RealYUV420toRGB24CCIR601Converter(_width, _height);
 #else
 			_pOutColourConverter = new RealYUV420toRGB24ConverterImpl2(_width, _height, 128);
 #endif
-//		else
-//		{
-//			_pOutColourConverter = new Fast6BitYUV420toRGB24ZoomConverter(_Pel_X, _Pel_Y);
-//			if(_pOutColourConverter != NULL)
-//				((Fast6BitYUV420toRGB24ZoomConverter *)_pOutColourConverter)->SetOutputDimensions(_OutPel_X, _OutPel_Y);
-//		}//end else...
 
 		if(_pOutColourConverter == NULL)
 		{
@@ -948,51 +862,49 @@ int H264v2Codec::Open(void)
 	_pI4x4TLum->SetMode(IInverseTransform::TransformOnly);
 	_pI4x4TChr->SetMode(IInverseTransform::TransformOnly);
 	_pIDC4x4T->SetMode(IInverseTransform::TransformAndQuant);
-//	_pIDC4x4T->SetScale((void *)dc4x4Scale);
 	_pIDC2x2T->SetMode(IInverseTransform::TransformAndQuant);
-//	_pIDC2x2T->SetScale((void *)dc2x2Scale);
 
 	// --------------- Create the Vlc encoders and decoders --------------------------
 	/// Create the vlc encoders and decoders for use with CAVLC.
-	_pPrefixVlcEnc					= new PrefixH264VlcEncoderImpl1();			///< New H.264
-	_pPrefixVlcDec					= new PrefixH264VlcDecoderImpl1();			///< New H.264
-	_pCoeffTokenVlcEnc			= new CoeffTokenH264VlcEncoder();				///< New H.264
-	_pCoeffTokenVlcDec			= new CoeffTokenH264VlcDecoder();				///< New H.264
-	_pTotalZeros4x4VlcEnc		= new TotalZeros4x4H264VlcEncoder();		///< New H.264
-	_pTotalZeros4x4VlcDec		= new TotalZeros4x4H264VlcDecoder();		///< New H.264
-	_pTotalZeros2x2VlcEnc		= new TotalZeros2x2H264VlcEncoder();		///< New H.264
-	_pTotalZeros2x2VlcDec		= new TotalZeros2x2H264VlcDecoder();		///< New H.264
-	_pRunBeforeVlcEnc				= new RunBeforeH264VlcEncoder();				///< New H.264
-	_pRunBeforeVlcDec				= new RunBeforeH264VlcDecoder();				///< New H.264
+	_pPrefixVlcEnc					= new PrefixH264VlcEncoderImpl1();
+	_pPrefixVlcDec					= new PrefixH264VlcDecoderImpl1();
+	_pCoeffTokenVlcEnc			= new CoeffTokenH264VlcEncoder();
+	_pCoeffTokenVlcDec			= new CoeffTokenH264VlcDecoder();
+	_pTotalZeros4x4VlcEnc		= new TotalZeros4x4H264VlcEncoder();
+	_pTotalZeros4x4VlcDec		= new TotalZeros4x4H264VlcDecoder();
+	_pTotalZeros2x2VlcEnc		= new TotalZeros2x2H264VlcEncoder();
+	_pTotalZeros2x2VlcDec		= new TotalZeros2x2H264VlcDecoder();
+	_pRunBeforeVlcEnc				= new RunBeforeH264VlcEncoder();
+	_pRunBeforeVlcDec				= new RunBeforeH264VlcDecoder();
 
 	/// Vlc encoder and decoder for the coded block pattern.
-	_pBlkPattVlcEnc	= new CodedBlkPatternH264VlcEncoder();					///< New H.264
-	_pBlkPattVlcDec	= new CodedBlkPatternH264VlcDecoder();					///< New H.264
+	_pBlkPattVlcEnc	= new CodedBlkPatternH264VlcEncoder();
+	_pBlkPattVlcDec	= new CodedBlkPatternH264VlcDecoder();
 
 	/// Vlc encoder and decoder for the delta QP.
-	_pDeltaQPVlcEnc	= new ExpGolombSignedVlcEncoder();							///< New H.264
-	_pDeltaQPVlcDec	= new ExpGolombSignedVlcDecoder();							///< New H.264
+	_pDeltaQPVlcEnc	= new ExpGolombSignedVlcEncoder();
+	_pDeltaQPVlcDec	= new ExpGolombSignedVlcDecoder();
 
 	/// Vlc encoder and decoder for the macroblock type.
-	_pMbTypeVlcEnc	= new ExpGolombUnsignedVlcEncoder();						///< New H.264
-	_pMbTypeVlcDec	= new ExpGolombUnsignedVlcDecoder();						///< New H.264
+	_pMbTypeVlcEnc	= new ExpGolombUnsignedVlcEncoder();
+	_pMbTypeVlcDec	= new ExpGolombUnsignedVlcDecoder();
 
 	/// Vlc encoder and decoder for intra chr pred mode. ExpGolomb codecs
 	/// are stateless therefore they can be reused.
-	_pMbIChrPredModeVlcEnc	= _pMbTypeVlcEnc;												///< New H.264
-	_pMbIChrPredModeVlcDec	= _pMbTypeVlcDec;												///< New H.264
+	_pMbIChrPredModeVlcEnc	= _pMbTypeVlcEnc;
+	_pMbIChrPredModeVlcDec	= _pMbTypeVlcDec;
 
 	/// Vlc encoder and decoder for motion vector differences. ExpGolomb codecs
 	/// are stateless therefore they can be reused.
-	_pMbMotionVecDiffVlcEnc	= _pDeltaQPVlcEnc;											///< New H.264
-	_pMbMotionVecDiffVlcDec	= _pDeltaQPVlcDec;											///< New H.264
+	_pMbMotionVecDiffVlcEnc	= _pDeltaQPVlcEnc;
+	_pMbMotionVecDiffVlcDec	= _pDeltaQPVlcDec;
 
 	/// Vlc encoder and decoder for general headers. ExpGolomb codecs
 	/// are stateless therefore they can be reused.
-	_pHeaderUnsignedVlcEnc	= _pMbTypeVlcEnc;												///< New H.264
-	_pHeaderUnsignedVlcDec	= _pMbTypeVlcDec;												///< New H.264
-	_pHeaderSignedVlcEnc		= _pDeltaQPVlcEnc;											///< New H.264
-	_pHeaderSignedVlcDec		= _pDeltaQPVlcDec;											///< New H.264
+	_pHeaderUnsignedVlcEnc	= _pMbTypeVlcEnc;	
+	_pHeaderUnsignedVlcDec	= _pMbTypeVlcDec;
+	_pHeaderSignedVlcEnc		= _pDeltaQPVlcEnc;
+	_pHeaderSignedVlcDec		= _pDeltaQPVlcDec;
 
 	if( (_pPrefixVlcEnc == NULL)||(_pPrefixVlcDec == NULL)||
 			(_pCoeffTokenVlcEnc == NULL)||(_pCoeffTokenVlcDec == NULL) ||
@@ -1019,36 +931,25 @@ int H264v2Codec::Open(void)
   }//end if !_pCAVLC4x4...
 
 	/// Attach the vlc encoders and decoders to the associated CAVLC.
-	_pCAVLC4x4->SetMode(CAVLCH264Impl::Mode4x4);																				///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetTokenCoeffVlcEncoder(_pCoeffTokenVlcEnc);					///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetTokenCoeffVlcDecoder(_pCoeffTokenVlcDec);					///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetPrefixVlcEncoder(_pPrefixVlcEnc);									///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetPrefixVlcDecoder(_pPrefixVlcDec);									///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetRunBeforeVlcEncoder(_pRunBeforeVlcEnc);						///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetRunBeforeVlcDecoder(_pRunBeforeVlcDec);						///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetTotalZerosVlcEncoder(_pTotalZeros4x4VlcEnc);			///< New H.264
-	((CAVLCH264Impl *)_pCAVLC4x4)->SetTotalZerosVlcDecoder(_pTotalZeros4x4VlcDec);			///< New H.264
+	_pCAVLC4x4->SetMode(CAVLCH264Impl::Mode4x4);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetTokenCoeffVlcEncoder(_pCoeffTokenVlcEnc);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetTokenCoeffVlcDecoder(_pCoeffTokenVlcDec);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetPrefixVlcEncoder(_pPrefixVlcEnc);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetPrefixVlcDecoder(_pPrefixVlcDec);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetRunBeforeVlcEncoder(_pRunBeforeVlcEnc);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetRunBeforeVlcDecoder(_pRunBeforeVlcDec);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetTotalZerosVlcEncoder(_pTotalZeros4x4VlcEnc);
+	((CAVLCH264Impl *)_pCAVLC4x4)->SetTotalZerosVlcDecoder(_pTotalZeros4x4VlcDec);
 
-	_pCAVLC2x2->SetMode(CAVLCH264Impl::Mode2x2);																				///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetTokenCoeffVlcEncoder(_pCoeffTokenVlcEnc);					///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetTokenCoeffVlcDecoder(_pCoeffTokenVlcDec);					///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetPrefixVlcEncoder(_pPrefixVlcEnc);									///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetPrefixVlcDecoder(_pPrefixVlcDec);									///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetRunBeforeVlcEncoder(_pRunBeforeVlcEnc);						///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetRunBeforeVlcDecoder(_pRunBeforeVlcDec);						///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetTotalZerosVlcEncoder(_pTotalZeros2x2VlcEnc);			///< New H.264
-	((CAVLCH264Impl *)_pCAVLC2x2)->SetTotalZerosVlcDecoder(_pTotalZeros2x2VlcDec);			///< New H.264
-
-#ifdef _INCLUDE_TEST_CODE
-  TestMacroblockIT();
-//	TestFastIT();
-//	TestFast16x16IT();
-//	TestCAVLC();
-//	TestVlcCodecs();
-//	TestBlockLayer();
-//	TestMacroBlockLayer();
-
-#endif // _INCLUDE_TEST_CODE
+	_pCAVLC2x2->SetMode(CAVLCH264Impl::Mode2x2);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetTokenCoeffVlcEncoder(_pCoeffTokenVlcEnc);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetTokenCoeffVlcDecoder(_pCoeffTokenVlcDec);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetPrefixVlcEncoder(_pPrefixVlcEnc);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetPrefixVlcDecoder(_pPrefixVlcDec);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetRunBeforeVlcEncoder(_pRunBeforeVlcEnc);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetRunBeforeVlcDecoder(_pRunBeforeVlcDec);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetTotalZerosVlcEncoder(_pTotalZeros2x2VlcEnc);
+	((CAVLCH264Impl *)_pCAVLC2x2)->SetTotalZerosVlcDecoder(_pTotalZeros2x2VlcDec);
 
 	// --------------- Configure bit stream access -----------------------------------
 	_pBitStreamWriter = new BitStreamWriterMSB();
@@ -1081,15 +982,15 @@ int H264v2Codec::Open(void)
 																																_lumHeight,
 																																motionVectorRange, ///< In 1/4 pel units.
 																																_autoIFrameIncluded);
-/*
+
 	/// Slow more accurate multiresolution estimator.
-	_pMotionEstimator = new MotionEstimatorH264ImplMultires((const void *)_pLum,	///< Multi res estimation.
-																													(const void *)_pRLum,
-																													_lumWidth,
-																													_lumHeight,
-																													motionVectorRange, ///< In 1/4 pel units
-																													_autoIFrameIncluded);
-*/
+//	_pMotionEstimator = new MotionEstimatorH264ImplMultires((const void *)_pLum,	///< Multi res estimation.
+//																													(const void *)_pRLum,
+//																													_lumWidth,
+//																													_lumHeight,
+//																													motionVectorRange, ///< In 1/4 pel units
+//																													_autoIFrameIncluded);
+
 	if(_pMotionEstimator != NULL)
 	{
 		/// Implementation specific modes.
@@ -1193,6 +1094,17 @@ int H264v2Codec::Open(void)
   return(1);
 }//end Open.
 
+/** Encode one frame of pels to a compressed stream.
+The input source pels in the format specified by "incolour" parameter are compressed
+to the output stream. The codeParameter specifies either the max size in bits of the 
+pCmp buffer or the number of bits to target during the compression process. The interpretation
+is determined by the "mode of operation" parameter. For SPS and PPS encoding the input 
+pSrc is ignored.
+@param  pSrc          : Input raw pels of one complete frame.
+@param  pCmp          : Output compressed stream buffer.
+@param  codeParameter : Mode of operation based bit size limits.
+@return               : 1 = success, 0 = failure.
+*/
 int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
 {
 	int allowedBits, bitsUsed;
@@ -1322,7 +1234,7 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
   }//end if H264V2_INTER...
 	else	///< if(_pictureCodingType == H264V2_INTRA)
   {
-	  _nal._ref_idc	= 1;  ///< Non-zero for all referenced frames P and I.
+	  _nal._ref_idc	= 3;  ///< Non-zero for all referenced frames P and I.
 		_nal._unit_type = NalHeaderH264::IDR_Slice;
   }//end else...
 
@@ -1423,6 +1335,15 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
 	return(1);
 }//end Code.
 
+/** Decode the compresed frame into raw pel samples.
+The input types are a compressed picture IDR or P NAL unit, a SPS, a PPS or a concatenated 
+SPS, PPS and compressed picture. The output is the raw picture pels in the format specified 
+by the "outcolour" codec parameter.
+@param  pCmp      : Compressed stream.
+@param  bitLength : Length in bits of pCmp.
+@param  pDst      : Raw pel output.
+@return           : 1 = success, 0 = failure.
+*/
 int	H264v2Codec::Decode(void* pCmp, int bitLength, void* pDst)
 {
   int	runOutOfBits	= 0;
@@ -1539,7 +1460,6 @@ int	H264v2Codec::Decode(void* pCmp, int bitLength, void* pDst)
               _pictureCodingType = tmpPicCodingType;
               }//end if changed...
 
-  //          return(1);
           }//end if _codecIsOpen...
 
           if(frameBitSize < 32) ///< No more units.
@@ -1667,25 +1587,6 @@ int	H264v2Codec::Decode(void* pCmp, int bitLength, void* pDst)
 
 int H264v2Codec::Close(void)
 {
-/////////////////////////////////////////////////////////////////
-/*
-		H264V2_P[32] = 0;
-		for(int i = 0; i < 31; i++)
-		{
-			H264V2_P[32] += (i * H264V2_P[i]);
-		}
-*/
-/*
-		if(H264V2_POS > 0)
-		{
-			H264V2_T.Save("E:/keithf/Excel/VideoEvaluation/MbQPvsD.dat", ",");
-			H264V2_POS = 0;
-		}//end if H264V2_POS...
-*/
-//		H264V2_T.Save("Intra.dat", ",");
-//		H264V2_POS = 0;
-/////////////////////////////////////////////////////////////////
-
 	/// Free the image memory and associated overlays.
 	if(_Lum != NULL)
 		delete _Lum;
@@ -1788,65 +1689,65 @@ int H264v2Codec::Close(void)
 	if(_pTotalZeros4x4VlcEnc != NULL)
 		delete _pTotalZeros4x4VlcEnc;
 	_pTotalZeros4x4VlcEnc = NULL;
-	if(_pTotalZeros4x4VlcDec != NULL)	///< New H.264
+	if(_pTotalZeros4x4VlcDec != NULL)
 		delete _pTotalZeros4x4VlcDec;
 	_pTotalZeros4x4VlcDec = NULL;
 
-	if(_pTotalZeros2x2VlcEnc != NULL)	///< New H.264
+	if(_pTotalZeros2x2VlcEnc != NULL)
 		delete _pTotalZeros2x2VlcEnc;
 	_pTotalZeros2x2VlcEnc = NULL;
-	if(_pTotalZeros2x2VlcDec != NULL)	///< New H.264
+	if(_pTotalZeros2x2VlcDec != NULL)
 		delete _pTotalZeros2x2VlcDec;
 	_pTotalZeros2x2VlcDec = NULL;
 
-	if(_pRunBeforeVlcEnc != NULL)		///< New H.264
+	if(_pRunBeforeVlcEnc != NULL)
 		delete _pRunBeforeVlcEnc;
 	_pRunBeforeVlcEnc = NULL;
-	if(_pRunBeforeVlcDec != NULL)		///< New H.264
+	if(_pRunBeforeVlcDec != NULL)
 		delete _pRunBeforeVlcDec;
 	_pRunBeforeVlcDec = NULL;
 
-	if(_pBlkPattVlcEnc != NULL)			///< New H.264
+	if(_pBlkPattVlcEnc != NULL)
 		delete _pBlkPattVlcEnc;
 	_pBlkPattVlcEnc = NULL;
-	if(_pBlkPattVlcDec != NULL)			///< New H.264
+	if(_pBlkPattVlcDec != NULL)
 		delete _pBlkPattVlcDec;
 	_pBlkPattVlcDec = NULL;
 
-	if(_pDeltaQPVlcEnc != NULL)			///< New H.264
+	if(_pDeltaQPVlcEnc != NULL)
 		delete _pDeltaQPVlcEnc;
 	_pDeltaQPVlcEnc = NULL;
-	if(_pDeltaQPVlcDec != NULL)			///< New H.264
+	if(_pDeltaQPVlcDec != NULL)
 		delete _pDeltaQPVlcDec;
 	_pDeltaQPVlcDec = NULL;
 
-	if(_pMbTypeVlcEnc != NULL)			///< New H.264
+	if(_pMbTypeVlcEnc != NULL)
 		delete _pMbTypeVlcEnc;
 	_pMbTypeVlcEnc = NULL;
-	if(_pMbTypeVlcDec != NULL)			///< New H.264
+	if(_pMbTypeVlcDec != NULL)
 		delete _pMbTypeVlcDec;
 	_pMbTypeVlcDec = NULL;
 
 	/// Vlc codecs that were used as references and not instantiated.
-	_pMbIChrPredModeVlcEnc		= NULL;	///< New H.264
-	_pMbIChrPredModeVlcDec		= NULL;	///< New H.264
-	_pMbMotionVecDiffVlcEnc		= NULL;	///< New H.264
-	_pMbMotionVecDiffVlcDec		= NULL;	///< New H.264
-	_pHeaderUnsignedVlcEnc		= NULL;	///< New H.264
-	_pHeaderUnsignedVlcDec		= NULL;	///< New H.264
-	_pHeaderSignedVlcEnc			= NULL;	///< New H.264
-	_pHeaderSignedVlcDec			= NULL;	///< New H.264
+	_pMbIChrPredModeVlcEnc		= NULL;
+	_pMbIChrPredModeVlcDec		= NULL;
+	_pMbMotionVecDiffVlcEnc		= NULL;
+	_pMbMotionVecDiffVlcDec		= NULL;
+	_pHeaderUnsignedVlcEnc		= NULL;
+	_pHeaderUnsignedVlcDec		= NULL;
+	_pHeaderSignedVlcEnc			= NULL;
+	_pHeaderSignedVlcDec			= NULL;
 
 	/// The CAVLC codecs.
-	if(_pCAVLC4x4 != NULL)			///< New H.264
+	if(_pCAVLC4x4 != NULL)
 		delete _pCAVLC4x4;
 	_pCAVLC4x4 = NULL;
-	if(_pCAVLC2x2 != NULL)			///< New H.264
+	if(_pCAVLC2x2 != NULL)
 		delete _pCAVLC2x2;
 	_pCAVLC2x2 = NULL;
 
 	/// Macroblock data objects.
-	if(_pMb != NULL)								///< New H.264
+	if(_pMb != NULL)
 		delete[] _pMb;
 	_pMb = NULL;
 	if(_Mb != NULL)
@@ -1904,7 +1805,7 @@ int H264v2Codec::Close(void)
 void H264v2Codec::Restart(void)
 {
   _pictureCodingType	= H264V2_INTRA;
-	_frameNum						= 0;				///< Reset the frame counter.					///< New H.264
+	_frameNum						= 0;				///< Reset the frame counter.
 
   /// Zero the reference image. Note that the colour components are 
 	/// held in contiguous mem.
@@ -5067,7 +4968,6 @@ images of both the Lum and Chr components.
 void H264v2Codec::ApplyLoopFilter(void)
 {
 	int mb,i,j;
-//  int mvDiffersBy4;
 	short** lumRef	= _RefLum->Get2DSrcPtr();	///< Image space to operate on.
 	short** cbRef		= _RefCb->Get2DSrcPtr();
 	short** crRef		= _RefCr->Get2DSrcPtr();
@@ -5107,7 +5007,6 @@ void H264v2Codec::ApplyLoopFilter(void)
 				for(i = 0; i < 4; i++)
 				{
 					int bS = mvDiffersBy4;
-//					if(pMb->_lumBlk[i][0].IsCoded() || pMb->_lumBlk[i][0]._blkLeft->IsCoded() )	///< Coded coeffs in block with q or block with p.
 					if(pMb->_lumBlk[i][0].GetNumCoeffs() || pMb->_lumBlk[i][0]._blkLeft->GetNumCoeffs() )	///< Coded coeffs in block with q or block with p.
 						bS = 2;
 
@@ -5147,7 +5046,6 @@ void H264v2Codec::ApplyLoopFilter(void)
 				for(i = 0; i < 4; i++)
 				{
 					int bS = 0;
-//					if(pMb->_lumBlk[i][j].IsCoded() || pMb->_lumBlk[i][j]._blkLeft->IsCoded() )	///< Coded coeffs in block with q or block with p.
 					if(pMb->_lumBlk[i][j].GetNumCoeffs() || pMb->_lumBlk[i][j]._blkLeft->GetNumCoeffs() )	///< Coded coeffs in block with q or block with p.
 						bS = 2;
 
@@ -5192,7 +5090,6 @@ void H264v2Codec::ApplyLoopFilter(void)
 				for(j = 0; j < 4; j++)
 				{
 					int bS = mvDiffersBy4;
-//					if(pMb->_lumBlk[0][j].IsCoded() || pMb->_lumBlk[0][j]._blkAbove->IsCoded() )	///< Coded coeffs in block with q or block with p.
 					if(pMb->_lumBlk[0][j].GetNumCoeffs() || pMb->_lumBlk[0][j]._blkAbove->GetNumCoeffs() )	///< Coded coeffs in block with q or block with p.
 						bS = 2;
 
@@ -5232,7 +5129,6 @@ void H264v2Codec::ApplyLoopFilter(void)
 				for(j = 0; j < 4; j++)
 				{
 					int bS = 0;
-//					if(pMb->_lumBlk[i][j].IsCoded() || pMb->_lumBlk[i][j]._blkAbove->IsCoded() )	///< Coded coeffs in block with q or block with p.
 					if(pMb->_lumBlk[i][j].GetNumCoeffs() || pMb->_lumBlk[i][j]._blkAbove->GetNumCoeffs() )	///< Coded coeffs in block with q or block with p.
 						bS = 2;
 
@@ -7113,233 +7009,6 @@ int H264v2Codec::IntraImgPlaneEncoderImplStdVer1::Encode(int allowedBits, int* b
 	return(1);
 }//end IntraImgPlaneEncoderImplStdVer1::Encode.
 
-/* Block by block version.
-int H264v2Codec::IntraImgPlaneEncoderImplStdVer1::Encode(int allowedBits, int* bitsUsed, int writeRef)
-{
-	int mb, blk;
-	int len	= _codec->_mbLength;
-
-	/// Slice without partitioning and therefore only one set of slice parameters.
-	_codec->_sliceType		= H264v2Codec::I_Slice;
-	_codec->_sliceQP			= _codec->_pQuant;
-	_codec->_sliceQPDelta	= 0;
-
-	/// Set up the input and ref image mem overlays.
-	_codec->_Lum->SetOverlayDim(4,4);
-	_codec->_Cb->SetOverlayDim(4,4);
-	_codec->_Cr->SetOverlayDim(4,4);
-	_codec->_RefLum->SetOverlayDim(4,4);
-	_codec->_RefCb->SetOverlayDim(4,4);
-	_codec->_RefCr->SetOverlayDim(4,4);
-
-	/// All integer transforms are Intra in this method.
-	_codec->_pF4x4T->SetMode(IForwardTransform::TransformOnly);
-	_codec->_pF4x4T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-	/// By default the DC transforms were set in the TransformOnly mode in the Open() method.
-	_codec->_pFDC4x4T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-	_codec->_pFDC2x2T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-
-	/// Whip through each macroblock in the slice and encode. The stream writing of
-	/// the macroblock is seperate to allow further decision making later.
-	for(mb = 0; mb < len; mb++)
-	{
-		/// Simplify the referencing to the current macroblock.
-		MacroBlockH264* pMb = &(_codec->_pMb[mb]);
-
-		/// Base settings for all intra macroblocks.
-		pMb->_intraFlag = 1;
-		pMb->_mbQP			= _codec->_sliceQP;
-
-		///------------------- Image prediction and loading ----------------------------------------
-		/// Currently only Intra 16x16 mode implemented. 
-		//////////////////////// Modes are fixed for testing purpose.
-		pMb->_mbPartPredMode			= MacroBlockH264::Intra_16x16;
-		// TODO: Algorithm to select the prediction modes for Lum and Chr.
-		pMb->_intra16x16PredMode	= MacroBlockH264::Intra_16x16_DC;
-		pMb->_intraChrPredMode		= MacroBlockH264::Intra_Chr_DC;
-
-		/// Fill all the non-DC 4x4 blks (Not blks = -1, 17, 18) of the macroblock blocks with 
-		/// the image colour components after prediction. Chr prediction is fixed and Lum prediction
-		/// varies therefore they are coded in seperate loops.
-
-		///================================ Lum ======================================================
-		/// Image setup.
-		int mbBaseX					= pMb->_offLumX;
-		int mbBaseY					= pMb->_offLumY;
-		OverlayMem2Dv2* img = _codec->_Lum;
-		img->SetOverlayDim(4, 4);	///< Work with the img 4x4 blocks.
-
-		/// Transform and quantisation set up.
-		IForwardTransform*	FTQ = _codec->_pF4x4T;
-		FTQ->SetParameter(IForwardTransform::QUANT_ID, pMb->_mbQP);
-		short*	pDcBlk	= pMb->_lumDcBlk.GetBlk();
-
-		for(blk = MBH264_LUM_0_0; blk <= MBH264_LUM_3_3; blk++)
-		{
-			///---------------- Read block -------------------------------------------
-			BlockH264* pBlk = pMb->_blkParam[blk].pBlk;	///< Short cut reference.
-			/// Align the block with the image space.
-			img->SetOrigin(mbBaseX + pBlk->_offX, mbBaseY + pBlk->_offY);
-			/// Read from the image mem into the block.
-			img->Read(*(pBlk->GetBlkOverlay()));
-
-			///---------------- Transform & Quantisation -----------------------------
-			_codec->TransAndQuantIntra16x16ModeBlk(FTQ, pBlk, &(pDcBlk[pMb->_blkParam[blk].rasterIndex]));
-		}//end for blk...
-
-		///================================ Cb ======================================================
-		mbBaseX	= pMb->_offChrX;
-		mbBaseY	= pMb->_offChrY;
-		img			= _codec->_Cb;
-		img->SetOverlayDim(4, 4);
-		FTQ = _codec->_pF4x4T;
-		FTQ->SetParameter(IForwardTransform::QUANT_ID, MacroBlockH264::GetQPc(pMb->_mbQP));
-		pDcBlk	= pMb->_cbDcBlk.GetBlk();
-		for(blk = MBH264_CB_0_0; blk <= MBH264_CB_1_1; blk++)
-		{
-			///---------------- Read block -------------------------------------------
-			BlockH264* pBlk = pMb->_blkParam[blk].pBlk;	///< Short cut reference.
-			/// Align the block with the image space.
-			img->SetOrigin(mbBaseX + pBlk->_offX, mbBaseY + pBlk->_offY);
-			/// Read from the image mem into the block.
-			img->Read(*(pBlk->GetBlkOverlay()));
-
-			///---------------- Transform & Quantisation -----------------------------
-			_codec->TransAndQuantIntra16x16ModeBlk(FTQ, pBlk, &(pDcBlk[pMb->_blkParam[blk].rasterIndex]));
-		}//end for blk...
-
-		///================================ Cr ======================================================
-		img			= _codec->_Cr;
-		img->SetOverlayDim(4, 4);
-		pDcBlk	= pMb->_crDcBlk.GetBlk();
-		for(blk = MBH264_CR_0_0; blk <= MBH264_CR_1_1; blk++)
-		{
-			///---------------- Read block -------------------------------------------
-			BlockH264* pBlk = pMb->_blkParam[blk].pBlk;	///< Short cut reference.
-			/// Align the block with the image space.
-			img->SetOrigin(mbBaseX + pBlk->_offX, mbBaseY + pBlk->_offY);
-			/// Read from the image mem into the block.
-			img->Read(*(pBlk->GetBlkOverlay()));
-
-			///---------------- Transform & Quantisation -----------------------------
-			_codec->TransAndQuantIntra16x16ModeBlk(FTQ, pBlk, &(pDcBlk[pMb->_blkParam[blk].rasterIndex]));
-		}//end for blk...
-
-		/// Transform and Quantise the DC blocks.
-		_codec->_pFDC4x4T->SetParameter(IForwardTransform::QUANT_ID, pMb->_mbQP);
-		pMb->_lumDcBlk.ForwardTransform(_codec->_pFDC4x4T);
-		_codec->_pFDC2x2T->SetParameter(IForwardTransform::QUANT_ID, MacroBlockH264::GetQPc(pMb->_mbQP));
-		pMb->_cbDcBlk.ForwardTransform(_codec->_pFDC2x2T);
-		pMb->_crDcBlk.ForwardTransform(_codec->_pFDC2x2T);
-
-		/// ------------------ Set patterns and type -----------------------------------------------
-		/// Determine the coded Lum and Chr patterns. The _codedBlkPatternLum, _codedBlkPatternChr 
-		/// and _coded_blk_pattern members are set.
-		pMb->SetCodedBlockPattern(pMb);
-
-		/// Determine the delta quantisation parameter.
-		// TODO: Cater for previous macroblocks that are skipped.
-		int prevMbIdx = pMb->_mbIndex - 1;
-		if(prevMbIdx >= 0)	///< Previous macroblock is within the image boundaries.
-		{
-			if(pMb->_slice == _codec->_pMb[prevMbIdx]._slice)	/// Previous macroblock within same slice.
-				pMb->_mb_qp_delta = pMb->_mbQP - _codec->_pMb[prevMbIdx]._mbQP;
-			else
-				pMb->_mb_qp_delta = pMb->_mbQP - _codec->_sliceQP;
-		}//end if prevMbIdx...
-		else
-			pMb->_mb_qp_delta = pMb->_mbQP - _codec->_sliceQP;
-
-		/// Determine the macroblock type. From the prediction modes and patterns set the 
-		/// _mb_type member.
-		pMb->SetType(&(_codec->_pMb[mb]), _codec->_sliceType);
-
-		/// ------------------ Feedback loop -------------------------------------------------------
-		/// Implement the feedback loop into the ref image. The block coeffs are still required for 
-		/// the context-aware vlc coding and therefore the temporary working blocks are used for this
-		/// feedback loop.
-		if(writeRef)
-		{
-			MacroBlockH264::CopyBlksToTmpBlks(pMb, 0, MBH264_NUM_BLKS);
-
-			/// Inverse Quantise and Transform the DC blocks.
-			_codec->_pIDC4x4T->SetParameter(IInverseTransform::QUANT_ID, pMb->_mbQP);
-			pMb->_lumDcBlkTmp.InverseTransform(_codec->_pIDC4x4T);
-			_codec->_pIDC2x2T->SetParameter(IInverseTransform::QUANT_ID, MacroBlockH264::GetQPc(pMb->_mbQP));
-			pMb->_cbDcBlkTmp.InverseTransform(_codec->_pIDC2x2T);
-			pMb->_crDcBlkTmp.InverseTransform(_codec->_pIDC2x2T);
-
-			///================================ Lum ======================================================
-			/// Image setup.
-			mbBaseX	= pMb->_offLumX;
-			mbBaseY	= pMb->_offLumY;
-			img			= _codec->_RefLum;
-			img->SetOverlayDim(4, 4);	///< Work with the img 4x4 blocks.
-
-			/// Inverse Quant and Transform set up.
-			IInverseTransform*	ITQ = _codec->_pI4x4T;
-			ITQ->SetParameter(IInverseTransform::QUANT_ID, pMb->_mbQP);
-			pDcBlk	= pMb->_lumDcBlkTmp.GetBlk();
-
-			for(blk = MBH264_LUM_0_0; blk <= MBH264_LUM_3_3; blk++)
-			{
-				BlockH264* pBlk = pMb->_blkParam[blk].pBlkTmp;	///< Short cut reference.
-
-				///---------------- Inverse Quantisation and Transform --------------------
-				_codec->InvTransAndQuantIntra16x16ModeBlk(ITQ, pBlk, &(pDcBlk[pMb->_blkParam[blk].rasterIndex]));
-				///---------------- Write block -------------------------------------------
-				/// Align the block with the image space.
-				img->SetOrigin(mbBaseX + pBlk->_offX, mbBaseY + pBlk->_offY);
-				/// Write the block into the ref image space.
-				img->Write(*(pBlk->GetBlkOverlay()));
-			}//end for blk...
-
-			///================================ Cb ======================================================
-			mbBaseX	= pMb->_offChrX;
-			mbBaseY	= pMb->_offChrY;
-			img			= _codec->_RefCb;
-			img->SetOverlayDim(4, 4);
-			ITQ->SetParameter(IInverseTransform::QUANT_ID, MacroBlockH264::GetQPc(pMb->_mbQP));
-			pDcBlk	= pMb->_cbDcBlkTmp.GetBlk();
-			for(blk = MBH264_CB_0_0; blk <= MBH264_CB_1_1; blk++)
-			{
-				BlockH264* pBlk = pMb->_blkParam[blk].pBlkTmp;	///< Short cut reference.
-
-				///---------------- Inverse Quantisation and Transform --------------------
-				_codec->InvTransAndQuantIntra16x16ModeBlk(ITQ, pBlk, &(pDcBlk[pMb->_blkParam[blk].rasterIndex]));
-				///---------------- Write block -------------------------------------------
-				/// Align the block with the image space.
-				img->SetOrigin(mbBaseX + pBlk->_offX, mbBaseY + pBlk->_offY);
-				/// Write the block into the ref image space.
-				img->Write(*(pBlk->GetBlkOverlay()));
-			}//end for blk...
-
-			///================================ Cr ======================================================
-			img			= _codec->_RefCr;
-			img->SetOverlayDim(4, 4);
-			pDcBlk	= pMb->_crDcBlkTmp.GetBlk();
-			for(blk = MBH264_CR_0_0; blk <= MBH264_CR_1_1; blk++)
-			{
-				BlockH264* pBlk = pMb->_blkParam[blk].pBlkTmp;	///< Short cut reference.
-
-				///---------------- Inverse Quantisation and Transform --------------------
-				_codec->InvTransAndQuantIntra16x16ModeBlk(ITQ, pBlk, &(pDcBlk[pMb->_blkParam[blk].rasterIndex]));
-				///---------------- Write block -------------------------------------------
-				/// Align the block with the image space.
-				img->SetOrigin(mbBaseX + pBlk->_offX, mbBaseY + pBlk->_offY);
-				/// Write the block into the ref image space.
-				img->Write(*(pBlk->GetBlkOverlay()));
-			}//end for blk...
-
-		}//end if writeRef...
-
-	}//end for mb...
-
-	*bitsUsed = 0;
-	return(1);
-}//end IntraImgPlaneEncoderImplStdVer1::Encode.
-*/
-
 /** Decode of the Intra macroblocks to the reference img.
 The macroblock obj encodings must be fully defined before calling
 this method.
@@ -7441,50 +7110,6 @@ int H264v2Codec::IntraImgPlaneDecoderImplStdVer1::Decode(void)
 		_codec->_RefCr->SetOrigin(cOffX, cOffY);
 		_codec->_RefCr->AddWithClip255(*(_codec->_8x8_1));
 
-////////////////////////////////////////////////////////
-		/// Neighbourhood testing.
-/*
-		if(pMb->_mbIndex == 53)
-		{
-			_codec->_RefLum->SetOverlayDim(16, 16);
-			_codec->_RefLum->SetOrigin(lOffX, lOffY);
-//			_codec->_RefLum->Fill(0);
-			_codec->_RefLum->Write(*(_codec->_16x16));
-
-			_codec->_RefCb->SetOverlayDim(8, 8);
-			_codec->_RefCb->SetOrigin(cOffX, cOffY);
-//			_codec->_RefCb->Fill(128);
-		_codec->_RefCb->Write(*(_codec->_8x8_0));
-		
-			_codec->_RefCr->SetOverlayDim(8, 8);
-			_codec->_RefCr->SetOrigin(cOffX, cOffY);
-//			_codec->_RefCr->Fill(128);
-		_codec->_RefCr->Write(*(_codec->_8x8_1));
-
-
-			if(pMb->_leftMb != NULL)
-			{
-				_codec->_RefLum->SetOrigin(pMb->_leftMb->_offLumX, pMb->_leftMb->_offLumY);
-				_codec->_RefLum->Fill(128);
-			}//end if leftMb...
-			if(pMb->_aboveLeftMb != NULL)
-			{
-				_codec->_RefLum->SetOrigin(pMb->_aboveLeftMb->_offLumX, pMb->_aboveLeftMb->_offLumY);
-				_codec->_RefLum->Fill(255);
-			}//end if aboveLeftMb...
-			if(pMb->_aboveMb != NULL)
-			{
-				_codec->_RefLum->SetOrigin(pMb->_aboveMb->_offLumX, pMb->_aboveMb->_offLumY);
-				_codec->_RefLum->Fill(64);
-			}//end if aboveMb...
-			if(pMb->_aboveRightMb != NULL)
-			{
-				_codec->_RefLum->SetOrigin(pMb->_aboveRightMb->_offLumX, pMb->_aboveRightMb->_offLumY);
-				_codec->_RefLum->Fill(192);
-			}//end if _aboveRightMb...
-
-		}//end if mbIndex...
-*/
 	}//end for mb...
 
 	return(1);
@@ -7773,29 +7398,6 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 
 #endif	///< End H264V2_FAST_MINMAX.
 
-////////////////////////////////////////////////
-/*		
-		if(iterations < 63)
-			H264V2_ITER[iterations]++;
-		else
-			H264V2_ITER[63]++;
-		if(iterations > H264V2_MAX_ITER)
-      H264V2_MAX_ITER = iterations;
-*/
-
-//	if(iterations < 32)
-//	{
-//		H264V2_T.WriteItem(1,iterations,H264V2_T.ReadItem(1,iterations) + 1);
-//	}//end if iterations...
-//	else
-//	{
-//		H264V2_T.WriteItem(1,32,H264V2_T.ReadItem(1,32) + 1);
-//	}//end else.
-//	H264V2_T.WriteItem(1,0,H264V2_T.ReadItem(1,0) + iterations);	///< Total.
-//	H264V2_POS++;
-
-////////////////////////////////////////////////
-
 		/// Set the macroblock QP values to their found states.
     if(invalidated)
     {
@@ -8045,6 +7647,7 @@ int H264v2Codec::GetMbQPBelowDmax(MacroBlockH264 &mb, int atQP, int Dmax, int de
 	*changeMb = lclChangeMb;
 	return(i);
 }//end GetMbQPBelowDmax.
+
 /** Get the next quant value that has a distortion less than Dmax with decrement only.
 @param mb						: Macroblock to operate on.
 @param atQ					: Current q for this macroblk.
@@ -8271,139 +7874,7 @@ int H264v2Codec::GetMbQPBelowDmaxApprox(MacroBlockH264 &mb, int atQP, int Dmax, 
 	*changeMb = lclChangeMb;
 	return(i);
 }//end GetMbQPBelowDmaxApprox.
-/*
-int H264v2Codec::ForwardLoopIntraImplStd(MacroBlockH264 &mb, int withDR)
-{
-	/// NB: _mbQP must be correctly defined before this method is called.
-	int distortion = 0;
 
-	/// Simplify the referencing to the macroblock.
-	MacroBlockH264* pMb = &mb;
-	int lOffX = pMb->_offLumX;
-	int lOffY = pMb->_offLumY;
-	int cOffX = pMb->_offChrX;
-	int cOffY = pMb->_offChrY;
-
-	/// Base settings for all intra macroblocks.
-	pMb->_skip			= 0;
-	pMb->_intraFlag = 1;
-
-	///------------------- Image prediction and loading ----------------------------------------
-	/// Currently only Intra 16x16 mode implemented. 
-	pMb->_mbPartPredMode= MacroBlockH264::Intra_16x16;
-
-	/// Predict the input from the previously decoded neighbour ref macroblocks then subtract the
-	/// prediction from the input.
-
-	/// Lum...
-	_RefLum->SetOverlayDim(16, 16);
-	_RefLum->SetOrigin(lOffX, lOffY); ///< Align the Ref Lum img block with this macroblock.
-	_Lum->SetOverlayDim(16, 16);
-	_Lum->SetOrigin(lOffX, lOffY);		///< Align the Lum img block with this macroblock.
-	/// Select the best mode and get the prediction.
-	pMb->_intra16x16PredMode = GetIntra16x16LumPredAndMode(pMb, _Lum, _RefLum, _16x16);
-	
-	_Lum->Read(*(_RefLum));						///< Read from input Lum into ref Lum.
-	_RefLum->Sub16x16(*(_16x16));			///< Subtract pred from ref Lum and leave result in ref img.
-
-	/// ... and Chr components.
-	_RefCb->SetOverlayDim(8, 8);
-	_RefCr->SetOverlayDim(8, 8);
-	_RefCb->SetOrigin(cOffX, cOffY);
-	_RefCr->SetOrigin(cOffX, cOffY);
-	_Cb->SetOverlayDim(8, 8);
-	_Cb->SetOrigin(cOffX, cOffY);
-	_Cr->SetOverlayDim(8, 8);
-	_Cr->SetOrigin(cOffX, cOffY);
-	pMb->_intraChrPredMode = GetIntra8x8ChrPredAndMode(pMb,	_Cb, _Cr,	_RefCb,	_RefCr, _8x8_0, _8x8_1);
-	_Cb->Read(*(_RefCb));
-	_RefCb->Sub8x8(*(_8x8_0));
-	_Cr->Read(*(_RefCr));
-	_RefCr->Sub8x8(*(_8x8_1));
-
-	/// Fill all the non-DC 4x4 blks (Not blks = -1, 17, 18) of the macroblock blocks with 
-	/// the differnce Lum and Chr after prediction.
-	MacroBlockH264::LoadBlks(pMb, _RefLum, lOffX, lOffY, _RefCb, _RefCr, cOffX, cOffY);
-
-	/// ------------------ Transform & Quantisation --------------------------------------------
-	if(pMb->_mbPartPredMode == MacroBlockH264::Intra_16x16)
-		TransAndQuantIntra16x16MBlk(pMb);
-
-	/// ------------------ Calc distortion from the feedback loop --------------------------------
-	/// Implement the feedback loop into the ref image. The block coeffs are still required for 
-	/// the context-aware vlc coding and therefore the temporary working blocks are used for this
-	/// feedback loop.
-	if(withDR)
-	{
-		/// --------------------- Inverse Transform & Quantisation -------------------------------
-		if(pMb->_mbPartPredMode == MacroBlockH264::Intra_16x16)
-			InverseTransAndQuantIntra16x16MBlk(pMb, 1);
-
-		/// --------------------- Image Storing into Ref -----------------------------------------
-		/// Fill the temp working Lum and Chr from all the non-DC 4x4 
-		/// blks (i.e. Not blks = -1, 17, 18) of the macroblock temp blocks. 
-		MacroBlockH264::StoreBlks(pMb, _16x16, 0, 0, _8x8_0, _8x8_1, 0, 0, 1);
-		/// StoreBlks() changes the dimensions and origin of the temp working overlays therefore
-		/// they must be reset.
-		_16x16->SetOverlayDim(16, 16);
-		_16x16->SetOrigin(0, 0);
-		_8x8_0->SetOverlayDim(8, 8);
-		_8x8_0->SetOrigin(0, 0);
-		_8x8_1->SetOverlayDim(8, 8);
-		_8x8_1->SetOrigin(0, 0);
-
-		/// --------------------- Add the prediction ---------------------------------------------
-		/// The prediction is common so distortion can be calculated from differnce between the
-		/// input predicted differnce images held in the ref and the decoded difference images held
-		/// in the temp working Lum and Chr. 
-		/// Lum.
-		_RefLum->SetOverlayDim(16, 16);
-		_RefLum->SetOrigin(lOffX, lOffY);						///< Align the Ref Lum img block with this macroblock.
-		distortion += _RefLum->Tsd16x16(*(_16x16));	///< Total square distortion with ref Lum.
-		/// Cb.
-		_RefCb->SetOverlayDim(8, 8);
-		_RefCb->SetOrigin(cOffX, cOffY);
-		distortion += _RefCb->Tsd8x8(*(_8x8_0));
-		/// Cr.
-		_RefCr->SetOverlayDim(8, 8);
-		_RefCr->SetOrigin(cOffX, cOffY);
-		distortion += _RefCr->Tsd8x8(*(_8x8_1));
-
-	}//end if withDR...
-
-	/// ------------------ Set patterns and type -----------------------------------------------
-	/// Determine the coded Lum and Chr patterns. The _codedBlkPatternLum, _codedBlkPatternChr 
-	/// and _coded_blk_pattern members are set.
-	MacroBlockH264::SetCodedBlockPattern(pMb);
-
-	/// Determine the delta quantisation parameter. For Intra slices
-	/// no previous macroblocks are skipped.
-	int prevMbIdx = pMb->_mbIndex - 1;
-	if(prevMbIdx >= 0)	///< Previous macroblock is within the image boundaries.
-	{
-		if(pMb->_slice == _pMb[prevMbIdx]._slice)	///< Previous macroblock within same slice.
-			pMb->_mb_qp_delta = pMb->_mbQP - _pMb[prevMbIdx]._mbQP;
-		else
-			pMb->_mb_qp_delta = pMb->_mbQP - _slice._qp;
-	}//end if prevMbIdx...
-	else
-		pMb->_mb_qp_delta = pMb->_mbQP - _slice._qp;
-
-	/// Determine the macroblock type. From the prediction modes and patterns set the 
-	/// _mb_type member.
-	MacroBlockH264::SetType(pMb, _slice._type);
-
-	/// ------------------ Calc the Rate and store results -----------------------------------------
-	/// Store distortion-rate pair for this quant value.
-	if(withDR)
-	{
-		pMb->_rate[pMb->_mbQP]				= MacroBlockLayerBitCounter(pMb);
-		pMb->_distortion[pMb->_mbQP]	= distortion;
-	}//end if withDR...
-
-	return(pMb->_rate[pMb->_mbQP]);
-}//end ForwardLoopIntraImplStd.
-*/
 /** The forward and inverse loop of a Std Intra macroblock.
 Code factoring usage. Includes reading the input image, IT, quantisation,
 vlc encoding and determining coding patterns, type, etc. Return the 
@@ -8916,13 +8387,6 @@ int H264v2Codec::ProcessInterMbImplStdMin(MacroBlockH264* pMb)
 	pMb->_intraFlag = 0;
 	pMb->_skip = 0;
 
-//	/// Only Inter_16x16 mode is currently implemented so only 1 motion vector is 
-//	/// checked for the macroblock skip mode. If motion is zero then mb is skipped.
-//	if( (pMb->_mvdX[MacroBlockH264::_16x16] == 0)&&(pMb->_mvdY[MacroBlockH264::_16x16] == 0) )
-//		pMb->_skip = 1;
-//  else
-//	  pMb->_skip = 0;
-
 	/// Clear the delta quantisation parameter and set the _mbQP to the same as the previous non-skipped mb. The
   /// _mbQP does not have any impact because all coeffs are set to zero.
 	pMb->_mb_qp_delta = 0;
@@ -9289,42 +8753,6 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 	Residual macroblock Q search.
 	-------------------------------------------------------------------------------------------
 	*/
- //////////////////////////////////////////////////////////////////////////////
-/*
-	H264V2_POS = 0;                     ///< Restart on every frame.
-  int selMb = 198;                    ///< Test mb = 198, middle of frame.
-  int generalQP = _codec->_slice._qp; ///< For all mbs up to selMb.
-
-	for(mb = 0; mb < selMb; mb++)
-  {
-    _codec->_pMb[mb]._mbQP = selMb;
-    _codec->ProcessInterMbImplStd(&(_codec->_pMb[mb]), 0, 1);
-  }//end for mb...
-
-  /// Plot results for mb = selMb.
-  for(int qp = 1; qp <= 51; qp++)
-  {
-    _codec->_pMb[selMb]._mbQP = qp;
-    _codec->ProcessInterMbImplStd(&(_codec->_pMb[selMb]), 0, 1);
-
-		if(H264V2_POS < H264V2_TLEN)
-		{
-			H264V2_T.WriteItem(0, H264V2_POS, qp);
-			H264V2_T.WriteItem(1, H264V2_POS, _codec->_pMb[selMb]._distortion[qp]);
-			H264V2_POS++;
-		}//end if H264V2_POS...
-  }//end for qp...
-
-  if(H264V2_POS > 0)
-	{
-		H264V2_T.Save("E:/keithf/Excel/VideoEvaluation/MbQPvsD.dat", ",");
-		H264V2_POS = 0;
-	}//end if H264V2_POS...
-
-  return(0);
-*/
-//////////////////////////////////////////////////////////////////////////////////////
-
  /// Initialisation step: 
 	///		lower(D,R) : QP = H264V2_MAX_QP.
 	/// Note that the D values represent the worst distortion of only one macroblock in the entire
@@ -9380,39 +8808,6 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
   /// Add last skip run.
   if(mbSkipRun)
     Rl += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
-
-/////////////////////////////////////////////////////////////////////////////////
-/*
-	H264V2_POS = 0; ///< Restart on every frame.
-	int test;
-	Dmax = Dl;
-	int stepD = (Dl+500)/1000;
-	for(test = 0; test < 1000; test++)
-	{
-		R = 0;
-		D = 0;
-		invalidated = 1;
-		int firstMbChange = 0;
-		for(mb = 0; mb < len; mb++)
-		{
-			int q = _codec->GetMacroblkQuantBelowDmax(_codec->_pMB[mb], 31, Dmax, 1, &firstMbChange, 1, FALSE);
-			R += (_codec->_pMB[mb]._rate[q] + _codec->_pMB[mb]._rate[0]);
-			if(_codec->_pMB[mb]._distortion[q] > D)
-				D = _codec->_pMB[mb]._distortion[q];
-		}//end for mb...
-
-		if(H264V2_POS < H264V2_TLEN)
-		{
-			H264V2_T.WriteItem(0, H264V2_POS, D);
-			H264V2_T.WriteItem(1, H264V2_POS, R);
-			H264V2_POS++;
-		}//end if H264V2_POS...
-
-		Dmax -= stepD;
-
-	}//end for test...
-*/
-////////////////////////////////////////////////////////////////////////////////
 
 	/// Test that there is room to adapt from quant param = H264V2_MAX_QP, else do damage control.
 	if(Rl <= allowedBits)
@@ -9475,8 +8870,6 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 				MacroBlockH264* pMb = &(_codec->_pMb[mb]);
 
 				/// Record the found QP where the macroblock dist is just below Dmax and accumulate the rate for this macroblock.
-//				_pQ[mb] = _codec->GetMbQPBelowDmaxApprox(*pMb, _pQ[mb], Dmax, closeEnoughDist, goingDown, &firstMbChange, qEnd, TRUE);
-//				_pQ[mb] = _codec->GetMbQPBelowDmax(*pMb, _pQ[mb], Dmax, goingDown, &firstMbChange, qEnd, TRUE);
 				_pQ[mb] = _codec->GetMbQPBelowDmaxVer2(*pMb, _pQ[mb], Dmax, &firstMbChange, qEnd, FALSE);
 				R += pMb->_rate[_pQ[mb]]; ///< Rate = 0 for skipped mbs.
         if(!pMb->_skip)
@@ -9543,16 +8936,6 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 
 			iterations++;
 		}//end while !done...
-///////////////////////////////////////
-/*
-		if(iterations < 63)
-			H264V2_ITER[iterations]++;
-		else
-			H264V2_ITER[63]++;
-		if(iterations > H264V2_MAX_ITER)
-      H264V2_MAX_ITER = iterations;
-*/
-///////////////////////////////////////
 
 		/// Set the macroblock QP values to their found states.
     if(invalidated)
@@ -9656,9 +9039,6 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 //  if(mbSkipRun)
 //    bitCount += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
 
-//  if(R != bitCount)
-//    int check = 1;
-
 	*bitsUsed = 0;
 	return(1);
 }//end InterImgPlaneEncoderImplMinMax::Encode.
@@ -9750,63 +9130,7 @@ int H264v2Codec::InterImgPlaneDecoderImplStdVer1::Decode(void)
 	Private helper methods for prediction tools.
 -------------------------------------------------------------------------------------------
 */
-/*
-void H264v2Codec::GetMotionMacroBlkPred(VectorStructList* pVL, int mBlkPos, int* px, int*py)
-{
-	// Find the current coords in macroblock units.
-	int mbWidth = _lumWidth/16;
-	int mby			= mBlkPos/mbWidth;
-	int mbx			= mBlkPos % mbWidth;
 
-	// Macroblock to the left.
-	int mv1x = 0;
-	int mv1y = 0;
-	int mb1x = mbx - 1;
-	if(mb1x >= 0) // Is not outside of the left edge.
-	{
-		int pos = (mby * mbWidth) + mb1x;
-		mv1x = pVL->GetSimpleElement(pos, 0);
-		mv1y = pVL->GetSimpleElement(pos, 1);
-	}//end if mb1...
-
-	// Macroblock above.
-	int mv2x = 0;
-	int mv2y = 0;
-	int mb2y = mby - 1;
-	if(mb2y >= 0) // Is not outside the top edge.
-	{
-		int pos = (mb2y * mbWidth) + mbx;
-		mv2x = pVL->GetSimpleElement(pos, 0);
-		mv2y = pVL->GetSimpleElement(pos, 1);
-	}//end if mb2y...
-	else
-	{
-		// The macroblock motion vector to the left is the predictor
-		// if at top edge, including the top right corner. Note that 
-		// it will also be [0,0] if it is the top left corner macroblock.
-		*px = mv1x;
-		*py = mv1y;
-		return;
-	}//end else...
-
-	// Macroblock above right.
-	int mv3x = 0;
-	int mv3y = 0;
-	int mb3x = mbx + 1;
-	int mb3y = mby - 1;
-	if(mb3x < mbWidth) // Is not outside of the right edge.
-	{
-		int pos = (mb3y * mbWidth) + mb3x;
-		mv3x = pVL->GetSimpleElement(pos, 0);
-		mv3y = pVL->GetSimpleElement(pos, 1);
-	}//end if mb1...
-
-	// Require the median of each vector component as the predictor.
-	*px = Median(mv1x, mv2x, mv3x);
-	*py = Median(mv1y, mv2y, mv3y);
-
-}//end GetMotionMacroBlkPred.
-*/
 /** Calc the median of 3 numbers.
 @param x	:	1st num.
 @param y	:	2nd num.
@@ -9854,2368 +9178,3 @@ void H264v2Codec::DumpBlock(OverlayMem2Dv2* pBlk, char* filename, const char* ti
   delete pT;
 }//end DumpBlock.
 
-/*
-----------------------------------------------------------------------------------
-	Modified Quantisation Mode helper Methods.
-----------------------------------------------------------------------------------
-*/
-
-/** Writes _pRleMotion struct list to the bit stream.
-Truncates if bit limit is reached.
-*/
-/*
-int H264v2Codec::MotionPlaneEncode(int allowedBits, int* bitsUsed)
-{
-	// Get the rle encoded list to work with. 
-	RleMotionVectorType* pRleList = _pRleMotion->GetListPtr();
-	int									 listLen	= _pRleMotion->GetLength();
-
-	int bitsSoFar = 0;
-  int nobits		= 0;
-  for(int motionpos = 0; (motionpos < listLen) && !nobits; motionpos++)
-  {
-		 // LoadMotionStruct() function selected the correct coding struct values.
-		int runbits			= pRleList[motionpos].runBits;
-		int motionbits	= pRleList[motionpos].xyBits;
-
-		int bits				= runbits + motionbits;
-    if(!runbits || !motionbits)
-    {
-			*bitsUsed = bitsSoFar;
-      return(2);
-    }//end if !runbits...
-    if((bitsSoFar + bits) < allowedBits)
-    {
-      // Add the coded bits to the bit stream.
-			_pBitStreamWriter->Write(runbits, pRleList[motionpos].runCode);
-			_pBitStreamWriter->Write(motionbits, pRleList[motionpos].xyCode);
-      bitsSoFar += bits;
-    }//end if bitsSoFar...
-    else
-    {
-      nobits = 1;
-			// Truncate the list length to match how far we did manage to code.
-			_pRleMotion->SetLength(motionpos);
-    }//end else...
-  }//end for motionpos...
-
-	// Add the end-of-partition marker - EOSB.
-	if(!nobits && ((bitsSoFar + H264V2_EOSBBits) < allowedBits))
-	{
-		_pBitStreamWriter->Write(H264V2_EOSBBits, H264V2_EOSBCode);
-	  bitsSoFar += H264V2_EOSBBits;
-	}//end if !nobits...
-
-	*bitsUsed = bitsSoFar;
-  return(nobits);
-}//end MotionPlaneEncode.
-*/
-/** Reads _pRleMotion struct list from the bit stream.
-*/
-/*
-int H264v2Codec::MotionPlaneDecode(unsigned long* remainingBits)
-{
-  int	 NoBits,MarkerFound;
-  int	 Run,RunBits;
-  int	 MX,MY,MBits;
-  unsigned long TotalBits;
-
-	// Set the esc bit lengths for the run vlc decoder.
-	_pRunVlcDecoder->SetEsc(M_Esc_Run_Bits, M_Esc_Run_Mask);
-
-	// The motion type (diff=2 or normal=1) was determined in the header and 
-	// interpreted here.
-	if(_Motion == 1)
-		_pRleMotion = _pNormalRleMotion;
-	else
-		_pRleMotion = _pDiffRleMotion;
-	// Reset the length before extracting.
-	_pRleMotion->SetLength(0);
-	int lclListLen = 0;
-	// Rle structure list access.
-	RleMotionVectorType* pRleList  = _pRleMotion->GetListPtr();
-
-  NoBits							= 0;
-  TotalBits						= *remainingBits;
-  int MotionDone	= 0;
-  while(!MotionDone && !NoBits)
-  {
-    // If expecting a motion run, then extract it from the bit stream
-    // and check that it is not an EOSB or EOI marker.
-		Run					= _pRunVlcDecoder->Decode(_pBitStreamReader);
-		RunBits			= _pRunVlcDecoder->GetNumDecodedBits();
-		MarkerFound = _pRunVlcDecoder->Marker();
-
-    TotalBits -= RunBits;
-    if(RunBits == 0)
-    {
-      // Loss of bit stream sync, catastrophic failure.
-			_pRleMotion->SetLength(lclListLen);
-      *remainingBits = TotalBits;
-      return(2);
-    }//end if RunBits...
-    if(MarkerFound)
-    {
-      MotionDone = 1; // Default is Run == RunLengthVlcDecoder::EOP_MARKER.
-      if(Run == RunLengthVlcDecoder::EOI_MARKER)
-      {
-        NoBits = 1;
-      }//end if Run...
-    }//end if MarkerFound...
-    else
-    {
-			pRleList[lclListLen].run = Run;
-
-      // Extract the motion vector and update the motion run length struct.
-			MBits = _pMvVlcDecoder->Decode2(_pBitStreamReader, &MX, &MY);
-      TotalBits -= MBits;
-      if( MBits == 0 )
-      {
-        // Loss of bit stream sync, catastrophic failure.
-				_pRleMotion->SetLength(lclListLen);
-        *remainingBits = TotalBits;
-        return(2);
-      }//end if MBits...
-
-			pRleList[lclListLen].x = MX;
-			pRleList[lclListLen].y = MY;
-
-			lclListLen++;
-    }//end else...
-  }//end while !MotionDone...
-	// Set the list length.
-	_pRleMotion->SetLength(lclListLen);
-
-  *remainingBits = TotalBits;
-  return(NoBits);
-}//end MotionPlaneDecode.
-*/
-/*
-int H264v2Codec::SetEscInfo(int length, int* bits, int* mask)
-{
-	int lclLength = length - 1;
-
-	int searchMask	= 0xFFFFFFFF;
-	int notFound		= lclLength;
-	int bitCount		= 0;
-
-	while(notFound)
-	{
-		searchMask	= searchMask << 1;
-		bitCount++;
-		notFound		= lclLength & searchMask;
-	}//end while notFound...
-
-	*bits	= bitCount;
-	*mask	= ~searchMask;
-
-	return(1);
-}//end SetEscInfo.
-*/
-/*
-int H264v2Codec::ConstructCodingInfo(void)
-{
-	int check = 1;
-
-	// I-frames.
-	int iLumLength = (Lum_X/H264V2_I_LUM_VQ_X_DIM)*(Lum_Y/H264V2_I_LUM_VQ_Y_DIM);
-	check  &= SetEscInfo(iLumLength,&I_Lum_Esc_Run_Bits,&I_Lum_Esc_Run_Mask);
-
-	int iChrLength = (Chr_X/H264V2_I_CHR_VQ_X_DIM)*(Chr_Y/H264V2_I_CHR_VQ_Y_DIM);
-	check  &= SetEscInfo(iChrLength,&I_Chr_Esc_Run_Bits,&I_Chr_Esc_Run_Mask);
-
-	// P-frames.
-	int pLumLength = (Lum_X/H264V2_P_VQ_X_DIM)*(Lum_Y/H264V2_P_VQ_Y_DIM);
-	check  &= SetEscInfo(pLumLength,&P_Lum_Esc_Run_Bits,&P_Lum_Esc_Run_Mask);
-
-	int pChrLength = (Chr_X/H264V2_P_VQ_X_DIM)*(Chr_Y/H264V2_P_VQ_Y_DIM);
-	check  &= SetEscInfo(pChrLength,&P_Chr_Esc_Run_Bits,&P_Chr_Esc_Run_Mask);
-
-  if(!check)
-  {
-    ErrorStr = _VICS_CHAR("H264V2: No escape codes for image dimensions!");
-    return(0);
-  }//end if !check...
-
-	return(1);
-}//end ConstructCodingInfo.
-*/
-/*
-int H264v2Codec::ConstructMotionInfo(void)
-{
-	// Check motion dimensions.
-	if( ((Lum_X % H264V2_MOTION_VEC_DIM)!= 0)||((Lum_Y % H264V2_MOTION_VEC_DIM)!= 0) )
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Motion vector dimensions are incompatable with codec!");
-    return(0);
-  }//end if Lum_X...
-
-	// Motion vector dimensions for this image size.
-	int mLength = (Lum_X/H264V2_MOTION_VEC_DIM)*(Lum_Y/H264V2_MOTION_VEC_DIM);
-
-	// Set ESC codes.
-  if(!SetEscInfo(mLength,&M_Esc_Run_Bits,&M_Esc_Run_Mask))
-  {
-    ErrorStr = _VICS_CHAR("H264V2: No motion escape codes for image dimensions!");
-    return(0);
-  }//end if !SetEscInfo...
-
-	// Set the encoding structures.
-	// Prepare two Rle motion vector lists and select the normal encoding as default.
-	_pNormalRleMotion = new RleMotionVectorList();
-	if(!_pNormalRleMotion)
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Cannot create normal rle motion vector list object");
-    return(0);
-  }//end if !_pNormalRleMotion...
-	if(!_pNormalRleMotion->SetMaxLength(mLength))
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Insufficient mem for normal rle motion vector list");
-    return(0);
-  }//end if !SetMaxLength...
-
-	_pDiffRleMotion = new RleMotionVectorList();
-	if(!_pDiffRleMotion)
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Cannot create differential rle motion vector list object");
-    return(0);
-  }//end if !_pDiffRleMotion...
-	if(!_pDiffRleMotion->SetMaxLength(mLength))
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Insufficient mem for differential rle motion vector list");
-    return(0);
-  }//end if !SetMaxLength...
-
-	_pRleMotion = _pNormalRleMotion;	// Default.
-
-	// Create a motion vector list to hold the decoded vectors for the compensation process.
-	_pMotionVectors = new SimpleMotionVectorList();
-	if(!_pMotionVectors)
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Cannot create motion vector list object");
-    return(0);
-  }//end if !_pMotionVectors...
-	if(!_pMotionVectors->SetLength(mLength))
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Insufficient mem for motion vector list");
-    return(0);
-  }//end if !SetLength...
-
-	// Set the codec to translate between the above structures.
-	_pRleMvCodec = new RleMotionVectorCodec();
-	if(!_pRleMvCodec)
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Cannot create rle motion vector list translator object");
-    return(0);
-  }//end if !_pRleMvCodec...
-
-  return(1);
-}//end ConstructMotionInfo.
-*/
-/*
---------------------------------------------------------------------------------
-  Motion Estimation and compensation functions.
---------------------------------------------------------------------------------
-*/
-/*
-RleMotionVectorList* H264v2Codec::RleEncodeMotionVectors(VectorList* pMotionEstimationResult)
-{
-	int normalBitCount	= 0;
-	int diffBitCount		= 0;
-
-	// Do the normal encoding.
-	_pRleMvCodec->SetMode(RleMotionVectorCodec::NORMAL);
-	normalBitCount = _pRleMvCodec->Encode(pMotionEstimationResult, _pNormalRleMotion);
-
-	// Do the differential encoding.
-	_pRleMvCodec->SetMode(RleMotionVectorCodec::DIFFERENTIAL);
-	diffBitCount = _pRleMvCodec->Encode(pMotionEstimationResult, _pDiffRleMotion);
-
-	// Make the appropriate selection and set the motion parameter for the 
-	// coded data header.
-	if(normalBitCount <= diffBitCount)
-	{
-		_Motion			= 1; // 1 = Normal, 2 = Diff.
-		return(_pNormalRleMotion);
-	}//end if normalBitCount...
-	else
-	{
-		_Motion			= 2;
-		return(_pDiffRleMotion);
-	}//end else...
-
-}//end RleEncodeMotionVectors.
-*/
-/*
-int H264v2Codec::RleDecodeMotionVectors(RleMotionVectorList* pExtractedResult, VectorList* pMotionList)
-{
-	if(_Motion == 1)
-		_pRleMvCodec->SetMode(RleMotionVectorCodec::NORMAL);
-	else if(_Motion == 2)
-		_pRleMvCodec->SetMode(RleMotionVectorCodec::DIFFERENTIAL);
-	else
-		return(0);
-	return(_pRleMvCodec->Decode(pExtractedResult, pMotionList));
-}//end RleDecodeMotionVectors.
-*/
-/*
--------------------------------------------------------------------------------------
-	Preprocessor filter functions.
--------------------------------------------------------------------------------------
-*/
-/*
-int H264v2Codec::SharpenFilter(pelType** Y, pelType** U, pelType** V)
-{
-  if(!CodecIsOpen)
-  {
-    ErrorStr = _VICS_CHAR("H264V2: Codec is not open!");
-    return(0);
-  }//end if !CodecIsOpen...
-
-	int r,c;
-	int h0;
-	int soften = (65 - _sharpFactor);
-	if(soften <= 0)
-		soften = 1;
-	int half	= soften/2;
-
-	// Use the compensated reference as a temp buffer for the output.
-
-	h0 = 3 + soften;	// Corners.
-	// Lum corners.
-	crLum[0][0]							= (pelType)H264V2_BOUNDS_CHECK( (h0*(int)Y[0][0]							- (int)Y[0][1]							- (int)Y[1][0]							- (int)Y[1][1]							+ half)/soften );
-	crLum[0][Lum_X-1]				= (pelType)H264V2_BOUNDS_CHECK( (h0*(int)Y[0][Lum_X-1]				- (int)Y[0][Lum_X-2]				- (int)Y[1][Lum_X-1]				- (int)Y[1][Lum_X-2]				+ half)/soften );
-	crLum[Lum_Y-1][0]				= (pelType)H264V2_BOUNDS_CHECK( (h0*(int)Y[Lum_Y-1][0]				- (int)Y[Lum_Y-1][1]				- (int)Y[Lum_Y-2][0]				- (int)Y[Lum_Y-2][1]				+ half)/soften );
-	crLum[Lum_Y-1][Lum_X-1]	= (pelType)H264V2_BOUNDS_CHECK( (h0*(int)Y[Lum_Y-1][Lum_X-1]	- (int)Y[Lum_Y-1][Lum_X-2]	- (int)Y[Lum_Y-2][Lum_X-1]	- (int)Y[Lum_Y-2][Lum_X-2]	+ half)/soften );
-
-	h0 = 5 + soften;	// Edges.
-	// Lum top row.
-	for(c = 1; c < (Lum_X-1); c++)
-	{
-		int x = ((h0*(int)Y[0][c] - (int)Y[0][c-1]									- (int)Y[0][c+1] - 
-								 								(int)Y[1][c-1] -	(int)Y[1][c]	- (int)Y[1][c+1]) + half) / soften;
-
-		crLum[0][c] = (pelType)H264V2_BOUNDS_CHECK(x);
-	}//end for c...
-
-	// Lum bottom row.
-	for(c = 1; c < (Lum_X-1); c++)
-	{
-		int x = ((h0*(int)Y[Lum_Y-1][c] - (int)Y[Lum_Y-2][c-1] -	(int)Y[Lum_Y-2][c]	- (int)Y[Lum_Y-2][c+1] - 
-																			(int)Y[Lum_Y-1][c-1]												- (int)Y[Lum_Y-1][c+1]) + half) / soften;
-
-		crLum[Lum_Y-1][c] = (pelType)H264V2_BOUNDS_CHECK(x);
-	}//end for c...
-
-	// Lum left column.
-	for(r = 1; r < (Lum_Y-1); r++)
-	{
-		int x = ((h0*(int)Y[r][0] - (int)Y[r-1][0]	- (int)Y[r-1][1] - 
-																									(int)Y[r][1] - 
-								 																	(int)Y[r+1][0]	- (int)Y[r+1][1]) + half) / soften;
-
-		crLum[r][0] = (pelType)H264V2_BOUNDS_CHECK(x);
-	}//end for r...
-
-	// Lum right column.
-	for(r = 1; r < (Lum_Y-1); r++)
-	{
-		int x = ((h0*(int)Y[r][Lum_X-1] - (int)Y[r-1][Lum_X-2] -	(int)Y[r-1][Lum_X-1]	- 
-																			(int)Y[r][Lum_X-2] - 
-								 											(int)Y[r+1][Lum_X-2] -	(int)Y[r+1][Lum_X-1]) + half) / soften;
-
-		crLum[r][Lum_X-1] = (pelType)H264V2_BOUNDS_CHECK(x);
-	}//end for c...
-
-	h0 = 8 + soften;	// Inner.
-	// Lum centre.
-	for(r = 1; r < (Lum_Y-1); r++)
-	{
-		for(c = 1; c < (Lum_X-1); c++)
-		{
-			int x = ((h0*(int)Y[r][c] - (int)Y[r-1][c-1] -	(int)Y[r-1][c]	- (int)Y[r-1][c+1] - 
-																											(int)Y[r][c-1]													- (int)Y[r][c+1] - 
-									 																		(int)Y[r+1][c-1] -	(int)Y[r+1][c]	- (int)Y[r+1][c+1]) + half) / soften;
-
-			crLum[r][c] = (pelType)H264V2_BOUNDS_CHECK(x);
-		}//end for c...
-	}//end for r...
-
-	// Transfer from temp buffer.
-	memcpy((void *)(Y[0]), (void *)(crLum[0]), Lum_Y*Lum_X);
-
-	return(1);
-}//end SharpenFilter.
-*/
-
-/*
--------------------------------------------------------------------------------------
-	Test vector code.
--------------------------------------------------------------------------------------
-*/
-#ifdef _INCLUDE_TEST_CODE
-
-/** Test fast forward IT and inverse implementations.
-@return	: 1 = success, 0 = failed..
-*/
-int H264v2Codec::TestMacroblockIT(void)
-{
-	int i,j;
-	int result = 1;
-	int TESTS = 1024;
-	short a[16];
-	short b[16];
-	int totNumCoeff = 16;
-
-	/// Create a IT to convert random values.
-	IForwardTransform* pFIT = new FastForward4x4ITImpl2();
-
-	/// Create an inverse IT to use and to compare with.
-	IInverseTransform* pIIT = new FastInverse4x4ITImpl1();
-
-	/// Fill the block with random numbers from -256...255.
-	srand(23995);
-
-	///	Quantisation.
-	int qp;	///< Step size.
-	for(qp = 1; qp < 32; qp++)
-	{
-		pFIT->SetParameter(FastForward4x4ITImpl2::QUANT_ID, qp);
-		pIIT->SetParameter(FastInverse4x4ITImpl1::QUANT_ID, qp);
-		int	qerr = qp + (qp/2) + 1;
-
-		for(j = 0; j < TESTS; j++)
-		{
-			for(i = 0; i < totNumCoeff; i++)
-			{
-				a[i] = (short)( (((double)rand()/(double)RAND_MAX) * 511.0) - 256.0 + 0.5 );
-				b[i] = a[i];
-			}//end for i...
-
-			/// Produce IT coeff.
-			pFIT->Transform(b);
-
-			/// Control inverse transform.
-			pIIT->InverseTransform(b);
-
-			/// Comparison.
-			for(i = 0; i < totNumCoeff; i++)
-			{
-				if( abs(b[i] - a[i]) > qerr )	///< Allow rounding error.
-				//if( b[i] != a[i] )
-					result = 0;
-			}//end for i...
-
-		}//end for j...
-	}//end for qp...
-
-	delete pIIT;
-	delete pFIT;
-	return(result);
-}//end TestMacroblockIT.
-
-/** Test fast forward IT and inverse implementations.
-@return	: 1 = success, 0 = failed..
-*/
-int H264v2Codec::TestFastIT(void)
-{
-	int i,j;
-	int result = 1;
-	int TESTS = 1024;
-	short a[16];
-	short b[16];
-	int totNumCoeff = 16;
-
-	/// Create a IT to convert random values.
-	IForwardTransform* pFIT = new FastForward4x4ITImpl2();
-
-	/// Create an inverse IT to use and to compare with.
-	IInverseTransform* pIIT = new FastInverse4x4ITImpl1();
-
-	/// Fill the block with random numbers from -256...255.
-	srand(23995);
-
-	///	Quantisation.
-	int qp;	///< Step size.
-	for(qp = 1; qp < 32; qp++)
-	{
-		pFIT->SetParameter(FastForward4x4ITImpl2::QUANT_ID, qp);
-		pIIT->SetParameter(FastInverse4x4ITImpl1::QUANT_ID, qp);
-		int	qerr = qp + (qp/2) + 1;
-
-		for(j = 0; j < TESTS; j++)
-		{
-			for(i = 0; i < totNumCoeff; i++)
-			{
-				a[i] = (short)( (((double)rand()/(double)RAND_MAX) * 511.0) - 256.0 + 0.5 );
-				b[i] = a[i];
-			}//end for i...
-
-			/// Produce IT coeff.
-			pFIT->Transform(b);
-
-			/// Control inverse transform.
-			pIIT->InverseTransform(b);
-
-			/// Comparison.
-			for(i = 0; i < totNumCoeff; i++)
-			{
-				if( abs(b[i] - a[i]) > qerr )	///< Allow rounding error.
-				//if( b[i] != a[i] )
-					result = 0;
-			}//end for i...
-
-		}//end for j...
-	}//end for qp...
-
-	delete pIIT;
-	delete pFIT;
-	return(result);
-}//end TestFastIT.
-
-/** Test fast forward IT and inverse implementations.
-@return	: 1 = success, 0 = failed..
-*/
-int H264v2Codec::TestFast16x16IT(void)
-{
-	int i,j;
-	int result = 1;
-	int TESTS = 1024;
-	short a[256];
-	short b[256];
-	int totNumCoeff = 256;
-
-	/// Create a IT to convert random values.
-	IForwardTransform* pFIT = new FastForward4x4On16x16ITImpl1();
-
-	/// Create an inverse IT to use and to compare with.
-	IInverseTransform* pIIT = new FastInverse4x4On16x16ITImpl1();
-
-	/// Fill the block with random numbers from -256...255.
-	srand(23995);
-
-	///	Quantisation.
-	int qp;	///< Step size.
-	for(qp = 1; qp < 35; qp++)
-	{
-		pFIT->SetParameter(FastForward4x4On16x16ITImpl1::QUANT_ID, qp);
-		pIIT->SetParameter(FastInverse4x4On16x16ITImpl1::QUANT_ID, qp);
-		int	qerr = qp + (qp/2) + 1;
-
-		for(j = 0; j < TESTS; j++)
-		{
-			for(i = 0; i < totNumCoeff; i++)
-			{
-				a[i] = (short)( (((double)rand()/(double)RAND_MAX) * 511.0) - 256.0 + 0.5 );
-				b[i] = a[i];
-			}//end for i...
-
-			/// Produce IT coeff.
-//      pFIT->SetMode(IForwardTransform::TransformOnly);
-			pFIT->Transform(b);
-//      pFIT->SetMode(IForwardTransform::QuantOnly);
-//			pFIT->Transform(b);
-
-			/// Control inverse transform.
-      pIIT->SetMode(IInverseTransform::QuantOnly);
-			pIIT->InverseTransform(b);
-      pIIT->SetMode(IInverseTransform::TransformOnly);
-			pIIT->InverseTransform(b);
-
-			/// Comparison.
-			for(i = 0; i < totNumCoeff; i++)
-			{
-				if( abs(b[i] - a[i]) > qerr )	///< Allow rounding error.
-				//if( b[i] != a[i] )
-					result = 0;
-			}//end for i...
-
-		}//end for j...
-	}//end for qp...
-
-	delete pIIT;
-	delete pFIT;
-	return(result);
-}//end TestFast16x16IT.
-
-/** Test CAVLC.
-@return	: 1 = success, 0 = failed..
-*/
-#define H264V2C_BYTESIZE 131072	///4096
-int H264v2Codec::TestCAVLC(void)
-{
-	int i,j,k;
-	int TESTS = 4096;
-	int result = 1;
-	short a[16] = { 0, 3,-1, 0, 
-									0,-1, 1, 0,
-									1, 0, 0, 0,
-									0, 0, 0, 0};
-	short b[16];
-
-	/// Use a bit stream reader/writer.
-	int bitSize = H264V2C_BYTESIZE * 8;
-	unsigned char stream[H264V2C_BYTESIZE];
-	IBitStreamWriter* pBsw = new BitStreamWriterMSB();
-	pBsw->SetStream((void *)stream, bitSize);
-	IBitStreamReader* pBsr = new BitStreamReaderMSB();
-	pBsr->SetStream((void *)stream, bitSize);
-
-	/// Test the associated Vlc encoders & decoders used in CAVLC.
-
-	/// 1. Prefix encoding & decoding.
-	IVlcEncoder*	pPrefixVlcEnc = new PrefixH264VlcEncoderImpl1();
-	IVlcDecoder*	pPrefixVlcDec = new PrefixH264VlcDecoderImpl1();
-	for( i = 0; i < 32; i++)	///< Encode.
-	{
-		int numCodedBits = pPrefixVlcEnc->Encode(i);
-		pBsw->Write(numCodedBits, pPrefixVlcEnc->GetCode());
-	}//end for i...
-	for( i = 0; i < 32; i++)	///< Decode.
-	{
-		int code = pPrefixVlcDec->Decode(pBsr);
-		if(code != i)
-			result = 0;
-	}//end for i...
-
-	/// 2. Coeff Token encoding & decoding.
-	IVlcEncoder*	pCoeffTokenVlcEnc = new CoeffTokenH264VlcEncoder();
-	IVlcDecoder*	pCoeffTokenVlcDec = new CoeffTokenH264VlcDecoder();
-	int nC, tO, tC;
-	pBsw->Reset();
-	for(nC = 0; nC <= 9; nC++)	///< Encode.
-	{
-		for(tO = 0; tO <= 3; tO++)
-		{
-			for(tC = tO; tC <= 16; tC++)
-			{
-				int numCodedBits = pCoeffTokenVlcEnc->Encode3(tC, tO, nC);
-				pBsw->Write(numCodedBits, pCoeffTokenVlcEnc->GetCode());
-			}//end for tC...
-		}//end for tO...
-	}//end for nC...
-	nC = -1;
-	for(tO = 0; tO <= 3; tO++)
-	{
-		for(tC = tO; tC <= 4; tC++)
-		{
-			int numCodedBits = pCoeffTokenVlcEnc->Encode3(tC, tO, nC);
-			pBsw->Write(numCodedBits, pCoeffTokenVlcEnc->GetCode());
-		}//end for tC...
-	}//end for tO...
-	nC = -2;
-	for(tO = 0; tO <= 3; tO++)
-	{
-		for(tC = tO; tC <= 8; tC++)
-		{
-			int numCodedBits = pCoeffTokenVlcEnc->Encode3(tC, tO, nC);
-			pBsw->Write(numCodedBits, pCoeffTokenVlcEnc->GetCode());
-		}//end for tC...
-	}//end for tO...
-
-	pBsr->Reset();
-	for(nC = 0; nC <= 9; nC++)	///< Decode.
-	{
-		for(tO = 0; tO <= 3; tO++)
-		{
-			for(tC = tO; tC <= 16; tC++)
-			{
-				int trailingOnes	= 0;
-				int totalCoeffs		= 0;
-				int numCodedBits = pCoeffTokenVlcDec->Decode3(pBsr, &totalCoeffs, &trailingOnes, &nC);
-				if( (tC != totalCoeffs)||(tO != trailingOnes) )
-					result = 0;
-			}//end for tC...
-		}//end for tO...
-	}//end for nC...
-	nC = -1;
-	for(tO = 0; tO <= 3; tO++)
-	{
-		for(tC = tO; tC <= 4; tC++)
-		{
-			int trailingOnes	= 0;
-			int totalCoeffs		= 0;
-			int numCodedBits = pCoeffTokenVlcDec->Decode3(pBsr, &totalCoeffs, &trailingOnes, &nC);
-			if( (tC != totalCoeffs)||(tO != trailingOnes) )
-				result = 0;
-		}//end for tC...
-	}//end for tO...
-	nC = -2;
-	for(tO = 0; tO <= 3; tO++)
-	{
-		for(tC = tO; tC <= 8; tC++)
-		{
-			int trailingOnes	= 0;
-			int totalCoeffs		= 0;
-			int numCodedBits = pCoeffTokenVlcDec->Decode3(pBsr, &totalCoeffs, &trailingOnes, &nC);
-			if( (tC != totalCoeffs)||(tO != trailingOnes) )
-				result = 0;
-		}//end for tC...
-	}//end for tO...
-
-	/// 3. Total Zeros encoding & decoding.
-	IVlcEncoder*	pTotalZeros4x4VlcEnc = new TotalZeros4x4H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros4x4VlcDec = new TotalZeros4x4H264VlcDecoder();
-	int tZ;
-	pBsw->Reset();
-	for(tC = 1; tC <= 15; tC++)	///< Encode.
-	{
-		for(tZ = 0; tZ <= (16-tC); tZ++)
-		{
-			int numCodedBits = pTotalZeros4x4VlcEnc->Encode2(tZ, tC);
-			pBsw->Write(numCodedBits, pTotalZeros4x4VlcEnc->GetCode());
-		}//end for tZ...
-	}//end for tC...
-
-	pBsr->Reset();
-	for(tC = 1; tC <= 15; tC++)	///< Decode.
-	{
-		for(tZ = 0; tZ <= (16-tC); tZ++)
-		{
-			int totalZeros = 0;
-			int numCodedBits = pTotalZeros4x4VlcDec->Decode2(pBsr, &totalZeros, &tC);
-			if(totalZeros != tZ)
-				result = 0;
-		}//end for tZ...
-	}//end for tC...
-
-	IVlcEncoder*	pTotalZeros2x2VlcEnc = new TotalZeros2x2H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros2x2VlcDec = new TotalZeros2x2H264VlcDecoder();
-	pBsw->Reset();
-	for(tC = 1; tC <= 3; tC++)	///< Encode.
-	{
-		for(tZ = 0; tZ <= (4-tC); tZ++)
-		{
-			int numCodedBits = pTotalZeros2x2VlcEnc->Encode2(tZ, tC);
-			pBsw->Write(numCodedBits, pTotalZeros2x2VlcEnc->GetCode());
-		}//end for tZ...
-	}//end for tC...
-
-	pBsr->Reset();
-	for(tC = 1; tC <= 3; tC++)	///< Decode.
-	{
-		for(tZ = 0; tZ <= (4-tC); tZ++)
-		{
-			int totalZeros = 0;
-			int numCodedBits = pTotalZeros2x2VlcDec->Decode2(pBsr, &totalZeros, &tC);
-			if(totalZeros != tZ)
-				result = 0;
-		}//end for tZ...
-	}//end for tC...
-
-	IVlcEncoder*	pTotalZeros2x4VlcEnc = new TotalZeros2x4H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros2x4VlcDec = new TotalZeros2x4H264VlcDecoder();
-	pBsw->Reset();
-	for(tC = 1; tC <= 7; tC++)	///< Encode.
-	{
-		for(tZ = 0; tZ <= (8-tC); tZ++)
-		{
-			int numCodedBits = pTotalZeros2x4VlcEnc->Encode2(tZ, tC);
-			pBsw->Write(numCodedBits, pTotalZeros2x4VlcEnc->GetCode());
-		}//end for tZ...
-	}//end for tC...
-
-	pBsr->Reset();
-	for(tC = 1; tC <= 7; tC++)	///< Decode.
-	{
-		for(tZ = 0; tZ <= (8-tC); tZ++)
-		{
-			int totalZeros = 0;
-			int numCodedBits = pTotalZeros2x4VlcDec->Decode2(pBsr, &totalZeros, &tC);
-			if(totalZeros != tZ)
-				result = 0;
-		}//end for tZ...
-	}//end for tC...
-
-	/// 4. Run-before encoding & decoding.
-	IVlcEncoder*	pRunBeforeVlcEnc = new RunBeforeH264VlcEncoder();
-	IVlcDecoder*	pRunBeforeVlcDec = new RunBeforeH264VlcDecoder();
-	int rB, zL;
-	pBsw->Reset();
-	for(zL = 1; zL <= 14; zL++)	///< Encode.
-	{
-		for(rB = 0; rB <= zL; rB++)
-		{
-			int numCodedBits = pRunBeforeVlcEnc->Encode2(rB, zL);
-			pBsw->Write(numCodedBits, pRunBeforeVlcEnc->GetCode());
-		}//end for rB...
-	}//end for zL...
-
-	pBsr->Reset();
-	for(zL = 1; zL <= 14; zL++)	///< Decode.
-	{
-		for(rB = 0; rB <= zL; rB++)
-		{
-			int runBefore = 0;
-			int numCodedBits = pRunBeforeVlcDec->Decode2(pBsr, &runBefore, &zL);
-			if(runBefore != rB)
-				result = 0;
-		}//end for rB...
-	}//end for zL...
-
-
-	/// Test the CAVLC encoding & decoding.
-
-	/// All vlc encoders and decoders are tested. Now load them into the 
-	/// CAVLC for usage in this test proceedure.
-	IContextAwareRunLevelCodec* pCAVLC = new CAVLCH264Impl();
-	/// Design unit test during development.
-	result = CAVLCH264Impl::TestLevelPrefixSuffix();
-
-	/// Testing for 4x4 and 2x2 modes.
-	int mode;
-	/// Vlc settings for all modes.
-	((CAVLCH264Impl *)pCAVLC)->SetTokenCoeffVlcEncoder(pCoeffTokenVlcEnc);
-	((CAVLCH264Impl *)pCAVLC)->SetTokenCoeffVlcDecoder(pCoeffTokenVlcDec);
-	((CAVLCH264Impl *)pCAVLC)->SetPrefixVlcEncoder(pPrefixVlcEnc);
-	((CAVLCH264Impl *)pCAVLC)->SetPrefixVlcDecoder(pPrefixVlcDec);
-	((CAVLCH264Impl *)pCAVLC)->SetRunBeforeVlcEncoder(pRunBeforeVlcEnc);
-	((CAVLCH264Impl *)pCAVLC)->SetRunBeforeVlcDecoder(pRunBeforeVlcDec);
-
-	int totNumCoeffs = 16;	///< Default value.
-	for(mode = CAVLCH264Impl::Mode2x2; mode <= CAVLCH264Impl::Mode4x4; mode++)
-	{
-		if(mode == CAVLCH264Impl::Mode2x2)
-		{
-			totNumCoeffs = 4;
-			pCAVLC->SetMode(CAVLCH264Impl::Mode2x2);
-			((CAVLCH264Impl *)pCAVLC)->SetTotalZerosVlcEncoder(pTotalZeros2x2VlcEnc);
-			((CAVLCH264Impl *)pCAVLC)->SetTotalZerosVlcDecoder(pTotalZeros2x2VlcDec);
-		}//end if mode...
-		else if(mode == CAVLCH264Impl::Mode4x4)
-		{
-			totNumCoeffs = 16;
-			pCAVLC->SetMode(CAVLCH264Impl::Mode4x4);
-			((CAVLCH264Impl *)pCAVLC)->SetTotalZerosVlcEncoder(pTotalZeros4x4VlcEnc);
-			((CAVLCH264Impl *)pCAVLC)->SetTotalZerosVlcDecoder(pTotalZeros4x4VlcDec);
-		}//end else if mode...
-
-		for(k = 0; k < TESTS; k++)
-		{
-			/// Load the test samples.
-			int existingZeros = 0;
-			for(i = 0; i < totNumCoeffs; i++)
-			{
-				b[i] = 0;	///< Clear the decoded to block.
-				a[i] = (short)( (((double)rand()/(double)RAND_MAX) * 1023.0) - 256.0 + 0.5 );
-				if(i != 0)
-					a[i] = (short)( ((double)a[i])/((double)(2*i)) );	///< Flatten function towards high freq.
-				if(a[i] == 0)
-					existingZeros++;
-			}//end for i...
-			/// Number of zeros in the test block 0...16 or 0...4.
-			int numOfZeros = k % (totNumCoeffs + 1);
-			/// Random unique positions for these zeros.
-			if(numOfZeros > existingZeros)
-			{
-				for(i = 0; i < (numOfZeros - existingZeros); i++)
-				{
-					int attempts	= 1;
-					int zeroPos		= (int)( (((double)rand()/(double)RAND_MAX) * ((double)(totNumCoeffs-1))) + 0.5 );
-					while((a[zeroPos] == 0)&&(attempts < 1024))
-					{
-						zeroPos	= (int)( (((double)rand()/(double)RAND_MAX) * ((double)(totNumCoeffs-1))) + 0.5 );
-						attempts++;
-					}//end while a[]...
-					a[zeroPos] = 0;
-				}//end for i...
-			}//end if numOfZeros...
-			/// Number of trailing ones in the test block 0...3.
-			int numOfOnes = k % 4;
-			/// Replace non-zero coeffs from the end with ones.
-			for(i = (totNumCoeffs-1); (i >= 0)&&(numOfOnes > 0); i--)
-			{
-				if(a[i] != 0)
-				{
-					if(a[i] < 0)
-						a[i] = -1;
-					else
-						a[i] = 1;
-					numOfOnes--;
-				}//end if a[]...
-			}//end for i...
-
-			/// Now do the actual test.
-			for(int dcSkip = 0; dcSkip <= 1; dcSkip++)
-			{
-				for(nC = 0; nC <= totNumCoeffs; nC++)	///< Step through all neighbourhood coeff totals.
-				{
-					pCAVLC->SetParameter(CAVLCH264Impl::NUM_TOT_NEIGHBOR_COEFF_ID, nC);
-					pCAVLC->SetParameter(CAVLCH264Impl::DC_SKIP_FLAG_ID, 0);
-
-					/// Encoding.
-					pBsw->Reset();
-					int numEncodedBits = pCAVLC->Encode(a, pBsw);
-
-					/// Decoding.
-					pBsr->Reset();
-					int numDecodedBits = pCAVLC->Decode(pBsr, b);
-
-					for(j = pCAVLC->GetParameter(CAVLCH264Impl::DC_SKIP_FLAG_ID); j < totNumCoeffs; j++)
-					{
-						if(a[j] != b[j])
-							result = 0;
-					}//end for j...
-				}//end for nC...
-			}//end for dcSkip...
-		}//end for k...
-
-	}//end for mode...
-
-	delete pCAVLC;
-
-	delete pRunBeforeVlcDec;
-	delete pRunBeforeVlcEnc;
-	delete pTotalZeros2x4VlcDec;
-	delete pTotalZeros2x4VlcEnc;
-	delete pTotalZeros2x2VlcDec;
-	delete pTotalZeros2x2VlcEnc;
-	delete pTotalZeros4x4VlcDec;
-	delete pTotalZeros4x4VlcEnc;
-	delete pCoeffTokenVlcDec;
-	delete pCoeffTokenVlcEnc;
-	delete pPrefixVlcDec;
-	delete pPrefixVlcEnc;
-
-	delete pBsr;
-	delete pBsw;
-
-	return(result);
-}//end TestCAVLC.
-
-int H264v2Codec::TestVlcCodecs(void)
-{
-	int i,r;
-	int TESTS = 4096;
-	int result = 1;
-
-	/// Use a bit stream reader/writer.
-	int bitSize = H264V2C_BYTESIZE * 8;
-	unsigned char stream[H264V2C_BYTESIZE];
-	IBitStreamWriter* pBsw = new BitStreamWriterMSB();
-	pBsw->SetStream((void *)stream, bitSize);
-	IBitStreamReader* pBsr = new BitStreamReaderMSB();
-	pBsr->SetStream((void *)stream, bitSize);
-
-	/// 1. Exp-Golomb unsigned encoder and decoder.
-	IVlcEncoder*	pExpGolUnVlcEnc = new ExpGolombUnsignedVlcEncoder();
-	IVlcDecoder*	pExpGolUnVlcDec = new ExpGolombUnsignedVlcDecoder();
-
-	pBsw->Reset();
-	for( i = 0; i < 32767; i++)	///< Encode.
-	{
-		int numCodedBits = pExpGolUnVlcEnc->Encode(i);
-		pBsw->Write(numCodedBits, pExpGolUnVlcEnc->GetCode());
-	}//end for i...
-
-	pBsr->Reset();
-	for( i = 0; i < 32767; i++)	///< Decode.
-	{
-		int code = pExpGolUnVlcDec->Decode(pBsr);
-		if(code != i)
-			result = 0;
-	}//end for i...
-
-	/// 2. Exp-Golomb signed encoder and decoder.
-	IVlcEncoder*	pExpGolSVlcEnc = new ExpGolombSignedVlcEncoder();
-	IVlcDecoder*	pExpGolSVlcDec = new ExpGolombSignedVlcDecoder();
-
-	pBsw->Reset();
-	for( i = -16383; i < 16383; i++)	///< Encode.
-	{
-		int numCodedBits = pExpGolSVlcEnc->Encode(i);
-		pBsw->Write(numCodedBits, pExpGolSVlcEnc->GetCode());
-	}//end for i...
-
-	pBsr->Reset();
-	for( i = -16383; i < 16383; i++)	///< Decode.
-	{
-		int code = pExpGolSVlcDec->Decode(pBsr);
-		if(code != i)
-			result = 0;
-	}//end for i...
-
-	/// 3. Exp-Golomb truncated encoder and decoder.
-	IVlcEncoder*	pExpGolTVlcEnc = new ExpGolombTruncVlcEncoder();
-	IVlcDecoder*	pExpGolTVlcDec = new ExpGolombTruncVlcDecoder();
-
-	pBsw->Reset();
-	for(r = 1; r < 32; r++)	///< Test a small subset only.
-	{
-		for( i = 0; i < r; i++)	///< Encode.
-		{
-			int numCodedBits = pExpGolTVlcEnc->Encode2(i,r);
-			pBsw->Write(numCodedBits, pExpGolTVlcEnc->GetCode());
-		}//end for i...
-	}//end for r...
-
-	pBsr->Reset();
-	for(r = 1; r < 32; r++)
-	{
-		for( i = 0; i < r; i++)	///< Decode.
-		{
-			int code;
-			int numCodeBits = pExpGolTVlcDec->Decode2(pBsr, &code, &r);
-			if(code != i)
-				result = 0;
-		}//end for i...
-	}//end for r...
-
-	/// 3. Coded block pattern encoder and decoder.
-	IVlcEncoder*	pCBPVlcEnc = new CodedBlkPatternH264VlcEncoder();
-	IVlcDecoder*	pCBPVlcDec = new CodedBlkPatternH264VlcDecoder();
-
-	pBsw->Reset();
-	for(r = 0; r < 2; r++)	///< Intra/Inter = 0/1
-	{
-		for( i = 0; i < 48; i++)	///< Encode.
-		{
-			int numCodedBits = pCBPVlcEnc->Encode2(i,r);
-			pBsw->Write(numCodedBits, pCBPVlcEnc->GetCode());
-		}//end for i...
-	}//end for r...
-
-	pBsr->Reset();
-	for(r = 0; r < 2; r++)
-	{
-		for( i = 0; i < 48; i++)	///< Decode.
-		{
-			int code;
-			int numCodeBits = pCBPVlcDec->Decode2(pBsr, &code, &r);
-			if(code != i)
-				result = 0;
-		}//end for i...
-	}//end for r...
-
-	delete pCBPVlcDec;
-	delete pCBPVlcEnc;
-
-	delete pExpGolTVlcDec;
-	delete pExpGolTVlcEnc;
-
-	delete pExpGolSVlcDec;
-	delete pExpGolSVlcEnc;
-
-	delete pExpGolUnVlcDec;
-	delete pExpGolUnVlcEnc;
-
-	delete pBsr;
-	delete pBsw;
-
-	return(result);
-}//end TestVlcCodecs.
-
-/** Test block layer encode and decode implementations.
-@return	: 1 = success, 0 = failed..
-*/
-int H264v2Codec::TestBlockLayer(void)
-{
-	int i,j,test,ret;
-	int result = 1;
-	int TESTS = 1024;
-
-	int q			= 4;	///< Step size.
-	int	qErr	= q + (q/2) + 1;
-
-	/// Block coding order as defined by H.264 standard.
-	int macroBlkCodingOrderY[4][4] =
-		{ { 0, 0, 1, 1 }, 
-			{ 0, 0, 1, 1 }, 
-			{ 2, 2, 3, 3 }, 
-			{ 2, 2, 3, 3 } 
-		};
-	int macroBlkCodingOrderX[4][4] =
-		{ { 0, 1, 0, 1 }, 
-			{ 2, 3, 2, 3 }, 
-			{ 0, 1, 0, 1 }, 
-			{ 2, 3, 2, 3 } 
-		};
-	/// Scaling is required for the DC coeffs to match the 4x4 
-	/// inverse IT saling of the AC coeffs.
-	int dc4x4Scale[16] =
-		{ 16, 16, 16, 16, 
-			16, 16, 16, 16, 
-			16, 16, 16, 16,
-			16, 16, 16, 16 
-		};
-	int dc2x2Scale[4] =
-		{ 16, 16, 
-			16, 16 
-		};
-
-	/// Simulate a macroblock structure with one 16x16 luminance and two 
-	/// 8x8 chrominance components.
-	short Yo[256], Uo[64], Vo[64];
-	short Y[256], U[64], V[64];
-	/// Create 4x4 mem overlays on the macroblock.
-	OverlayMem2Dv2* pY = new OverlayMem2Dv2(Y, 16, 16, 4, 4);
-	OverlayMem2Dv2* pU = new OverlayMem2Dv2(U, 8, 8, 4, 4);
-	OverlayMem2Dv2* pV = new OverlayMem2Dv2(V, 8, 8, 4, 4);
-	/// ...and now for the blocks. Included are one lum 4x4 DC block and
-	/// two chr 2x2 DC blocks. Overlays are created on instantiation.
-	BlockH264 Yblk[4][4]; ///< Default block dimensions are 4x4.
-	BlockH264 Ublk[2][2];
-	BlockH264 Vblk[2][2];
-
-	for(i = 0; i < 4; i++)	///< Initialise all location aware members.
-		for(j = 0; j < 4; j++)
-		{
-			/// Lum.
-			Yblk[i][j]._offX	= j*4;
-			Yblk[i][j]._offY	= i*4;
-			if(i == 0)	///< Falls into MB above and in row 3.
-				Yblk[i][j]._blkAbove = NULL;	///< In this case, there are no MBs above, so set to invalid.	
-			else
-				Yblk[i][j]._blkAbove = &(Yblk[i-1][j]); ///< In current MB.
-			if(j == 0)	///< Falls into MB to the left and in col 3.
-				Yblk[i][j]._blkLeft = NULL;	///< In this case, there are no MBs to the left, so set to invalid.
-			else
-				Yblk[i][j]._blkLeft = &(Yblk[i][j-1]); ///< In current MB.
-			/// Chr.
-			if((i < 2)&&(j < 2))
-			{
-				Ublk[i][j]._offX	= j*4;
-				Ublk[i][j]._offY	= i*4;
-				Vblk[i][j]._offX	= j*4;
-				Vblk[i][j]._offY	= i*4;
-				if(i == 0)	///< Falls into MB above and in row 3.
-				{
-					Ublk[i][j]._blkAbove = NULL;	///< In this case, there are no MBs above, so set to invalid.
-					Vblk[i][j]._blkAbove = NULL;
-				}//end if i...
-				else
-				{
-					Ublk[i][j]._blkAbove = &(Ublk[i-1][j]); ///< In current MB.
-					Vblk[i][j]._blkAbove = &(Vblk[i-1][j]); ///< In current MB.
-				}//end else...
-				if(j == 0)	///< Falls into MB to the left and in col 3.
-				{
-					Ublk[i][j]._blkLeft = NULL;	///< In this case, there are no MBs to the left, so set to invalid.
-					Vblk[i][j]._blkLeft = NULL;
-				}//end if j...
-				else
-				{
-					Ublk[i][j]._blkLeft = &(Ublk[i][j-1]); ///< In current MB.
-					Vblk[i][j]._blkLeft = &(Vblk[i][j-1]); ///< In current MB.
-				}//end else...
-			}//end if i...
-		}//end for i & j...
-	/// Ignore neighbourhood of DC blocks (for this test).
-	BlockH264 YDCblk;
-	BlockH264 UDCblk(2,2);
-	BlockH264 VDCblk(2,2);
-
-	/// Create Integer Transformers and their inverses to convert the test values.
-	IForwardTransform* pF4x4T = new FastForward4x4ITImpl1();
-	pF4x4T->SetParameter(IForwardTransform::QUANT_ID, q);
-	pF4x4T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-	pF4x4T->SetMode(IForwardTransform::TransformOnly);
-
-	IForwardTransform* pFDC4x4T = new FastForwardDC4x4ITImpl1();
-	pFDC4x4T->SetParameter(IForwardTransform::QUANT_ID, q);
-	pFDC4x4T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-	pFDC4x4T->SetMode(IForwardTransform::TransformAndQuant);
-
-	IForwardTransform* pFDC2x2T = new FastForwardDC2x2ITImpl1();
-	pFDC2x2T->SetParameter(IForwardTransform::QUANT_ID, q);
-	pFDC2x2T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-	pFDC2x2T->SetMode(IForwardTransform::TransformAndQuant);
-
-	/// Create an inverse IT to use and to compare with.
-	IInverseTransform* pI4x4T = new FastInverse4x4ITImpl1();
-	pI4x4T->SetParameter(IInverseTransform::QUANT_ID, q);
-	pI4x4T->SetMode(IInverseTransform::TransformOnly);
-
-	IInverseTransform* pIDC4x4T = new FastInverseDC4x4ITImpl1();
-	pIDC4x4T->SetParameter(IInverseTransform::QUANT_ID, q);
-	pIDC4x4T->SetMode(IInverseTransform::TransformAndQuant);
-//	pIDC4x4T->SetScale((void *)dc4x4Scale);
-
-	IInverseTransform* pIDC2x2T = new FastInverseDC2x2ITImpl1();
-	pIDC2x2T->SetParameter(IInverseTransform::QUANT_ID, q);
-	pIDC2x2T->SetMode(IInverseTransform::TransformAndQuant);
-//	pIDC2x2T->SetScale((void *)dc2x2Scale);
-
-	/// Use a bit stream reader/writer to code to and from.
-	int bitSize = H264V2C_BYTESIZE * 8;
-	unsigned char stream[H264V2C_BYTESIZE];
-	IBitStreamWriter* pBsw = new BitStreamWriterMSB();
-	pBsw->SetStream((void *)stream, bitSize);
-	IBitStreamReader* pBsr = new BitStreamReaderMSB();
-	pBsr->SetStream((void *)stream, bitSize);
-
-	/// Create the vlc encoders and decoders for use with CAVLC.
-	IVlcEncoder*	pPrefixVlcEnc					= new PrefixH264VlcEncoderImpl1();
-	IVlcDecoder*	pPrefixVlcDec					= new PrefixH264VlcDecoderImpl1();
-	IVlcEncoder*	pCoeffTokenVlcEnc			= new CoeffTokenH264VlcEncoder();
-	IVlcDecoder*	pCoeffTokenVlcDec			= new CoeffTokenH264VlcDecoder();
-	IVlcEncoder*	pTotalZeros4x4VlcEnc	= new TotalZeros4x4H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros4x4VlcDec	= new TotalZeros4x4H264VlcDecoder();
-	IVlcEncoder*	pTotalZeros2x2VlcEnc	= new TotalZeros2x2H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros2x2VlcDec	= new TotalZeros2x2H264VlcDecoder();
-	IVlcEncoder*	pRunBeforeVlcEnc			= new RunBeforeH264VlcEncoder();
-	IVlcDecoder*	pRunBeforeVlcDec			= new RunBeforeH264VlcDecoder();
-
-	/// Create a CAVLC for each type.
-	IContextAwareRunLevelCodec* pCAVLC4x4 = new CAVLCH264Impl();
-	IContextAwareRunLevelCodec* pCAVLC2x2 = new CAVLCH264Impl();
-	/// Attach the vlc encoders and decoders excluding the total zeros vlc.
-	pCAVLC4x4->SetMode(CAVLCH264Impl::Mode4x4);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTokenCoeffVlcEncoder(pCoeffTokenVlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTokenCoeffVlcDecoder(pCoeffTokenVlcDec);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetPrefixVlcEncoder(pPrefixVlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetPrefixVlcDecoder(pPrefixVlcDec);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetRunBeforeVlcEncoder(pRunBeforeVlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetRunBeforeVlcDecoder(pRunBeforeVlcDec);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTotalZerosVlcEncoder(pTotalZeros4x4VlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTotalZerosVlcDecoder(pTotalZeros4x4VlcDec);
-
-	pCAVLC2x2->SetMode(CAVLCH264Impl::Mode2x2);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTokenCoeffVlcEncoder(pCoeffTokenVlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTokenCoeffVlcDecoder(pCoeffTokenVlcDec);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetPrefixVlcEncoder(pPrefixVlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetPrefixVlcDecoder(pPrefixVlcDec);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetRunBeforeVlcEncoder(pRunBeforeVlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetRunBeforeVlcDecoder(pRunBeforeVlcDec);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTotalZerosVlcEncoder(pTotalZeros2x2VlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTotalZerosVlcDecoder(pTotalZeros2x2VlcDec);
-
-	/// Simulate a macroblock of YUV values at a mid point and then random
-	/// deviations from it with a limited range for each test.
-	srand(23995);
-	for(test = 0; test < TESTS; test++)
-	{
-		/// **** Construct a typical test sample macroblock. Midpoint between -256..255.
-		short midPoint = (short)( (((double)rand()/(double)RAND_MAX) * 511.0) - 256.0 + 0.5 );
-		/// Deviation limit between 0..128.
-		short devLimit = (short)( (((double)rand()/(double)RAND_MAX) * 128.0) + 0.5 );
-		for(i = 0; i < 256; i++)	///< Lum and Chr.
-		{
-			int x = (short)( (((double)rand()/(double)RAND_MAX) * (double)devLimit) - ((double)devLimit/2.0) + 0.5 );
-			x = x + midPoint;
-			if(x > 255) x = 255;
-			else if(x < -255) x = -255;
-			Yo[i] = x;
-			Y[i]	= Yo[i];
-			if(i < 64)	///< Chr sample.
-			{
-				/// Range is halved for Chr.
-				x = (short)( (((double)rand()/(double)RAND_MAX) * ((double)devLimit/2.0)) - ((double)devLimit/4.0) + 0.5 );
-				x = x + midPoint;
-				if(x > 255) x = 255;
-				else if(x < -255) x = -255;
-				Uo[i] = x;
-				U[i]	= Uo[i];
-				x = (short)( (((double)rand()/(double)RAND_MAX) * ((double)devLimit/2.0)) - ((double)devLimit/4.0) + 0.5 );
-				x = x + midPoint;
-				if(x > 255) x = 255;
-				else if(x < -255) x = -255;
-				Vo[i] = x;
-				V[i]	= Vo[i];
-			}//end if Chr...
-		}//end for i...
-
-		/// ************ Encode **************
-
-		/// Load each block from the macroblock and apply the forward transform.
-		for(i = 0; i < 4; i++)	///< 16 Lum blocks + 4 U Chr and 4 V Chr blocks.
-			for(j = 0; j < 4; j++)
-			{
-				/// Lum.
-				pY->SetOrigin(Yblk[i][j]._offX, Yblk[i][j]._offY);	///< Set overlay origin for macroblock.
-				/// Copy from macroblock to block.
-				pY->Read(*(Yblk[i][j].GetBlkOverlay()));
-				/// Transform without scaling and quant.
-				Yblk[i][j].ForwardTransform(pF4x4T);
-
-				/// Chr.
-				if((i < 2)&&(j < 2))
-				{
-					pU->SetOrigin(Ublk[i][j]._offX, Ublk[i][j]._offY);
-					/// Copy from macroblock to block.
-					pU->Read(*(Ublk[i][j].GetBlkOverlay()));
-					/// Transform.
-					Ublk[i][j].ForwardTransform(pF4x4T);
-
-					pV->SetOrigin(Vblk[i][j]._offX, Vblk[i][j]._offY);
-					/// Copy from macroblock to block.
-					pV->Read(*(Vblk[i][j].GetBlkOverlay()));
-					/// Transform.
-					Vblk[i][j].ForwardTransform(pF4x4T);
-				}//end if i...
-
-			}//end for i & j...
-
-		/// Pull out the Lum DC components. This is done in the 16x16 Intra mode only. The
-		/// coeffs must be scaled by 4 to ensure proper decoding.
-		short* pYDC = YDCblk.GetBlk();
-		for(i = 0; i < 4; i++)
-			for(j = 0; j < 4; j++)
-			{
-				pYDC[4*i + j] = Yblk[i][j].GetDC()/4;
-				Yblk[i][j].SetDC(0);	///< Not really necessary.
-			}//end for i & j...
-		/// Transform & quantise Lum DC components.
-		YDCblk.ForwardTransform(pFDC4x4T);
-
-		/// Pull out the Chr DC components. This is done in all modes.
-		short* pUDC = UDCblk.GetBlk();
-		short* pVDC = VDCblk.GetBlk();
-		for(i = 0; i < 2; i++)
-			for(j = 0; j < 2; j++)
-			{
-				pUDC[2*i + j] = Ublk[i][j].GetDC()/4;
-				Ublk[i][j].SetDC(0);
-				pVDC[2*i + j] = Vblk[i][j].GetDC()/4;
-				Vblk[i][j].SetDC(0);
-			}//end for i & j...
-		/// Transform & quantise Chr DC components.
-		UDCblk.ForwardTransform(pFDC2x2T);
-		VDCblk.ForwardTransform(pFDC2x2T);
-
-		/// Quantise the main blocks.
-		for(i = 0; i < 4; i++)	///< 16 Lum blocks + 4 U Chr and 4 V Chr blocks.
-			for(j = 0; j < 4; j++)
-			{
-				/// Lum.
-				Yblk[i][j].Quantise(pF4x4T, q);
-				/// Chr.
-				if((i < 2)&&(j < 2))
-				{
-					Ublk[i][j].Quantise(pF4x4T, q);
-					Vblk[i][j].Quantise(pF4x4T, q);
-				}//end if i...
-			}//end for i & j...
-
-		/// Encode the vlc blocks with the context of the neighborhood number of coeffs. Map
-		/// to the required H.264 coding order of each block.
-		pBsw->Reset();
-		int numLumNeighborCoeffs	= 0;
-		int numUChrNeighborCoeffs = 0;
-		int numVChrNeighborCoeffs = 0;
-		/// Lum DC first. Block num = -1.
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 0);											///< Include DC for DC Lum block.
-		pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, 0);						///< This would be found from neighboring MBs.
-		ret = pCAVLC4x4->Encode(YDCblk.GetBlk(), pBsw);															///< Put onto coded stream.
-		if(ret <= 0)	///< Codec errors are detected from a negative return value.
-			result = 0;
-		YDCblk.SetNumCoeffs(pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID));	///< Set this block's coeff num. (Not used here.)
-		///< 16 Lum blocks without DC value. Block num = 0..15
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 1);
-		for(i = 0; i < 4; i++)	
-			for(j = 0; j < 4; j++)	
-			{
-				int blkY = macroBlkCodingOrderY[i][j];
-				int blkX = macroBlkCodingOrderX[i][j];
-				/// Get num of neighbourhood coeffs as average of above and left block coeffs.
-				int neighCoeffs = 0;
-				if(Yblk[blkY][blkX]._blkAbove != NULL)
-					neighCoeffs += (Yblk[blkY][blkX]._blkAbove)->GetNumCoeffs();
-				if(Yblk[blkY][blkX]._blkLeft != NULL)
-					neighCoeffs += (Yblk[blkY][blkX]._blkLeft)->GetNumCoeffs();
-				if((Yblk[blkY][blkX]._blkAbove != NULL)&&(Yblk[blkY][blkX]._blkLeft != NULL))
-					neighCoeffs = (neighCoeffs + 1)/2;
-				pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);
-				/// Put onto coded stream.
-				ret = pCAVLC4x4->Encode(Yblk[blkY][blkX].GetBlk(), pBsw);										
-				int numCoeffs = pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID);
-				Yblk[blkY][blkX].SetNumCoeffs(numCoeffs);															///< Set this block's coeff num for later use.
-				if(numCoeffs > 0)																											///< Set the coded/no coded flag
-					Yblk[blkY][blkX].SetCoded(1);
-				else
-					Yblk[blkY][blkX].SetCoded(0);
-			}//end for i & j...
-		/// Chr DC next. Block num = 16 & 17.
-		pCAVLC2x2->SetParameter(pCAVLC2x2->DC_SKIP_FLAG_ID, 0);											///< Include DC for DC Chr blocks.
-		pCAVLC2x2->SetParameter(pCAVLC2x2->NUM_TOT_NEIGHBOR_COEFF_ID, -1);					///< Fixed at -1 for chroma_format_idc = 1.
-		ret = pCAVLC2x2->Encode(UDCblk.GetBlk(), pBsw);															///< Put Chr U onto coded stream.
-		UDCblk.SetNumCoeffs(pCAVLC2x2->GetParameter(pCAVLC2x2->NUM_TOT_COEFF_ID));	///< Set this block's coeff num. (Not used here.)
-		ret = pCAVLC2x2->Encode(VDCblk.GetBlk(), pBsw);															///< Put Chr V onto coded stream.
-		VDCblk.SetNumCoeffs(pCAVLC2x2->GetParameter(pCAVLC2x2->NUM_TOT_COEFF_ID));	///< Set this block's coeff num. (Not used here.)
-		///< 4 U Chr blocks without DC value. Block num = 18..21
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 1);
-		for(i = 0; i < 2; i++)	
-			for(j = 0; j < 2; j++)	
-			{
-				/// Get num of neighbourhood coeffs as average of above and left block coeffs.
-				int neighCoeffs = 0;
-				if(Ublk[i][j]._blkAbove != NULL)
-					neighCoeffs += (Ublk[i][j]._blkAbove)->GetNumCoeffs();
-				if(Ublk[i][j]._blkLeft != NULL)
-					neighCoeffs += (Ublk[i][j]._blkLeft)->GetNumCoeffs();
-				if((Ublk[i][j]._blkAbove != NULL)&&(Ublk[i][j]._blkLeft != NULL))
-					neighCoeffs = (neighCoeffs + 1)/2;
-				pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);
-				/// Put onto coded stream.
-				ret = pCAVLC4x4->Encode(Ublk[i][j].GetBlk(), pBsw);																		
-				int numCoeffs = pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID);
-				Ublk[i][j].SetNumCoeffs(numCoeffs);															///< Set this block's coeff num for later use.
-				if(numCoeffs > 0)																								///< Set the coded/no coded flag
-					Ublk[i][j].SetCoded(1);
-				else
-					Ublk[i][j].SetCoded(0);
-			}//end for i & j...
-		///< 4 V Chr blocks without DC value. Block num = 22..25
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 1);
-		for(i = 0; i < 2; i++)	
-			for(j = 0; j < 2; j++)	
-			{
-				/// Get num of neighbourhood coeffs as average of above and left block coeffs.
-				int neighCoeffs = 0;
-				if(Vblk[i][j]._blkAbove != NULL)
-					neighCoeffs += (Vblk[i][j]._blkAbove)->GetNumCoeffs();
-				if(Ublk[i][j]._blkLeft != NULL)
-					neighCoeffs += (Vblk[i][j]._blkLeft)->GetNumCoeffs();
-				if((Vblk[i][j]._blkAbove != NULL)&&(Vblk[i][j]._blkLeft != NULL))
-					neighCoeffs = (neighCoeffs + 1)/2;
-				pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);
-				/// Put onto coded stream.
-				ret = pCAVLC4x4->Encode(Vblk[i][j].GetBlk(), pBsw);
-				int numCoeffs = pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID);
-				Vblk[i][j].SetNumCoeffs(numCoeffs);															///< Set this block's coeff num for later use.
-				if(numCoeffs > 0)																								///< Set the coded/no coded flag.
-					Vblk[i][j].SetCoded(1);
-				else
-					Vblk[i][j].SetCoded(0);
-			}//end for i & j...
-
-		/// *********** Clear all ***********
-		for(i = 0; i < 256; i++)
-		{
-			Y[i] = 0;
-			if(i < 64)
-			{
-				U[i] = 0;
-				V[i] = 0;
-			}//end if i...
-		}//end for i...
-
-		for(i = 0; i < 4; i++)
-			for(j = 0; j < 4; j++)
-			{
-				Yblk[i][j].Zero();
-				if((i < 2)&&(j < 2))
-				{
-					Ublk[i][j].Zero();
-					Vblk[i][j].Zero();
-				}//end if i...
-			}//end for i & j...
-		YDCblk.Zero();
-		UDCblk.Zero();
-		VDCblk.Zero();
-
-		/// *********** Decode ***********
-
-		/// Decode the vlc blocks with the context of the neighborhood number of coeffs.
-		pBsr->Reset();
-		numLumNeighborCoeffs	= 0;
-		numUChrNeighborCoeffs = 0;
-		numVChrNeighborCoeffs = 0;
-		/// Lum DC first. Block num = -1.
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 0);											///< Include DC for DC Lum block.
-		pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, 0);						///< This would be found from neighboring MBs.
-		ret = pCAVLC4x4->Decode(pBsr, YDCblk.GetBlk());															///< Get from coded stream.
-		YDCblk.SetNumCoeffs(pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID));	///< Set this block's coeff num. (Not used here.)
-		///< 16 Lum blocks without DC value. Block num = 0..15
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 1);
-		for(i = 0; i < 4; i++)	
-			for(j = 0; j < 4; j++)	
-			{
-				int blkY = macroBlkCodingOrderY[i][j];
-				int blkX = macroBlkCodingOrderX[i][j];
-				/// Get num of neighbourhood coeffs as average of above and left block coeffs.
-				int neighCoeffs = 0;
-				if(Yblk[blkY][blkX]._blkAbove != NULL)
-					neighCoeffs += (Yblk[blkY][blkX]._blkAbove)->GetNumCoeffs();
-				if(Yblk[blkY][blkX]._blkLeft != NULL)
-					neighCoeffs += (Yblk[blkY][blkX]._blkLeft)->GetNumCoeffs();
-				if((Yblk[blkY][blkX]._blkAbove != NULL)&&(Yblk[blkY][blkX]._blkLeft != NULL))
-					neighCoeffs = (neighCoeffs + 1)/2;
-				pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);
-				/// Get from coded stream.
-				ret = pCAVLC4x4->Decode(pBsr, Yblk[blkY][blkX].GetBlk());										
-				Yblk[blkY][blkX].SetNumCoeffs(pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID));	///< Set this block's coeff num for later use.
-			}//end for i & j...
-		/// Chr DC next. Block num = 16 & 17.
-		pCAVLC2x2->SetParameter(pCAVLC2x2->DC_SKIP_FLAG_ID, 0);											///< Include DC for DC Chr blocks.
-		pCAVLC2x2->SetParameter(pCAVLC2x2->NUM_TOT_NEIGHBOR_COEFF_ID, -1);					///< Fixed at -1 for chroma_format_idc = 1.
-		ret = pCAVLC2x2->Decode(pBsr, UDCblk.GetBlk());															///< Get Chr U from coded stream.
-		UDCblk.SetNumCoeffs(pCAVLC2x2->GetParameter(pCAVLC2x2->NUM_TOT_COEFF_ID));	///< Set this block's coeff num. (Not used here.)
-		ret = pCAVLC2x2->Decode(pBsr, VDCblk.GetBlk());															///< Get Chr V from coded stream.
-		VDCblk.SetNumCoeffs(pCAVLC2x2->GetParameter(pCAVLC2x2->NUM_TOT_COEFF_ID));	///< Set this block's coeff num. (Not used here.)
-		///< 4 U Chr blocks without DC value. Block num = 18..21
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 1);
-		for(i = 0; i < 2; i++)	
-			for(j = 0; j < 2; j++)	
-			{
-				/// Get num of neighbourhood coeffs as average of above and left block coeffs.
-				int neighCoeffs = 0;
-				if(Ublk[i][j]._blkAbove != NULL)
-					neighCoeffs += (Ublk[i][j]._blkAbove)->GetNumCoeffs();
-				if(Ublk[i][j]._blkLeft != NULL)
-					neighCoeffs += (Ublk[i][j]._blkLeft)->GetNumCoeffs();
-				if((Ublk[i][j]._blkAbove != NULL)&&(Ublk[i][j]._blkLeft != NULL))
-					neighCoeffs = (neighCoeffs + 1)/2;
-				pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);
-				/// Get from coded stream.
-				ret = pCAVLC4x4->Decode(pBsr, Ublk[i][j].GetBlk());
-				Ublk[i][j].SetNumCoeffs(pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID));	///< Set this block's coeff num for later use.
-			}//end for i & j...
-		///< 4 V Chr blocks without DC value. Block num = 22..25
-		pCAVLC4x4->SetParameter(pCAVLC4x4->DC_SKIP_FLAG_ID, 1);
-		for(i = 0; i < 2; i++)	
-			for(j = 0; j < 2; j++)	
-			{
-				/// Get num of neighbourhood coeffs as average of above and left block coeffs.
-				int neighCoeffs = 0;
-				if(Vblk[i][j]._blkAbove != NULL)
-					neighCoeffs += (Vblk[i][j]._blkAbove)->GetNumCoeffs();
-				if(Ublk[i][j]._blkLeft != NULL)
-					neighCoeffs += (Vblk[i][j]._blkLeft)->GetNumCoeffs();
-				if((Vblk[i][j]._blkAbove != NULL)&&(Vblk[i][j]._blkLeft != NULL))
-					neighCoeffs = (neighCoeffs + 1)/2;
-				pCAVLC4x4->SetParameter(pCAVLC4x4->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);
-				/// Get from coded stream.
-				ret = pCAVLC4x4->Decode(pBsr, Vblk[i][j].GetBlk());																		
-				Vblk[i][j].SetNumCoeffs(pCAVLC4x4->GetParameter(pCAVLC4x4->NUM_TOT_COEFF_ID));	///< Set this block's coeff num.
-			}//end for i & j...
-
-		/// Inverse transform & inverse quantise Lum DC components.
-		YDCblk.InverseTransform(pIDC4x4T);
-		/// Inverse transform & inverse quantise Chr DC components.
-		UDCblk.InverseTransform(pIDC2x2T);
-		VDCblk.InverseTransform(pIDC2x2T);
-
-		/// Inverse quantise the main blocks.
-		for(i = 0; i < 4; i++)	///< 16 Lum blocks + 4 U Chr and 4 V Chr blocks.
-			for(j = 0; j < 4; j++)
-			{
-				/// Lum.
-				Yblk[i][j].InverseQuantise(pI4x4T, q);
-				/// Chr.
-				if((i < 2)&&(j < 2))
-				{
-					Ublk[i][j].InverseQuantise(pI4x4T, q);
-					Vblk[i][j].InverseQuantise(pI4x4T, q);
-				}//end if i...
-			}//end for i & j...
-
-		/// Put the Lum DC components in position with a preset 16x scale factor.
-		pYDC = YDCblk.GetBlk();
-		for(i = 0; i < 4; i++)
-			for(j = 0; j < 4; j++)
-				Yblk[i][j].SetDC(pYDC[4*i + j]);
-
-		/// Put the Chr DC components in position.
-		pUDC = UDCblk.GetBlk();
-		pVDC = VDCblk.GetBlk();
-		for(i = 0; i < 2; i++)
-			for(j = 0; j < 2; j++)
-			{
-				Ublk[i][j].SetDC(pUDC[2*i + j]);
-				Vblk[i][j].SetDC(pVDC[2*i + j]);
-//				Ublk[i][j].SetDC(16 * pUDC[2*i + j]);
-//				Vblk[i][j].SetDC(16 * pVDC[2*i + j]);
-			}//end for i & j...
-
-		for(i = 0; i < 4; i++)	///< 16 Lum blocks + 4 U Chr and 4 V Chr blocks.
-			for(j = 0; j < 4; j++)
-			{
-				/// Inverse transform.
-				Yblk[i][j].InverseTransform(pI4x4T);
-				/// Lum.
-				pY->SetOrigin(Yblk[i][j]._offX, Yblk[i][j]._offY);	///< Set overlay origin for macroblock.
-				/// Copy from block to macroblock.
-				pY->Write(*(Yblk[i][j].GetBlkOverlay()));
-
-				/// Chr.
-				if((i < 2)&&(j < 2))
-				{
-					/// Inverse transform.
-					Ublk[i][j].InverseTransform(pI4x4T);
-					pU->SetOrigin(Ublk[i][j]._offX, Ublk[i][j]._offY);
-					/// Copy from block to macroblock.
-					pU->Write(*(Ublk[i][j].GetBlkOverlay()));
-
-					/// Inverse transform.
-					Vblk[i][j].InverseTransform(pI4x4T);
-					pV->SetOrigin(Vblk[i][j]._offX, Vblk[i][j]._offY);
-					/// Copy from block to macroblock.
-					pV->Write(*(Vblk[i][j].GetBlkOverlay()));
-				}//end if i...
-
-			}//end for i & j...
-
-		/// ************ Evaluate ******************
-		for(i = 0; i < 256; i++)
-		{
-			if( abs(Y[i] - Yo[i]) > qErr )	///< Allow rounding error.
-				result = 0;
-			if(i < 64)
-			{
-				if( abs(U[i] - Uo[i]) > qErr )
-					result = 0;
-				if( abs(V[i] - Vo[i]) > qErr )
-					result = 0;
-			}//end if i...
-		}//end for i...
-
-	}//end for test...
-
-	/// Chuck out everything in reverse order of instantiation.
-	delete pCAVLC2x2;
-	delete pCAVLC4x4;
-	delete pPrefixVlcEnc;
-	delete pPrefixVlcDec;
-	delete pCoeffTokenVlcEnc;
-	delete pCoeffTokenVlcDec;
-	delete pTotalZeros4x4VlcEnc;
-	delete pTotalZeros4x4VlcDec;
-	delete pTotalZeros2x2VlcEnc;
-	delete pTotalZeros2x2VlcDec;
-	delete pRunBeforeVlcEnc;
-	delete pRunBeforeVlcDec;
-	delete pBsw;
-	delete pBsr;
-	delete pIDC2x2T;
-	delete pIDC4x4T;
-	delete pI4x4T;
-	delete pFDC2x2T;
-	delete pFDC4x4T;
-	delete pF4x4T;
-	delete pV;
-	delete pU;
-	delete pY;
-
-	return(result);
-}//end TestBlockLayer.
-
-/** Test macroblock layer encode and decode implementations.
-@return	: 1 = success, 0 = failed..
-*/
-#define H264V2C_MbType			0
-#define H264V2C_QP					1
-#define H264V2C_IChrPedMode	2
-#define H264V2C_MVx					3
-#define H264V2C_MVy					4
-
-static int H264V2C_ParamSet[3][3][5];
-int H264v2Codec::TestMacroBlockLayer(void)
-{
-	int i,j,y,x,test,ret;
-	int result = 1;
-	int TESTS = 1024;
-	int qStep, qErr;
-	int sliceQP, sliceType;
-
-	int qfactor[6] = { 10, 11, 13, 14, 16, 18 };
-
-	/// Scaling is required for the DC coeffs to match the 4x4 
-	/// inverse IT saling of the AC coeffs.
-	int dc4x4Scale[16] =
-	{ 16, 16, 16, 16, 
-		16, 16, 16, 16, 
-		16, 16, 16, 16,
-		16, 16, 16, 16 
-	};
-	int dc2x2Scale[4] =
-	{ 16, 16, 
-		16, 16 
-	};
-
-	/// Create Integer Transformers and their inverses to convert the test values.
-	IForwardTransform* pF4x4T = new FastForward4x4ITImpl1();
-	pF4x4T->SetMode(IForwardTransform::TransformOnly);
-
-	IForwardTransform* pFDC4x4T = new FastForwardDC4x4ITImpl1();
-	pFDC4x4T->SetMode(IForwardTransform::TransformAndQuant);
-
-	IForwardTransform* pFDC2x2T = new FastForwardDC2x2ITImpl1();
-	pFDC2x2T->SetMode(IForwardTransform::TransformAndQuant);
-
-	/// Create an inverse IT to use and to compare with.
-	IInverseTransform* pI4x4T = new FastInverse4x4ITImpl1();
-	pI4x4T->SetMode(IInverseTransform::TransformOnly);
-
-	IInverseTransform* pIDC4x4T = new FastInverseDC4x4ITImpl1();
-	pIDC4x4T->SetMode(IInverseTransform::TransformAndQuant);
-
-	IInverseTransform* pIDC2x2T = new FastInverseDC2x2ITImpl1();
-	pIDC2x2T->SetMode(IInverseTransform::TransformAndQuant);
-
-	/// Use a bit stream reader/writer to code to and from.
-	int bitSize = H264V2C_BYTESIZE * 8;
-	unsigned char stream[H264V2C_BYTESIZE];
-	IBitStreamWriter* pBsw = new BitStreamWriterMSB();
-	pBsw->SetStream((void *)stream, bitSize);
-	IBitStreamReader* pBsr = new BitStreamReaderMSB();
-	pBsr->SetStream((void *)stream, bitSize);
-
-	/// Create the vlc encoders and decoders for use with CAVLC.
-	IVlcEncoder*	pPrefixVlcEnc					= new PrefixH264VlcEncoderImpl1();
-	IVlcDecoder*	pPrefixVlcDec					= new PrefixH264VlcDecoderImpl1();
-	IVlcEncoder*	pCoeffTokenVlcEnc			= new CoeffTokenH264VlcEncoder();
-	IVlcDecoder*	pCoeffTokenVlcDec			= new CoeffTokenH264VlcDecoder();
-	IVlcEncoder*	pTotalZeros4x4VlcEnc	= new TotalZeros4x4H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros4x4VlcDec	= new TotalZeros4x4H264VlcDecoder();
-	IVlcEncoder*	pTotalZeros2x2VlcEnc	= new TotalZeros2x2H264VlcEncoder();
-	IVlcDecoder*	pTotalZeros2x2VlcDec	= new TotalZeros2x2H264VlcDecoder();
-	IVlcEncoder*	pRunBeforeVlcEnc			= new RunBeforeH264VlcEncoder();
-	IVlcDecoder*	pRunBeforeVlcDec			= new RunBeforeH264VlcDecoder();
-
-	/// Create a CAVLC for each type.
-	IContextAwareRunLevelCodec* pCAVLC4x4 = new CAVLCH264Impl();
-	IContextAwareRunLevelCodec* pCAVLC2x2 = new CAVLCH264Impl();
-	/// Attach the vlc encoders and decoders excluding the total zeros vlc.
-	pCAVLC4x4->SetMode(CAVLCH264Impl::Mode4x4);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTokenCoeffVlcEncoder(pCoeffTokenVlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTokenCoeffVlcDecoder(pCoeffTokenVlcDec);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetPrefixVlcEncoder(pPrefixVlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetPrefixVlcDecoder(pPrefixVlcDec);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetRunBeforeVlcEncoder(pRunBeforeVlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetRunBeforeVlcDecoder(pRunBeforeVlcDec);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTotalZerosVlcEncoder(pTotalZeros4x4VlcEnc);
-	((CAVLCH264Impl *)pCAVLC4x4)->SetTotalZerosVlcDecoder(pTotalZeros4x4VlcDec);
-
-	pCAVLC2x2->SetMode(CAVLCH264Impl::Mode2x2);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTokenCoeffVlcEncoder(pCoeffTokenVlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTokenCoeffVlcDecoder(pCoeffTokenVlcDec);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetPrefixVlcEncoder(pPrefixVlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetPrefixVlcDecoder(pPrefixVlcDec);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetRunBeforeVlcEncoder(pRunBeforeVlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetRunBeforeVlcDecoder(pRunBeforeVlcDec);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTotalZerosVlcEncoder(pTotalZeros2x2VlcEnc);
-	((CAVLCH264Impl *)pCAVLC2x2)->SetTotalZerosVlcDecoder(pTotalZeros2x2VlcDec);
-
-	/// Vlc encoder and decoder for the coded block pattern.
-	IVlcEncoder*	pBlkPattVlcEnc	= new CodedBlkPatternH264VlcEncoder();
-	IVlcDecoder*	pBlkPattVlcDec	= new CodedBlkPatternH264VlcDecoder();
-
-	/// Vlc encoder and decoder for the delta QP.
-	IVlcEncoder*	pDeltaQPVlcEnc	= new ExpGolombSignedVlcEncoder();
-	IVlcDecoder*	pDeltaQPVlcDec	= new ExpGolombSignedVlcDecoder();
-
-	/// Vlc encoder and decoder for the macroblock type.
-	IVlcEncoder*	pMbTypeVlcEnc	= new ExpGolombUnsignedVlcEncoder();
-	IVlcDecoder*	pMbTypeVlcDec	= new ExpGolombUnsignedVlcDecoder();
-
-	/// Vlc encoder and decoder for intra chr pred mode. ExpGolomb codecs
-	// are stateless therefore they can be reused.
-	IVlcEncoder*	pMbIChrPredModeVlcEnc	= pMbTypeVlcEnc;
-	IVlcDecoder*	pMbIChrPredModeVlcDec	= pMbTypeVlcDec;
-
-	/// Vlc encoder and decoder for motion vector differences. ExpGolomb codecs
-	// are stateless therefore they can be reused.
-	IVlcEncoder*	pMbMotionVecDiffVlcEnc	= pDeltaQPVlcEnc;
-	IVlcDecoder*	pMbMotionVecDiffVlcDec	= pDeltaQPVlcDec;
-
-	/// Simulate an image of 3x3 macroblocks, Lum 48x48, Chr 2x24x24.
-	short* pImg = new short[(48*48) + 2*(24*24)];	///< Hold the original to compare with.
-	short* pLum = new short[(48*48) + 2*(24*24)];	///< Contiguous mem for Lum, Cb and Cr.
-	short* pCb	= &(pLum[48*48]);									///< end of Lum.
-	short* pCr  = &(pLum[(48*48)+(24*24)]);				///< end of Cb.
-	/// Create macroblock size overlays for each image colour component.
-	OverlayMem2Dv2* Lum = new OverlayMem2Dv2(pLum, 48, 48, 16, 16);
-	OverlayMem2Dv2* Cb	= new OverlayMem2Dv2(pCb, 24, 24, 8, 8);
-	OverlayMem2Dv2* Cr	= new OverlayMem2Dv2(pCr, 24, 24, 8, 8);
-	/// Set a 2-D array of macroblocks.
-	MacroBlockH264*		pMb	= new MacroBlockH264[3*3];
-	MacroBlockH264**	Mb	= new MacroBlockH264*[3];	/// Macroblock row pointers.
-	/// Set the row pointers.
-	for(i = 0; i < 3; i++)
-		Mb[i] = &(pMb[i*3]);
-
-	/// Initialise all internal and neighbourhood members. Parameters = Mb[3][3] macroblocks
-	///	where macroblock indecies 0..8 are in slice 0.
-	MacroBlockH264::Initialise(3, 3, 0, 8, 0, Mb);
-
-	srand(23995);
-	for(test = 0; test < TESTS; test++)
-	{
-		/// Slice type: 0 == (P_Slice = 0), 1 == (I_Slice = 2).
-		sliceType	= (int)( (((double)rand()/(double)RAND_MAX) * 1.0) + 0.5 );
-		if(sliceType)
-			sliceType = SliceHeaderH264::I_Slice_All;
-
-		/// Random sliceQP value for all macroblocks mbQP = { 0...51}.
-		//	sliceQP = (int)( (((double)rand()/(double)RAND_MAX) * 51.0) + 0.5 );
-		sliceQP = test % 52;
-		qStep		= (qfactor[sliceQP % 6] << (sliceQP / 6))/16;
-		qErr		= qStep + (((sliceQP * 2)+2)/3);
-		if(qErr < 1) qErr = 1;
-
-		/// Simulate an image with YCbCr values at a mid point and then random
-		/// deviations from it with a limited range for each test.
-		/// ********** Construct a typical test sample image. Midpoint between -256..255.
-		short midPoint = (short)( (((double)rand()/(double)RAND_MAX) * 511.0) - 256.0 + 0.5 );
-		/// Deviation limit between 0..128.
-		short devLimit = (short)( (((double)rand()/(double)RAND_MAX) * 128.0) + 0.5 );
-		for(i = 0; i < (48*48); i++)	///< Lum and Chr.
-		{
-			int x = (short)( (((double)rand()/(double)RAND_MAX) * (double)devLimit) - ((double)devLimit/2.0) + 0.5 );
-			x = x + midPoint;
-			if(x > 255) x = 255;
-			else if(x < -255) x = -255;
-			pLum[i] = x;
-			if(i < (24*24))	///< Chr sample.
-			{
-				/// Range is halved for Chr.
-				x = (short)( (((double)rand()/(double)RAND_MAX) * ((double)devLimit/2.0)) - ((double)devLimit/4.0) + 0.5 );
-				x = x + midPoint;
-				if(x > 255) x = 255;
-				else if(x < -255) x = -255;
-				pCb[i] = x;
-				x = (short)( (((double)rand()/(double)RAND_MAX) * ((double)devLimit/2.0)) - ((double)devLimit/4.0) + 0.5 );
-				x = x + midPoint;
-				if(x > 255) x = 255;
-				else if(x < -255) x = -255;
-				pCr[i] = x;
-			}//end if Chr...
-		}//end for i...
-		/// Make an image copy.
-		memcpy((void *)pImg, (const void *)pLum, sizeof(short) * ((48*48) + 2*(24*24)));
-
-		/// ************** Encode ***********************************
-		Lum->SetOverlayDim(4,4);
-		Cb->SetOverlayDim(4,4);
-		Cr->SetOverlayDim(4,4);
-
-		pBsw->Reset();
-		int totalEncBits = 0;
-
-		for(y = 0; y < 3; y++)
-			for(x = 0; x < 3; x++)
-			{
-				/// Set macroblock parameters to code to.
-				if((sliceType == SliceHeaderH264::I_Slice)||(sliceType == SliceHeaderH264::I_Slice_All))	///< I-Slice has only intra macroblocks.
-					Mb[y][x]._intraFlag = 1;
-				else	///< Simulate with a random selection of macroblock coding type.
-					Mb[y][x]._intraFlag	= (int)( (((double)rand()/(double)RAND_MAX) * 1.0) + 0.5 );
-
-				/// Simulate a change in mbQP that can only be in the range {-26...+25} from the
-				/// previous mbQP value. Set mbQP either side of SliceQP for each macroblock.
-				int deltaQP	= (int)( (((double)rand()/(double)RAND_MAX) * 25.0) + 0.5 );
-				Mb[y][x]._mbQP	= sliceQP - deltaQP;
-				if(Mb[y][x]._mbQP < 0)
-					Mb[y][x]._mbQP = 0;
-				if(Mb[y][x]._mbQP > 51)
-					Mb[y][x]._mbQP = 51;
-
-				/// Respond to these settings for this macroblock.
-				pF4x4T->SetParameter(IForwardTransform::QUANT_ID, Mb[y][x]._mbQP);
-				pF4x4T->SetParameter(IForwardTransform::INTRA_FLAG_ID, Mb[y][x]._intraFlag);
-				pFDC4x4T->SetParameter(IForwardTransform::QUANT_ID, Mb[y][x]._mbQP);
-				pFDC4x4T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-				pFDC2x2T->SetParameter(IForwardTransform::QUANT_ID, MacroBlockH264::GetQPc(Mb[y][x]._mbQP));
-				pFDC2x2T->SetParameter(IForwardTransform::INTRA_FLAG_ID, 1);
-
-				/// --------------------- Prediction --------------------------------------------
-				if(Mb[y][x]._intraFlag)
-				{
-					/// Simulate a random selection of the Intra prediction mode.
-					Mb[y][x]._mbPartPredMode			= MacroBlockH264::Intra_16x16;	///< Currently only 16x16 implemented.
-					Mb[y][x]._intra16x16PredMode	= (int)( (((double)rand()/(double)RAND_MAX) * 3.0) + 0.5 );
-					Mb[y][x]._intraChrPredMode		= (int)( (((double)rand()/(double)RAND_MAX) * 3.0) + 0.5 );
-				}//end if _intraFlag...
-				else	//if inter
-				{
-					//Mb[y][x]._mbPartPredMode			= (int)( (((double)rand()/(double)RAND_MAX) * 4.0) + 0.5 );
-					Mb[y][x]._mbPartPredMode = MacroBlockH264::Inter_16x16;	///< Fixed at 16x16 for now.
-					/// The max range of motion vectors for the baseline profile in quarter pel units
-					/// for a 352x288 picture size is x = [-8192, 8191], y = [-512, 511].
-					Mb[y][x]._mvX[MacroBlockH264::_16x16]	= (int)( (((double)rand()/(double)RAND_MAX) * 16384.0) + 0.5 ) - 8192;
-					Mb[y][x]._mvY[MacroBlockH264::_16x16]	= (int)( (((double)rand()/(double)RAND_MAX) * 1024.0) + 0.5 ) - 512;
-
-					/// Get the predicted motion vector for this macroblock as the median of the neighbourhood vectors.
-					int predX, predY;
-					Mb[y][x].GetMbMotionMedianPred(&(Mb[y][x]), &predX, &predY);
-					Mb[y][x]._mvdX[MacroBlockH264::_16x16] = Mb[y][x]._mvX[MacroBlockH264::_16x16] - predX;
-					Mb[y][x]._mvdY[MacroBlockH264::_16x16] = Mb[y][x]._mvY[MacroBlockH264::_16x16] - predY;
-				}//end else...
-
-				/// --------------------- Image Loading -----------------------------------------
-				/// Fill all the non-DC 4x4 blks (Not blks = -1, 17, 18) of the macroblock blocks with 
-				/// the image (difference) colour components after prediction.
-				for(i = MBH264_LUM_0_0; i < MBH264_NUM_BLKS; i++)
-				{
-					BlockH264* pBlk = Mb[y][x]._blkParam[i].pBlk;
-
-					if(!(pBlk->IsDc()) )	///< Ignore DC blocks.
-					{
-						/// Default to assuming a Lum block.
-						OverlayMem2Dv2* img			= Lum;
-						int							offX		= Mb[y][x]._offLumX + pBlk->_offX;
-						int							offY		= Mb[y][x]._offLumY + pBlk->_offY;
-						int							colour	= pBlk->GetColour();
-						if(colour != BlockH264::LUM)	///< ...else is chr block.
-						{
-							offX = Mb[y][x]._offChrX + pBlk->_offX;
-							offY = Mb[y][x]._offChrY + pBlk->_offY;
-							if(colour == BlockH264::CB)
-								img = Cb;
-							else	///< BlockH264::CR
-								img = Cr;
-						}//end if colour...
-
-						/// Align the macroblock block with the image space.
-						img->SetOrigin(offX, offY);
-						/// Read from the image into the block.
-						img->Read(*(pBlk->GetBlkOverlay()));
-
-					}//end if !Dc blk...
-				}//end for i...
-
-				/// --------------------- Transform & Quantisation ----------------------------------
-				/// Do the forward 4x4 transform on the non-DC 4x4 blocks without scaling or quantisation. Pull
-				/// out the DC terms from each block and populate the DC blocks and then scale and quant the
-				/// non-DC 4x4 blocks. Note that this is done in raster scan order and not coding order to
-				/// align each position in the DC block with the spatial location of the 4x4 block in the image.
-
-				for(i = 0; i < 4; i++)
-					for(j = 0; j < 4; j++)
-					{
-						/// Transform without scaling and quant.
-						Mb[y][x]._lumBlk[i][j].ForwardTransform(pF4x4T);
-						/// Set the Lum DC block from the DC term of this block.
-						if( Mb[y][x]._mbPartPredMode == MacroBlockH264::Intra_16x16 )
-						{
-							(Mb[y][x]._lumDcBlk.GetBlk())[4*i + j] = Mb[y][x]._lumBlk[i][j].GetDC()/4;
-							Mb[y][x]._lumBlk[i][j].SetDC(0);
-						}//end if Intra_16x16...
-						/// Now scale and quant.
-						Mb[y][x]._lumBlk[i][j].Quantise(pF4x4T, Mb[y][x]._mbQP);
-
-						if( (i < 2)&&(j < 2))	///< Chr components.
-						{
-							Mb[y][x]._cbBlk[i][j].ForwardTransform(pF4x4T);
-							(Mb[y][x]._cbDcBlk.GetBlk())[2*i + j] = Mb[y][x]._cbBlk[i][j].GetDC()/4;
-							Mb[y][x]._cbBlk[i][j].SetDC(0);
-							Mb[y][x]._cbBlk[i][j].Quantise(pF4x4T, MacroBlockH264::GetQPc(Mb[y][x]._mbQP));
-							Mb[y][x]._crBlk[i][j].ForwardTransform(pF4x4T);
-							(Mb[y][x]._crDcBlk.GetBlk())[2*i + j] = Mb[y][x]._crBlk[i][j].GetDC()/4;
-							Mb[y][x]._crBlk[i][j].SetDC(0);
-							Mb[y][x]._crBlk[i][j].Quantise(pF4x4T, MacroBlockH264::GetQPc(Mb[y][x]._mbQP));
-						}//end if Chr...
-					}//end for i & j...
-
-				/// Transform and quant the DC blocks.
-				if( Mb[y][x]._mbPartPredMode == MacroBlockH264::Intra_16x16 )
-					Mb[y][x]._lumDcBlk.ForwardTransform(pFDC4x4T);
-
-				Mb[y][x]._cbDcBlk.ForwardTransform(pFDC2x2T);
-				Mb[y][x]._crDcBlk.ForwardTransform(pFDC2x2T);
-
-				/// Determine the coded Lum and Chr patterns. The _codedBlkPatternLum, _codedBlkPatternChr 
-				/// and _coded_blk_pattern members are set.
-				Mb[y][x].SetCodedBlockPattern(&(Mb[y][x]));
-
-				/// Determine the delta quantisation parameter.
-				// TODO: Cater for previous macroblocks that are skipped.
-				int prevMbIdx = Mb[y][x]._mbIndex - 1;
-				if(prevMbIdx >= 0)	///< Previous macroblock is within the image boundaries.
-				{
-					if(Mb[y][x]._slice == pMb[prevMbIdx]._slice)	/// Previous macroblock within same slice.
-						Mb[y][x]._mb_qp_delta = Mb[y][x]._mbQP - pMb[prevMbIdx]._mbQP;
-					else
-						Mb[y][x]._mb_qp_delta = Mb[y][x]._mbQP - sliceQP;
-				}//end if prevMbIdx...
-				else
-					Mb[y][x]._mb_qp_delta = Mb[y][x]._mbQP - sliceQP;
-
-				/// Determine the macroblock type. From the prediction modes and patterns set the 
-				/// _mb_type member.
-				Mb[y][x].SetType(&(Mb[y][x]), sliceType);
-
-				/// Store macroblock members for later comparison.
-				H264V2C_ParamSet[y][x][H264V2C_MbType]			= Mb[y][x]._mb_type;
-				H264V2C_ParamSet[y][x][H264V2C_QP]					= Mb[y][x]._mbQP;
-				H264V2C_ParamSet[y][x][H264V2C_IChrPedMode]	= Mb[y][x]._intraChrPredMode;
-				H264V2C_ParamSet[y][x][H264V2C_MVx]					= Mb[y][x]._mvX[MacroBlockH264::_16x16];
-				H264V2C_ParamSet[y][x][H264V2C_MVy]					= Mb[y][x]._mvY[MacroBlockH264::_16x16];
-
-				/// --------------------- VLC Encoding -----------------------------------------
-				/// Encode the vlc blocks with the context of the neighborhood number of coeffs. Map
-				/// to the required H.264 coding order of each block when writing to the stream.
-
-				/// Code the macroblock header.
-
-				/// Macroblock type.
-				ret = pMbTypeVlcEnc->Encode(Mb[y][x]._mb_type);
-				pBsw->Write(ret, pMbTypeVlcEnc->GetCode());
-				totalEncBits += ret;
-
-				/// Intra requires lum and chr prediction modes, Inter requires reference 
-				/// index lists and motion vector diff values.
-				if(!Mb[y][x]._intraFlag)	/// Inter	(most common option)
-				{
-					int numOfVecs = 1;
-					if(Mb[y][x]._mbPartPredMode == MacroBlockH264::Inter_16x16)
-						numOfVecs = 1;
-					for(int vec = 0; vec < numOfVecs; vec++)
-					{
-						ret = pMbMotionVecDiffVlcEnc->Encode(Mb[y][x]._mvdX[vec]);
-						pBsw->Write(ret, pMbMotionVecDiffVlcEnc->GetCode());
-						totalEncBits += ret;
-
-						ret = pMbMotionVecDiffVlcEnc->Encode(Mb[y][x]._mvdY[vec]);
-						pBsw->Write(ret, pMbMotionVecDiffVlcEnc->GetCode());
-						totalEncBits += ret;
-					}//end for vec...
-				}//end if !_interFlag...
-				else											/// Intra
-				{
-					// TODO: Implement Intra_8x8 and Intra_4x4 mode options.
-
-					/// Write chr prediction mode.
-					ret = pMbIChrPredModeVlcEnc->Encode(Mb[y][x]._intraChrPredMode);
-					pBsw->Write(ret, pMbIChrPredModeVlcEnc->GetCode());
-					totalEncBits += ret;
-				}//end else...
-
-				/// If not Intra_16x16 mode then _coded_blk_pattern must be written.
-				if( Mb[y][x]._mbPartPredMode != MacroBlockH264::Intra_16x16 )
-				{
-					/// Block coded pattern.
-					int isInter = 1;
-					if(Mb[y][x]._intraFlag) isInter = 0;
-					ret = pBlkPattVlcEnc->Encode2(Mb[y][x]._coded_blk_pattern, isInter);
-					pBsw->Write(ret, pBlkPattVlcEnc->GetCode());
-					totalEncBits += ret;
-				}//end if !Intra_16x16...
-
-				/// Delta QP.
-				ret = pDeltaQPVlcEnc->Encode(Mb[y][x]._mb_qp_delta);
-				pBsw->Write(ret, pDeltaQPVlcEnc->GetCode());
-				totalEncBits += ret;
-
-				int dcSkip	 = 0;
-				int startBlk = 1;
-				if( Mb[y][x]._mbPartPredMode == MacroBlockH264::Intra_16x16 )
-				{
-					startBlk = 0;	///< Change starting block to include block num = -1;
-					dcSkip	 = 1;
-				}//end if Intra_16x16...
-				/// For Lum blocks that are Inter coded or not Intra_16x16 coded, the DC coeff is not skipped.
-				for(i = MBH264_LUM_0_0; i <= MBH264_LUM_3_3; i++)
-					Mb[y][x]._blkParam[i].dcSkipFlag = dcSkip;
-
-				for(i = startBlk; i < MBH264_NUM_BLKS; i++)
-				{
-					if(Mb[y][x]._blkParam[i].pBlk->IsCoded())
-					{
-						/// Choose the appropriate dimension CAVLC codec. Only 4x4 or 2x2 are expected here.
-						IContextAwareRunLevelCodec* pCAVLC = pCAVLC2x2;
-						if( ((Mb[y][x]._blkParam[i].pBlk)->GetHeight() == 4) && ((Mb[y][x]._blkParam[i].pBlk)->GetWidth() == 4) )
-							pCAVLC = pCAVLC4x4;
-
-						/// Get num of neighbourhood coeffs as average of above and left block coeffs. Previous
-						/// MB encodings in raster order have already set the num of coeffs.
-						int neighCoeffs = 0;
-						if(Mb[y][x]._blkParam[i].neighbourIndicator)
-						{
-							if(Mb[y][x]._blkParam[i].neighbourIndicator > 0)
-								neighCoeffs = BlockH264::GetNumNeighbourCoeffs(Mb[y][x]._blkParam[i].pBlk);
-							else	///< Negative values for neighbourIndicator imply pass through.
-								neighCoeffs = Mb[y][x]._blkParam[i].neighbourIndicator;
-						}//end if neighbourIndicator...
-						pCAVLC->SetParameter(pCAVLC->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);	///< Prepare the vlc coder.
-						pCAVLC->SetParameter(pCAVLC->DC_SKIP_FLAG_ID, Mb[y][x]._blkParam[i].dcSkipFlag);
-
-						ret = (Mb[y][x]._blkParam[i].pBlk)->RleEncode(pCAVLC, pBsw);					///< Vlc encode and add to stream.
-						if(ret <= 0)	///< Vlc codec errors are detected from a negative return value.
-							result = 0;
-						else totalEncBits += ret;
-					}//end if IsCoded()...
-					else
-						Mb[y][x]._blkParam[i].pBlk->SetNumCoeffs(0);	///< For future use.
-				}//end for i...
-
-			}//end for y & x...
-
-		/// *********** Clear all **********************************************
-		memset((void *)pLum, 0, sizeof(short) * ((48*48) + 2*(24*24)));
-
-		for(y = 0; y < 3; y++)
-			for(x = 0; x < 3; x++)
-			{
-				for(i = 0; i < 4; i++)
-					for(j = 0; j < 4; j++)
-					{
-						Mb[y][x]._lumBlk[i][j].Zero();
-						if((i < 2)&&(j < 2))
-						{
-							Mb[y][x]._cbBlk[i][j].Zero();
-							Mb[y][x]._crBlk[i][j].Zero();
-						}//end if i...
-					}//end for i & j...
-				Mb[y][x]._lumDcBlk.Zero();
-				Mb[y][x]._cbDcBlk.Zero();
-				Mb[y][x]._crDcBlk.Zero();
-				Mb[y][x]._coded_blk_pattern						= 0;
-				Mb[y][x]._mb_qp_delta									= 0;
-				Mb[y][x]._mb_type											= 0;
-				Mb[y][x]._intra16x16PredMode					= 0;
-				Mb[y][x]._intraChrPredMode						= 0;
-				Mb[y][x]._mvX[MacroBlockH264::_16x16] = 0;
-				Mb[y][x]._mvY[MacroBlockH264::_16x16] = 0;
-				Mb[y][x]._mvdX[MacroBlockH264::_16x16] = 0;
-				Mb[y][x]._mvdY[MacroBlockH264::_16x16] = 0;
-			}//end for y & x...
-
-		/// *********** Decode **************************************************
-
-		/// Decode the vlc blocks with the context of the neighborhood number of coeffs.
-		pBsr->Reset();
-		int totalDecBits = 0;
-
-		for(y = 0; y < 3; y++)
-			for(x = 0; x < 3; x++)
-			{
-				/// --------------------- VLC Decoding -----------------------------------------
-				/// Decode the macroblock header from the stream.
-
-				/// Macroblock type.
-				Mb[y][x]._mb_type = pMbTypeVlcDec->Decode(pBsr);
-				ret = pMbTypeVlcDec->GetNumDecodedBits();
-				totalDecBits += ret;
-				/// Unpack _intraFlag and _mbPartPredMode from _mb_type.
-				Mb[y][x].UnpackMbType(&(Mb[y][x]), sliceType);
-
-				/// Intra requires lum and chr prediction modes, Inter requires reference 
-				/// index lists and motion vector diff values.
-				if(!Mb[y][x]._intraFlag)	/// Inter	(most common option)
-				{
-					int numOfVecs = 1;
-					if(Mb[y][x]._mbPartPredMode == MacroBlockH264::Inter_16x16)
-						numOfVecs = 1;
-					for(int vec = 0; vec < numOfVecs; vec++)
-					{
-						/// Get the motion vector differences for this macroblock.
-						Mb[y][x]._mvdX[vec] = pMbMotionVecDiffVlcDec->Decode(pBsr);
-						totalDecBits += pMbMotionVecDiffVlcDec->GetNumDecodedBits();
-						Mb[y][x]._mvdY[vec] = pMbMotionVecDiffVlcDec->Decode(pBsr);
-						totalDecBits += pMbMotionVecDiffVlcDec->GetNumDecodedBits();
-						/// Get the prediction vector from the neighbourhood.
-						int predX, predY;
-						Mb[y][x].GetMbMotionMedianPred(&(Mb[y][x]), &predX, &predY);
-						Mb[y][x]._mvX[vec] = predX + Mb[y][x]._mvdX[vec];
-						Mb[y][x]._mvY[vec] = predY + Mb[y][x]._mvdY[vec];
-					}//end for vec...
-				}//end if !_interFlag...
-				else											/// Intra
-				{
-					// TODO: Implement Intra_8x8 and Intra_4x4 mode options.
-
-					/// Get chr prediction mode.
-					Mb[y][x]._intraChrPredMode = pMbIChrPredModeVlcDec->Decode(pBsr);
-					ret = pMbIChrPredModeVlcDec->GetNumDecodedBits();
-					totalDecBits += ret;
-				}//end else...
-
-				/// If not Intra_16x16 mode then _coded_blk_pattern must be extracted.
-				if( Mb[y][x]._mbPartPredMode != MacroBlockH264::Intra_16x16 )
-				{
-					/// Block coded pattern.
-					int isInter = 1;
-					if(Mb[y][x]._intraFlag) isInter = 0;
-					ret = pBlkPattVlcDec->Decode2(pBsr, &(Mb[y][x]._coded_blk_pattern), &isInter);
-					totalDecBits += ret;
-				}//end if !Intra_16x16...
-
-				/// Disassemble the bit pattern to determine which blocks are to be decoded.
-				Mb[y][x].GetCodedBlockPattern(&(Mb[y][x]));
-
-				/// Delta QP.
-				Mb[y][x]._mb_qp_delta = pDeltaQPVlcDec->Decode(pBsr);
-				ret = pDeltaQPVlcDec->GetNumDecodedBits();
-				totalDecBits += ret;
-				int prevMbIdx = Mb[y][x]._mbIndex - 1;
-				if(prevMbIdx >= 0)	///< Previous macroblock is within the image boundaries.
-				{
-					if(Mb[y][x]._slice == pMb[prevMbIdx]._slice)	/// Previous macroblock within same slice.
-						Mb[y][x]._mbQP = pMb[prevMbIdx]._mbQP + Mb[y][x]._mb_qp_delta;
-					else
-						Mb[y][x]._mbQP = sliceQP + Mb[y][x]._mb_qp_delta;
-				}//end if prevMbIdx...
-				else
-					Mb[y][x]._mbQP = sliceQP + Mb[y][x]._mb_qp_delta;
-
-				/// Respond to these header settings for this macroblock.
-				pI4x4T->SetParameter(IInverseTransform::QUANT_ID, Mb[y][x]._mbQP);
-				pIDC4x4T->SetParameter(IInverseTransform::QUANT_ID, Mb[y][x]._mbQP);
-				pIDC2x2T->SetParameter(IInverseTransform::QUANT_ID, MacroBlockH264::GetQPc(Mb[y][x]._mbQP));
-
-				/// Get the macroblock coeffs from the coded stream.
-				int dcSkip	 = 0;
-				int startBlk = 1;
-				if( Mb[y][x]._mbPartPredMode == MacroBlockH264::Intra_16x16 )
-				{
-					startBlk = 0;	///< Change starting block to include block num = -1;
-					dcSkip	 = 1;
-				}//end if Intra_16x16...
-				/// For Lum blocks that are Inter coded and not Intra_16x16 coded the DC coeff is not skipped.
-				for(i = MBH264_LUM_0_0; i <= MBH264_LUM_3_3; i++)
-					Mb[y][x]._blkParam[i].dcSkipFlag = dcSkip;
-
-				for(i = startBlk; i < MBH264_NUM_BLKS; i++)
-				{
-					if(Mb[y][x]._blkParam[i].pBlk->IsCoded())
-					{
-						/// Choose the appropriate dimension CAVLC codec.
-						IContextAwareRunLevelCodec* pCAVLC = pCAVLC2x2;
-						if( ((Mb[y][x]._blkParam[i].pBlk)->GetHeight() == 4) && ((Mb[y][x]._blkParam[i].pBlk)->GetWidth() == 4) )
-							pCAVLC = pCAVLC4x4;
-
-						/// Get num of neighbourhood coeffs as average of above and left block coeffs. Previous
-						/// MB decodings in decoding order have already set the num of neighbourhood coeffs.
-						int neighCoeffs = 0;
-						if(Mb[y][x]._blkParam[i].neighbourIndicator)
-						{
-							if(Mb[y][x]._blkParam[i].neighbourIndicator > 0)
-								neighCoeffs = BlockH264::GetNumNeighbourCoeffs(Mb[y][x]._blkParam[i].pBlk);
-							else	///< Negative values for neighbourIndicator imply pass through.
-								neighCoeffs = Mb[y][x]._blkParam[i].neighbourIndicator;
-						}//end if neighbourIndicator...
-						pCAVLC->SetParameter(pCAVLC->NUM_TOT_NEIGHBOR_COEFF_ID, neighCoeffs);	///< Prepare the vlc coder.
-						pCAVLC->SetParameter(pCAVLC->DC_SKIP_FLAG_ID, Mb[y][x]._blkParam[i].dcSkipFlag);
-
-						ret = (Mb[y][x]._blkParam[i].pBlk)->RleDecode(pCAVLC, pBsr);					///< Vlc decode from the stream.
-						if(ret <= 0)	///< Vlc codec errors are detected from a negative return value.
-							result = 0;
-						else totalDecBits += ret;
-					}//end if IsCoded()...
-					else
-					{
-						Mb[y][x]._blkParam[i].pBlk->SetNumCoeffs(0);	///< For future use.
-						Mb[y][x]._blkParam[i].pBlk->Zero();
-					}//end else...
-				}//end for i...
-
-				/// --------------------- Inverse Transform & Quantisation --------------------------
-				/// Inverse transform & inverse quantise Lum DC components.
-				if( Mb[y][x]._mbPartPredMode == MacroBlockH264::Intra_16x16 )
-					Mb[y][x]._lumDcBlk.InverseTransform(pIDC4x4T);
-				/// Inverse transform & inverse quantise Chr DC components.
-				Mb[y][x]._cbDcBlk.InverseTransform(pIDC2x2T);
-				Mb[y][x]._crDcBlk.InverseTransform(pIDC2x2T);
-
-				/// Inverse quant for the main Lum, Cb and Cr blocks, insert the DC terms from the 
-				/// DC blocks and then complete the inverse transform process.
-				for(i = 0; i < 4; i++)	///< 16 Lum blocks + 4 Cb Chr and 4 Cr Chr blocks.
-					for(j = 0; j < 4; j++)
-					{
-						/// Lum.
-						Mb[y][x]._lumBlk[i][j].InverseQuantise(pI4x4T, Mb[y][x]._mbQP);
-						/// Put the Lum DC components in position with a 4x scale factor. Not sure why
-						/// this scale factor is required in the InverseQuantise() method yet.
-						if( Mb[y][x]._mbPartPredMode == MacroBlockH264::Intra_16x16 )
-							Mb[y][x]._lumBlk[i][j].SetDC((Mb[y][x]._lumDcBlk.GetBlk())[4*i + j]);
-						/// Inverse transform.
-						Mb[y][x]._lumBlk[i][j].InverseTransform(pI4x4T);
-
-						if((i < 2)&&(j < 2))	///< Chr.
-						{
-							Mb[y][x]._cbBlk[i][j].InverseQuantise(pI4x4T, MacroBlockH264::GetQPc(Mb[y][x]._mbQP));
-							Mb[y][x]._cbBlk[i][j].SetDC((Mb[y][x]._cbDcBlk.GetBlk())[2*i + j]);
-							Mb[y][x]._cbBlk[i][j].InverseTransform(pI4x4T);
-							Mb[y][x]._crBlk[i][j].InverseQuantise(pI4x4T, MacroBlockH264::GetQPc(Mb[y][x]._mbQP));
-							Mb[y][x]._crBlk[i][j].SetDC((Mb[y][x]._crDcBlk.GetBlk())[2*i + j]);
-							Mb[y][x]._crBlk[i][j].InverseTransform(pI4x4T);
-						}//end if i...
-					}//end for i & j...
-
-				/// --------------------- Image Storing -----------------------------------------
-				/// Fill the image (difference) colour components from all the non-DC 4x4 
-				/// blks (i.e. Not blks = -1, 17, 18) of the macroblock blocks. 
-				for(i = MBH264_LUM_0_0; i < MBH264_NUM_BLKS; i++)
-				{
-					BlockH264* pBlk = Mb[y][x]._blkParam[i].pBlk;
-
-					if(!(pBlk->IsDc()) )	///< Ignore DC blocks.
-					{
-						/// Default to assuming a Lum block.
-						OverlayMem2Dv2* img			= Lum;
-						int							offX		= Mb[y][x]._offLumX + pBlk->_offX;
-						int							offY		= Mb[y][x]._offLumY + pBlk->_offY;
-						int							colour	= pBlk->GetColour();
-						if(colour != BlockH264::LUM)	///< ...else is chr block.
-						{
-							offX = Mb[y][x]._offChrX + pBlk->_offX;
-							offY = Mb[y][x]._offChrY + pBlk->_offY;
-							if(colour == BlockH264::CB)
-								img = Cb;
-							else	///< BlockH264::CR
-								img = Cr;
-						}//end if colour...
-
-						/// Align the macroblock block with the image space.
-						img->SetOrigin(offX, offY);
-						/// Write the block into the image space.
-						img->Write(*(pBlk->GetBlkOverlay()));
-
-					}//end if !Dc blk...
-				}//end for i...
-
-			}//end for y & x...
-
-		/// ************ Evaluate **************************************************
-		for(i = 0; i < ((48*48) + 2*(24*24)); i++)
-		{
-			if( abs(pLum[i] - pImg[i]) > qErr )	///< Allow rounding and quant error.
-				result = 0;
-		}//end for i...
-		for(y = 0; y < 3; y++)
-			for(x = 0; x < 3; x++)
-			{
-				if( (Mb[y][x]._mb_type != H264V2C_ParamSet[y][x][H264V2C_MbType]) ||
-					  (Mb[y][x]._mbQP != H264V2C_ParamSet[y][x][H264V2C_QP]) ||
-						((Mb[y][x]._intraFlag) && (Mb[y][x]._intraChrPredMode != H264V2C_ParamSet[y][x][H264V2C_IChrPedMode])) || 
-						((!Mb[y][x]._intraFlag) && (Mb[y][x]._mvX[MacroBlockH264::_16x16] != H264V2C_ParamSet[y][x][H264V2C_MVx])
-																		&& (Mb[y][x]._mvY[MacroBlockH264::_16x16] != H264V2C_ParamSet[y][x][H264V2C_MVy])) ) 
-				result = 0;
-			}//end for y & x...
-
-	}//end for test...
-
-	/// Release all mem variables.
-	delete[] Mb;
-	delete[] pMb;
-	delete Cr;			///< Delete macroblock overlays.
-	delete Cb;
-	delete Lum;
-	delete[] pLum;
-	delete[] pImg;
-
-	/// Chuck out everything in reverse order of instantiation.
-	delete pMbTypeVlcDec;
-	delete pMbTypeVlcEnc;
-	delete pDeltaQPVlcDec;
-	delete pDeltaQPVlcEnc;
-	delete pBlkPattVlcDec;
-	delete pBlkPattVlcEnc;
-	delete pCAVLC2x2;
-	delete pCAVLC4x4;
-	delete pPrefixVlcEnc;
-	delete pPrefixVlcDec;
-	delete pCoeffTokenVlcEnc;
-	delete pCoeffTokenVlcDec;
-	delete pTotalZeros4x4VlcEnc;
-	delete pTotalZeros4x4VlcDec;
-	delete pTotalZeros2x2VlcEnc;
-	delete pTotalZeros2x2VlcDec;
-	delete pRunBeforeVlcEnc;
-	delete pRunBeforeVlcDec;
-	delete pBsw;
-	delete pBsr;
-	delete pIDC2x2T;
-	delete pIDC4x4T;
-	delete pI4x4T;
-	delete pFDC2x2T;
-	delete pFDC4x4T;
-	delete pF4x4T;
-
-	return(result);
-}//end TestMacroBlockLayer.
-
-
-#endif // _INCLUDE_TEST_CODE

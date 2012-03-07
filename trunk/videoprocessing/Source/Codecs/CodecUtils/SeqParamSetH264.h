@@ -77,7 +77,7 @@ public:
 	int _seq_parameter_set_id;										///< The index for this definition of sequence params [0..31].
 
 	int _profile_idc;															///< Baseline profile = 66.
-	int _constraint_set0_flag;										///< = 0.
+	int _constraint_set0_flag;										///< = 1.
 	int _constraint_set1_flag;										///< = 0.
 	int _constraint_set2_flag;										///< = 0.
 	int _constraint_set3_flag;										///< = 0.

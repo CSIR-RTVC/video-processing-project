@@ -78,7 +78,7 @@ FastInverseDC4x4ITImpl1::FastInverseDC4x4ITImpl1(void)
 	int i,j,qm;
 
 	for(i = 0; i < 16; i++)
-		_weightScale[i] = 1;	///< Flat_4x4_1 is default.
+		_weightScale[i] = 16;	///< Flat_4x4_16 is default.
 
 	for(qm = 0; qm < 6; qm++)
 		for(i = 0; i < 4; i++)

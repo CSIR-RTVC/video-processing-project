@@ -12,7 +12,7 @@ DESCRIPTION		: A class to implement a fast forward 2x2 2-D integer
 								IForwardTransform interface. The scaling is part of 
 								the quantisation process.
 
-COPYRIGHT			:	(c)CSIR 2007-2009 all rights resevered
+COPYRIGHT			:	(c)CSIR 2007-2010 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -80,8 +80,10 @@ FastForwardDC2x2ITImpl1::FastForwardDC2x2ITImpl1()
 	_q			= 1;
 	_qm			= _q % 6;
 	_qe			= _q/6;
-	_f			= (1 << (14+_qe))/6;
-	_scale	= 14+_qe;
+//	_f			= (1 << (14+_qe))/6;
+//	_scale	= 14+_qe;
+	_f			= 2 * ((1 << (15+_qe))/3);
+	_scale	= 16 + _qe;
 }//end constructor.
 
 /*
@@ -191,8 +193,10 @@ void FastForwardDC2x2ITImpl1::SetParameter(int paramID, int paramVal)
 				{
 					_qm			= paramVal % 6;
 					_qe			= paramVal/6;
-					_f			= (1 << (14+_qe))/6;
-					_scale	= 14+_qe;
+//					_f			= (1 << (14+_qe))/6;
+//					_scale	= 14+_qe;
+	        _f			= 2 * ((1 << (15+_qe))/3);
+	        _scale	= 16 + _qe;
 					_q			= paramVal;
 				}//end if q...
 			}//end case QUANT_ID...

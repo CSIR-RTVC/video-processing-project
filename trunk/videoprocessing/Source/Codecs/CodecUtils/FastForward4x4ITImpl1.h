@@ -107,6 +107,13 @@ class FastForward4x4ITImpl1 : public IForwardTransform
 		virtual void	SetParameter(int paramID, int paramVal);
 		virtual int		GetParameter(int paramID);
 
+    /// Internal methods
+  private:
+    /** Set internal quant members based on _q.
+    @return: none.
+    */
+    void SetNewQP(void);
+
 		/// Constants.
 	protected:
 		static const int NormAdjust[6][3];

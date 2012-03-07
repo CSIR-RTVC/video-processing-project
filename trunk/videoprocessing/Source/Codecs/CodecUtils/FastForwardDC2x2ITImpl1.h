@@ -12,7 +12,7 @@ DESCRIPTION		: A class to implement a fast forward 2x2 2-D integer
 								IForwardTransform interface. The scaling is part of 
 								the quantisation process.
 
-COPYRIGHT			:	(c)CSIR 2007-2009 all rights resevered
+COPYRIGHT			:	(c)CSIR 2007-2010 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 
@@ -61,7 +61,7 @@ class FastForwardDC2x2ITImpl1 : public IForwardTransform
 		FastForwardDC2x2ITImpl1();
 		virtual ~FastForwardDC2x2ITImpl1()	{ }
 
-	// Interface implementation.
+	/// Interface implementation.
 	public:
 		/** In-place forward IT.
 		The IT is performed on the input and replaces it with the coeffs.

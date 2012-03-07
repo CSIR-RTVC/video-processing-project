@@ -57,7 +57,7 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 NalHeaderH264::NalHeaderH264(void)
 {
 	/// Defualt to an IDR NAL unit.
-	_ref_idc		= 3;					///< Indicates reference parameter sets or IDR coded slices in the NAL payload. 
+	_ref_idc		= 1;					///< Indicates reference parameter sets or IDR coded slices in the NAL payload. 
 	_unit_type	= IDR_Slice;	///< NAL contents type.
 
 }//end constructor.

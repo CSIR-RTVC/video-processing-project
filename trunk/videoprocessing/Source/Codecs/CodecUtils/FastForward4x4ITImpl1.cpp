@@ -229,19 +229,14 @@ void FastForward4x4ITImpl1::SetParameter(int paramID, int paramVal)
 				// TODO: Put these calcs into a table.
 				if(paramVal != _q)	///< Do we need to change member values or keep previous?
 				{
-					_qm			= paramVal % 6;
-					_qe			= paramVal/6;
-					if(_intra)
-						_f = (1 << (15+_qe))/3;
-					else
-						_f = (1 << (15+_qe))/6;
-					_scale	= 15+_qe;
-					_q			= paramVal;
+					_q = paramVal;
+          SetNewQP();
 				}//end if q...
 			}//end case QUANT_ID...
 			break;
 		case INTRA_FLAG_ID:
 			_intra = paramVal;
+      SetNewQP();
 			break;
 		default :
 			/// Do nothing.
@@ -268,3 +263,16 @@ int FastForward4x4ITImpl1::GetParameter(int paramID)
 	return(ret);
 }//end GetParameter.
 
+/** Set internal quant members based on _q.
+@return: none.
+*/
+void FastForward4x4ITImpl1::SetNewQP(void)
+{
+	_qm			= _q % 6;
+	_qe			= _q/6;
+	if(_intra)
+		_f = (1 << (15+_qe))/3;
+	else
+		_f = (1 << (15+_qe))/6;
+	_scale	= 15+_qe;
+}//end SetNewQP.

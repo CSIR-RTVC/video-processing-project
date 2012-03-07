@@ -85,7 +85,7 @@ FastInverse4x4ITImpl1::FastInverse4x4ITImpl1(void)
 	int i,j,qm;
 
 	for(i = 0; i < 16; i++)
-		_weightScale[i] = 16;	///< Flat_4x4_16 is default.
+		_weightScale[i] = 16;	///< For baseline Flat_4x4_16 is default.
 
 	for(qm = 0; qm < 6; qm++)
 		for(i = 0; i < 4; i++)
@@ -135,64 +135,62 @@ void FastInverse4x4ITImpl1::InverseTransform(void* ptr)
 					block[i*4 + j] = (short)( x << _leftScale );
 			}//end for i & j...
 	}//end if _mode == 2...
-	else	///< IT&Q and IT only.
+	else if(_mode == TransformAndQuant)	///< 0 = IT&Q.
 	{
+		/// 1-D inverse IT in horiz direction.
+		for(j = 0; j < 16; j += 4)
+		{
+			/// 1st stage with pre-scaling and quantisation.
+			int x0 = (int)block[j]		* _levelScale[_qm][j];
+			int x1 = (int)block[j+1]	* _levelScale[_qm][j+1];
+			int x2 = (int)block[j+2]	* _levelScale[_qm][j+2];
+			int x3 = (int)block[j+3]	* _levelScale[_qm][j+3];
+			if(_q < 24)
+			{
+				x0 = (x0 + _f) >> _rightScale;
+				x1 = (x1 + _f) >> _rightScale;
+				x2 = (x2 + _f) >> _rightScale;
+				x3 = (x3 + _f) >> _rightScale;
+			}//end if _q...
+			else
+			{
+				x0 = x0 << _leftScale;
+				x1 = x1 << _leftScale;
+				x2 = x2 << _leftScale;
+				x3 = x3 << _leftScale;
+			}//end else...
+
+			int s0 = x0					+ x2;
+			int s1 = x0					- x2;
+			int s2 = (x1 >> 1)	- x3;
+			int s3 = x1					+ (x3 >> 1);
+
+			/// 2nd stage.
+			block[j]		= (short)(s0 + s3);
+			block[3+j]	= (short)(s0 - s3);
+			block[1+j]	= (short)(s1 + s2);
+			block[2+j]	= (short)(s1 - s2);
+		}//end for j...
+
 		/// 1-D inverse IT in vert direction.
-
-		if(_mode == TransformAndQuant)	///< 0 = IT&Q.
+		for(j = 0; j < 4; j++)
 		{
-			for(j = 0; j < 4; j++)
-			{
-				/// 1st stage with pre-scaling and quantisation.
-				int x0 = (int)block[j]		* _levelScale[_qm][j];
-				int x1 = (int)block[j+4]	* _levelScale[_qm][j+4];
-				int x2 = (int)block[j+8]	* _levelScale[_qm][j+8];
-				int x3 = (int)block[j+12]	* _levelScale[_qm][j+12];
-				if(_q < 24)
-				{
-					x0 = (x0 + _f) >> _rightScale;
-					x1 = (x1 + _f) >> _rightScale;
-					x2 = (x2 + _f) >> _rightScale;
-					x3 = (x3 + _f) >> _rightScale;
-				}//end if _q...
-				else
-				{
-					x0 = x0 << _leftScale;
-					x1 = x1 << _leftScale;
-					x2 = x2 << _leftScale;
-					x3 = x3 << _leftScale;
-				}//end else...
+			/// 1st stage.
+			int s0 = (int)block[j]					+ (int)block[j+8];
+			int s1 = (int)block[j]					- (int)block[j+8];
+			int s2 = ((int)block[j+4] >> 1)	- (int)block[j+12];
+			int s3 = (int)block[j+4]				+ ((int)block[j+12] >> 1);
 
-				int s0 = x0					+ x2;
-				int s1 = x0					- x2;
-				int s2 = (x1 >> 1)	- x3;
-				int s3 = x1					+ (x3 >> 1);
+			/// 2nd stage.
+			block[j]		= (short)((s0 + s3 + 32) >> 6);
+			block[12+j]	= (short)((s0 - s3 + 32) >> 6);
+			block[4+j]	= (short)((s1 + s2 + 32) >> 6);
+			block[8+j]	= (short)((s1 - s2 + 32) >> 6);
+		}//end for j...
 
-				/// 2nd stage.
-				block[j]		= (short)(s0 + s3);
-				block[12+j]	= (short)(s0 - s3);
-				block[4+j]	= (short)(s1 + s2);
-				block[8+j]	= (short)(s1 - s2);
-			}//end for j...
-		}//end if _mode == 0...
-		else	///< _mode == 1 IT only.
-		{
-			for(j = 0; j < 4; j++)
-			{
-				/// 1st stage.
-				int s0 = (int)block[j]					+ (int)block[8+j];
-				int s1 = (int)block[j]					- (int)block[8+j];
-				int s2 = (int)(block[4+j] >> 1)	- (int)block[12+j];
-				int s3 = (int)block[4+j]				+ (int)(block[12+j] >> 1);
-
-				/// 2nd stage.
-				block[j]		= (short)(s0 + s3);
-				block[12+j]	= (short)(s0 - s3);
-				block[4+j]	= (short)(s1 + s2);
-				block[8+j]	= (short)(s1 - s2);
-			}//end for j...
-		}//end else...
-
+  }//end if _mode == 0...
+	else	///< _mode == 1 IT only.
+	{
 		/// 1-D inverse IT in horiz direction.
 		for(j = 0; j < 16; j += 4)
 		{
@@ -203,11 +201,29 @@ void FastInverse4x4ITImpl1::InverseTransform(void* ptr)
 			int s3 = (int)block[1+j]				+ (int)(block[3+j] >> 1);
 
 			/// 2nd stage.
-			block[j]		= (short)((s0 + s3 + 32) >> 6);
-			block[3+j]	= (short)((s0 - s3 + 32) >> 6);
-			block[1+j]	= (short)((s1 + s2 + 32) >> 6);
-			block[2+j]	= (short)((s1 - s2 + 32) >> 6);
+			block[j]		= (short)(s0 + s3);
+			block[3+j]	= (short)(s0 - s3);
+			block[1+j]	= (short)(s1 + s2);
+			block[2+j]	= (short)(s1 - s2);
 		}//end for j...
+
+		/// 1-D inverse IT in vert direction.
+		for(j = 0; j < 4; j++)
+		{
+			/// 1st stage.
+			int s0 = (int)block[j]					+ (int)block[8+j];
+			int s1 = (int)block[j]					- (int)block[8+j];
+			int s2 = (int)(block[4+j] >> 1)	- (int)block[12+j];
+			int s3 = (int)block[4+j]				+ (int)(block[12+j] >> 1);
+
+			/// 2nd stage.
+			block[j]		= (short)((s0 + s3 + 32) >> 6);
+			block[12+j]	= (short)((s0 - s3 + 32) >> 6);
+			block[4+j]	= (short)((s1 + s2 + 32) >> 6);
+			block[8+j]	= (short)((s1 - s2 + 32) >> 6);
+
+		}//end for j...
+
 	}//end else...
 
 }//end InverseTransform.
