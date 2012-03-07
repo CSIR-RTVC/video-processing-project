@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <streams.h>
 #include <initguid.h>
+#include <wmcodecdsp.h> //for i420 GUID
 
 #include "YuvSource.h"
 #include "YuvProperties.h"
@@ -51,7 +52,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 {
   &MEDIATYPE_Video,       // Major type
-  &MEDIASUBTYPE_NULL      // Minor type
+  &MEDIASUBTYPE_I420      // Minor type
 };
 
 
@@ -72,7 +73,7 @@ const AMOVIESETUP_FILTER sudPushSourceBitmap =
 {
   &CLSID_YUVSource,		// Filter CLSID
   g_wszYuvSource,			// String name
-  MERIT_DO_NOT_USE,       // Filter merit
+  MERIT_NORMAL,       // Filter merit
   1,                      // Number pins
   &sudOutputPinBitmap     // Pin details
 };
