@@ -132,7 +132,7 @@ public:
 
     // configure converters
     m_pRgbToYuvConverter->SetDimensions(m_pBbitmapInfoHeader->biWidth, m_pBbitmapInfoHeader->biHeight);
-    m_pRgbToYuvConverter->setChrominanceOffset(128);
+    m_pRgbToYuvConverter->SetChrominanceOffset(128);
     m_pYuvToRgbConverter->SetDimensions(m_pBbitmapInfoHeader->biWidth, m_pBbitmapInfoHeader->biHeight);
     m_pYuvToRgbConverter->SetRotate(0);
 
