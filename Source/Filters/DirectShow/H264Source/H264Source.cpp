@@ -67,17 +67,19 @@ H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
   : CSource(NAME("CSIR RTVC H264 Source"), pUnk, CLSID_H264Source),
   m_iWidth(DEFAULT_WIDTH),
   m_iHeight(DEFAULT_HEIGHT),
-  m_iFramesPerSecond(30),
+  m_iFramesPerSecond(25),
   m_uiCurrentBufferSize(MINIMUM_BUFFER_SIZE),
   m_pBuffer(NULL),
   m_uiBytesInBuffer(0),
   m_uiCurrentNalUnitSize(0),
+  m_uiCurrentNalUnitStartPos(0),
   m_pSeqParamSet(0),
   m_uiSeqParamSetLen(0),
   m_pPicParamSet(0),
   m_uiPicParamSetLen(0),
   m_iFileSize(0),
-  m_iRead(0)
+  m_iRead(0),
+  m_bAnalyseOnLoad(true)
 {
   // Init CSettingsInterface
   initParameters();
@@ -113,6 +115,7 @@ void H264SourceFilter::reset()
   m_pPin->m_iCurrentFrame = 0;
   m_uiBytesInBuffer = 0;
   m_uiCurrentNalUnitSize = 0;
+  m_uiCurrentNalUnitStartPos = 0;
   m_in1.clear(); // clear for next play
   m_in1.seekg( 0 , std::ios::beg );
 }
@@ -138,31 +141,56 @@ STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
     {
       if (!readNalUnit())
       {
-        // failed to find SPS and PPS
-        return E_FAIL;
+        //// failed to find SPS and PPS
+        //return E_FAIL;
+        break;
       }
 
       // check for SPS and PPS
       if (isSps(m_pBuffer[4]))
       {
+        // only store first one
+        if (bSps) continue;
         bSps = true;
         if (m_pSeqParamSet) delete[] m_pSeqParamSet;
         m_pSeqParamSet = new unsigned char[m_uiCurrentNalUnitSize];
         memcpy(m_pSeqParamSet, m_pBuffer, m_uiCurrentNalUnitSize);
         m_uiSeqParamSetLen = m_uiCurrentNalUnitSize;
-      }
 
-      if (isPps(m_pBuffer[4]))
+        m_vParameterSets.push_back(m_uiCurrentNalUnitStartPos);
+      }
+      else if (isPps(m_pBuffer[4]))
       {
+        // only store first one
+        if (bPps) continue;
         bPps = true;
         if (m_pPicParamSet) delete[] m_pPicParamSet;
         m_pPicParamSet = new unsigned char[m_uiCurrentNalUnitSize];
         memcpy(m_pPicParamSet, m_pBuffer, m_uiCurrentNalUnitSize);
         m_uiPicParamSetLen = m_uiCurrentNalUnitSize;
+
+        m_vParameterSets.push_back(m_uiCurrentNalUnitStartPos);
+      }
+      else
+      {
+        if (isIdrFrame(m_pBuffer[4]))
+        {
+          m_vIdrFrames.push_back(m_uiCurrentNalUnitStartPos);
+          m_vFrames.push_back(m_uiCurrentNalUnitStartPos);
+        }
+        else
+        {
+          m_vFrames.push_back(m_uiCurrentNalUnitStartPos);
+        }
       }
 
-      if (bSps && bPps) break;
+      // Recompile to avoid analysis on load
+      if (!m_bAnalyseOnLoad)
+        if (bSps && bPps) break;
     }
+
+    // check if we found the parameter sets
+    if (!(bSps && bPps)) return E_FAIL;
 
     // reset file pointer
     reset();
@@ -212,6 +240,10 @@ STDMETHODIMP H264SourceFilter::NonDelegatingQueryInterface( REFIID riid, void **
   else if (riid == IID_ISpecifyPropertyPages)
   {
     return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+  }
+  else if (riid == IID_IMediaSeeking)
+  {
+    return GetInterface((IMediaSeeking*) this, ppv);
   }
   else
   {
@@ -277,6 +309,7 @@ bool H264SourceFilter::readNalUnit()
       }
 
       m_uiBytesInBuffer -= m_uiCurrentNalUnitSize;
+      m_uiCurrentNalUnitStartPos += m_uiCurrentNalUnitSize;
       m_uiCurrentNalUnitSize = 0;
     }
 
@@ -317,7 +350,7 @@ bool H264SourceFilter::readNalUnit()
           }
           if (m_in1.fail()) return false;
 
-          // expand buffer 
+          // expand buffer
           BYTE* pNewBuffer = new BYTE[m_uiCurrentBufferSize * 2];
           memcpy(pNewBuffer, m_pBuffer, m_uiCurrentBufferSize);
           delete[] m_pBuffer;
@@ -341,3 +374,156 @@ bool H264SourceFilter::readNalUnit()
   return false;
 }
 
+void H264SourceFilter::skipToFrame(unsigned uiFrameNumber)
+{
+  m_uiCurrentNalUnitSize = 0;
+  m_uiBytesInBuffer = 0;
+  m_pPin->m_iCurrentFrame = uiFrameNumber;
+  m_uiCurrentNalUnitStartPos = m_vFrames[uiFrameNumber];
+  m_in1.clear(); // clear for next play
+  m_in1.seekg( m_uiCurrentNalUnitStartPos , std::ios::beg );
+}
+
+// IMediaSeeking
+HRESULT H264SourceFilter::CheckCapabilities(DWORD *pCapabilities)
+{
+  DWORD ourCap = AM_SEEKING_CanSeekAbsolute | AM_SEEKING_CanGetDuration;
+  DWORD cap = *pCapabilities;
+  DWORD match = cap & ourCap;
+  if (match == ourCap) return S_OK;
+  else if (match > 0)
+  {
+    *pCapabilities = match;
+    return S_FALSE;
+  }
+  else
+  {
+    *pCapabilities = 0;
+    return E_FAIL;
+  }
+}
+
+HRESULT H264SourceFilter::ConvertTimeFormat( LONGLONG *pTarget, const GUID *pTargetFormat, LONGLONG Source, const GUID *pSourceFormat)
+{
+  return E_NOTIMPL;
+}
+
+HRESULT H264SourceFilter::GetAvailable(LONGLONG *pEarliest,  LONGLONG *pLatest)
+{
+  return E_NOTIMPL;
+}
+
+HRESULT H264SourceFilter::GetCapabilities(DWORD *pCapabilities)
+{
+  *pCapabilities = AM_SEEKING_CanSeekAbsolute | AM_SEEKING_CanGetDuration;
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::GetCurrentPosition(LONGLONG *pCurrent)
+{
+  *pCurrent = m_pPin->m_iCurrentFrame * m_pPin->m_rtFrameLength;
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::GetDuration(LONGLONG *pDuration)
+{
+  *pDuration = m_pPin->m_rtFrameLength * m_vFrames.size();
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::GetPositions( LONGLONG *pCurrent, LONGLONG *pStop)
+{
+  *pCurrent = m_pPin->m_iCurrentFrame * m_pPin->m_rtFrameLength;
+  *pStop = m_pPin->m_rtFrameLength * m_vFrames.size();
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::GetPreroll( LONGLONG *pllPreroll )
+{
+  return E_NOTIMPL;
+}
+
+HRESULT H264SourceFilter::GetRate( double *dRate )
+{
+  return E_NOTIMPL;
+}
+
+HRESULT H264SourceFilter::GetStopPosition( LONGLONG *pStop)
+{
+  *pStop = m_pPin->m_rtFrameLength * m_vFrames.size();
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::GetTimeFormat( GUID *pFormat )
+{
+  if (!pFormat) return E_POINTER;
+  *pFormat = TIME_FORMAT_MEDIA_TIME;
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::IsFormatSupported( const GUID *pFormat )
+{
+  if (!pFormat) return E_POINTER;
+  else if (*pFormat == TIME_FORMAT_MEDIA_TIME)
+  {
+    return S_OK;
+  }
+  else
+  {
+    return S_FALSE;
+  }
+}
+
+HRESULT H264SourceFilter::IsUsingTimeFormat( const GUID *pFormat )
+{
+  if (*pFormat == TIME_FORMAT_MEDIA_TIME)
+  {
+    return S_OK;
+  }
+  else
+  {
+    return S_FALSE;
+  }
+}
+
+HRESULT H264SourceFilter::QueryPreferredFormat( GUID *pFormat )
+{
+  if (!pFormat) return E_POINTER;
+  *pFormat = TIME_FORMAT_MEDIA_TIME;
+  return S_OK;
+}
+
+HRESULT H264SourceFilter::SetPositions(LONGLONG *pCurrent, DWORD dwCurrentFlags, LONGLONG *pStop, DWORD dwStopFlags)
+{
+  // use pCurrent to calculate the frame
+  if (!pCurrent) return E_POINTER;
+  // Commenting out this for now: need to handle set stop position
+  // for now only support setting start position
+  // if (pStop) return E_INVALIDARG;
+  
+  // only checking for absolute positioning
+  if (dwCurrentFlags & AM_SEEKING_AbsolutePositioning)
+  {
+    // find index of frame
+    unsigned uiIndexOfFrame = (*pCurrent)/m_pPin->m_rtFrameLength;
+    if (uiIndexOfFrame >= m_vFrames.size()) return E_INVALIDARG;
+    else
+    {
+      // the next call to readNalUnit will read the frame into the buffer and set all member values correctly
+      skipToFrame(uiIndexOfFrame);
+      return S_OK;
+    }
+  }
+  else
+    return E_INVALIDARG;
+}
+
+HRESULT H264SourceFilter::SetRate( double dRate )
+{
+  return E_NOTIMPL;
+}
+
+HRESULT H264SourceFilter::SetTimeFormat( const GUID *pFormat )
+{
+  return E_NOTIMPL;
+}
