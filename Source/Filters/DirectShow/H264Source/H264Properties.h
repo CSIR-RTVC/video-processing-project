@@ -1,10 +1,10 @@
 /** @file
 
-MODULE				: H264Properties
+MODULE				: H264
 
 FILE NAME			: H264Properties.h
 
-DESCRIPTION			: Properties dialog for YUV Source Filter
+DESCRIPTION			: Properties dialog for H264 Source Filter
 
 LICENSE: Software License Agreement (BSD License)
 

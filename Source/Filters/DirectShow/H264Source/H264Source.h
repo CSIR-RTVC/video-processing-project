@@ -1,10 +1,10 @@
 /** @file
 
-MODULE				: H264Source
+MODULE				: H264
 
 FILE NAME			: H264Source.h
 
-DESCRIPTION			: 
+DESCRIPTION			: H264 source filter header
 
 LICENSE: Software License Agreement (BSD License)
 

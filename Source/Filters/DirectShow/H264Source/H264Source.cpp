@@ -4,7 +4,7 @@ MODULE				: H264Source
 
 FILE NAME			: H264Source.cpp
 
-DESCRIPTION			: 
+DESCRIPTION			: H264 source filter implementation
 
 LICENSE: Software License Agreement (BSD License)
 
