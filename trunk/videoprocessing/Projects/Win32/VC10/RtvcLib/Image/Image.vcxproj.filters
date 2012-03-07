@@ -72,6 +72,18 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastFixedPointRGB24toYUV420Converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastGpuRGB24toYUV420Converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastLookupTableRGB24toYUV420Converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatBase.h">
@@ -153,6 +165,18 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastFixedPointRGB24toYUV420Converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastGpuRGB24toYUV420Converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastLookupTableRGB24toYUV420Converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
