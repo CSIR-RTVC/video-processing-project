@@ -83,7 +83,7 @@ HRESULT TimestampLoggerFilter::Transform(IMediaSample *pSample) // Overrriding t
 	{
 		return hr;
 	}
-	m_vTimeInfo.push_back(TimeInfo(tStart, tStop));
+  m_vTimeInfo.push_back(TimeInfo(tStart, tStop, pSample->GetActualDataLength()));
 	return S_OK;
 }
 
@@ -132,7 +132,7 @@ HRESULT TimestampLoggerFilter::Stop( void )
 	{
 		for (std::vector<TimeInfo>::iterator it = m_vTimeInfo.begin(); it != m_vTimeInfo.end(); ++it)
 		{
-			m_outStream << (*it).StartTime << " " << (*it).StopTime <<  " " << (*it).StopTime - (*it).StartTime << std::endl;
+      m_outStream << (*it).StartTime << " " << (*it).StopTime <<  " " << (*it).StopTime - (*it).StartTime << " " <<  (*it).Size <<  std::endl;
 		}
 		m_outStream.flush();
 		m_outStream.close();
