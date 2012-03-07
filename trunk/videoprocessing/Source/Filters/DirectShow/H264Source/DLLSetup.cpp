@@ -1,10 +1,10 @@
 /** @file
 
-MODULE				: DLLSetup
+MODULE				: H264
 
 FILE NAME			: DLLSetup.cpp
 
-DESCRIPTION			: 
+DESCRIPTION			: H264 source filter registration
 
 LICENSE: Software License Agreement (BSD License)
 
