@@ -133,9 +133,11 @@ public:
     // configure converters
     m_pRgbToYuvConverter->SetDimensions(m_pBbitmapInfoHeader->biWidth, m_pBbitmapInfoHeader->biHeight);
     m_pRgbToYuvConverter->SetChrominanceOffset(128);
+    m_pRgbToYuvConverter->SetFlip(true);
     m_pYuvToRgbConverter->SetDimensions(m_pBbitmapInfoHeader->biWidth, m_pBbitmapInfoHeader->biHeight);
-    m_pYuvToRgbConverter->SetRotate(0);
-
+    m_pYuvToRgbConverter->SetChrominanceOffset(128);
+    m_pYuvToRgbConverter->SetFlip(true);
+    
     // allocate memory for YUV (1.5 suffices but BUILD_FOR_SHORT requires 2 x 1.5)
     SafeDeleteArray(m_pYuvDataBuffer);
     unsigned uiBufferSize = m_pBbitmapInfoHeader->biWidth * m_pBbitmapInfoHeader->biHeight * 3;
