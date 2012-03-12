@@ -10,7 +10,7 @@ DESCRIPTION			: Double precision floating point RGB 24 bit to YUV420 colour
 	  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,38 +33,59 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 */
-#ifndef _REALRGB24TOYUV420CONVERTER_H
-#define _REALRGB24TOYUV420CONVERTER_H
-
 #pragma once
 
 #include "RGBtoYUV420Converter.h"
 
-#include <emmintrin.h>
-
+#include <Winsock2.h>
+#include <boost/asio/io_service.hpp>
+#include <boost/thread.hpp>
 /**
  * \ingroup ImageLib
  * Double precision floating point RGB 24 bit to YUV420 colour 
  * convertion derived from the RGBtoYUV420Converter base class.
  * Use this implementation as the reference.
  */
-class RealRGB24toYUV420Converter: public RGBtoYUV420Converter
+class MtRGB24toYUV420Converter: public RGBtoYUV420Converter
 {
 public:
     /// Construction and destruction.
-    RealRGB24toYUV420Converter(void) { initLookupTable(); }
-    RealRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) { initLookupTable(); }
-    RealRGB24toYUV420Converter(int width, int height, int chrOff): RGBtoYUV420Converter(width,height, chrOff) { initLookupTable(); }
-    virtual ~RealRGB24toYUV420Converter(void) {}
+    MtRGB24toYUV420Converter(void)
+      : work(io_service),
+      finished1(false),
+      finished2(false),
+      uiConverted1(0),
+      uiConverted2(0)
+    { init(); }
+    MtRGB24toYUV420Converter(int width, int height)
+      : RGBtoYUV420Converter(width,height),
+      work(io_service),
+      finished1(false),
+      finished2(false),
+      uiConverted1(0),
+      uiConverted2(0)
+    { init(); }
+    MtRGB24toYUV420Converter(int width, int height, int chrOff)
+      : RGBtoYUV420Converter(width,height, chrOff),
+      work(io_service),
+      finished1(false),
+      finished2(false),
+      uiConverted1(0),
+      uiConverted2(0)
+    { init(); }
+    virtual ~MtRGB24toYUV420Converter(void) 
+    {
+      io_service.stop();
+      threads.join_all();
+    }
 
     /// Interface.
     void Convert(void* pRgb, void* pY, void* pU, void* pV);
 
 protected:
-  void FlipConvert(void* pRgb, void* pY, void* pU, void* pV);
-  void NonFlipConvert(void* pRgb, void* pY, void* pU, void* pV);
 
-  void initLookupTable();
+  void init();
+  void doConvert(unsigned char* pRgb, yuvType* pY, yuvType* pU, yuvType* pV, unsigned uiThread);
 
   float m_RRGB24YUVCI2_00[256];
   float m_RRGB24YUVCI2_01[256];
@@ -76,11 +97,16 @@ protected:
   float m_RRGB24YUVCI2_21[256];
   float m_RRGB24YUVCI2_22[256];
 
-  // SSE
-  //__m128i m_xmm_y; 
-  //__m128i m_xmm_u; 
-  //__m128i m_xmm_v; 
-};//end _REALRGB24TOYUV420CONVERTERIMPL2_H.
+  // for threads
+  boost::asio::io_service io_service;
+  boost::asio::io_service::work work;
+  boost::thread_group threads;
 
+  bool finished1;
+  bool finished2;
+  unsigned uiConverted1;
+  unsigned uiConverted2;
 
-#endif
+  boost::condition_variable condvar;
+  boost::mutex mutex;
+};

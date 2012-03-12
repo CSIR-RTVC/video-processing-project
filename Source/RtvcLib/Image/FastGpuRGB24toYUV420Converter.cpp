@@ -83,4 +83,4 @@ to 0..255.
 void FastGpuRGB24toYUV420Converter::Convert(void* pRgb, void* pY, void* pU, void* pV)
 {
 
-}
+}//end Convert.

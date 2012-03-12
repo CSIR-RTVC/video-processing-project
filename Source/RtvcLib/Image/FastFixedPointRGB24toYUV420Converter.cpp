@@ -62,6 +62,17 @@ Constants.
 #define RRGB24YUVCI2_21		-0.515
 #define RRGB24YUVCI2_22		-0.100
 
+const int iPrecision = 12;
+const int iRRGB24YUVCI2_00 = static_cast<int>(0.5 + RRGB24YUVCI2_00 * (2 << iPrecision));
+const int iRRGB24YUVCI2_01 = static_cast<int>(0.5 + RRGB24YUVCI2_01 * (2 << iPrecision));
+const int iRRGB24YUVCI2_02 = static_cast<int>(0.5 + RRGB24YUVCI2_02 * (2 << iPrecision));
+const int iRRGB24YUVCI2_10 = static_cast<int>(0.5 + RRGB24YUVCI2_10 * (2 << iPrecision));
+const int iRRGB24YUVCI2_11 = static_cast<int>(0.5 + RRGB24YUVCI2_11 * (2 << iPrecision));
+const int iRRGB24YUVCI2_12 = static_cast<int>(0.5 + RRGB24YUVCI2_12 * (2 << iPrecision));
+const int iRRGB24YUVCI2_20 = static_cast<int>(0.5 + RRGB24YUVCI2_20 * (2 << iPrecision));
+const int iRRGB24YUVCI2_21 = static_cast<int>(0.5 + RRGB24YUVCI2_21 * (2 << iPrecision));
+const int iRRGB24YUVCI2_22 = static_cast<int>(0.5 + RRGB24YUVCI2_22 * (2 << iPrecision));
+
 #define RRGB24YUVCI2_RANGECHECK_0TO255(x) ( (((x) <= 255)&&((x) >= 0))?((x)):( ((x) > 255)?(255):(0) ) )
 #define RRGB24YUVCI2_RANGECHECK_N128TO127(x) ( (((x) <= 127)&&((x) >= -128))?((x)):( ((x) > 127)?(127):(-128) ) )
 
@@ -82,6 +93,77 @@ to 0..255.
 */
 void FastFixedPointRGB24toYUV420Converter::Convert(void* pRgb, void* pY, void* pU, void* pV)
 {
+  yuvType*	py = (yuvType *)pY;
+  yuvType*	pu = (yuvType *)pU;
+  yuvType*	pv = (yuvType *)pV;
+  unsigned char* src = (unsigned char *)pRgb;
 
-}
+  /// Y have range 0..255, U & V have range -128..127.
+  int	u,v;
+  int	r,g,b;
+
+  /// Step in 2x2 pel blocks. (4 pels per block).
+  int xBlks = _width >> 1;
+  int yBlks = _height >> 1;
+  for(int yb = 0; yb < yBlks; yb++)
+    for(int xb = 0; xb < xBlks; xb++)
+    {
+      int							chrOff	= yb*xBlks + xb;
+      int							lumOff	= (yb*_width + xb) << 1;
+      unsigned char*	t				= src + lumOff*3;
+
+      /// Top left pel.
+      b = (int)(*t++);
+      g = (int)(*t++);
+      r = (int)(*t++);
+      py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255(((iRRGB24YUVCI2_00*r + iRRGB24YUVCI2_01*g + iRRGB24YUVCI2_02*b)>> (iPrecision + 1)));
+
+      u = iRRGB24YUVCI2_10*r + iRRGB24YUVCI2_11*g + iRRGB24YUVCI2_12*b;
+      v = iRRGB24YUVCI2_20*r + iRRGB24YUVCI2_21*g + iRRGB24YUVCI2_22*b;
+
+      /// Top right pel.
+      b = (int)(*t++);
+      g = (int)(*t++);
+      r = (int)(*t++);
+      py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255(((iRRGB24YUVCI2_00*r + iRRGB24YUVCI2_01*g + iRRGB24YUVCI2_02*b)>> (iPrecision + 1)));
+
+      u += iRRGB24YUVCI2_10*r + iRRGB24YUVCI2_11*g + iRRGB24YUVCI2_12*b;
+      v += iRRGB24YUVCI2_20*r + iRRGB24YUVCI2_21*g + iRRGB24YUVCI2_22*b;
+
+      lumOff += _width;
+      t = t + _width*3 - 6;
+      /// Bottom left pel.
+      b = (int)(*t++);
+      g = (int)(*t++);
+      r = (int)(*t++);
+      py[lumOff] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255(((iRRGB24YUVCI2_00*r + iRRGB24YUVCI2_01*g + iRRGB24YUVCI2_02*b)>> (iPrecision + 1)));
+
+      u += iRRGB24YUVCI2_10*r + iRRGB24YUVCI2_11*g + iRRGB24YUVCI2_12*b;
+      v += iRRGB24YUVCI2_20*r + iRRGB24YUVCI2_21*g + iRRGB24YUVCI2_22*b;
+
+      /// Bottom right pel.
+      b = (int)(*t++);
+      g = (int)(*t++);
+      r = (int)(*t++);
+      py[lumOff+1] = (yuvType)RRGB24YUVCI2_RANGECHECK_0TO255(((iRRGB24YUVCI2_00*r + iRRGB24YUVCI2_01*g + iRRGB24YUVCI2_02*b)>> (iPrecision + 1)));
+
+      u += iRRGB24YUVCI2_10*r + iRRGB24YUVCI2_11*g + iRRGB24YUVCI2_12*b;
+      v += iRRGB24YUVCI2_20*r + iRRGB24YUVCI2_21*g + iRRGB24YUVCI2_22*b;
+
+      /// Average the 4 chr values.
+      int iu = u >> (iPrecision + 1);
+      int iv = v >> (iPrecision + 1);
+      if(iu < 0)	///< Rounding.
+        iu -= 2;
+      else
+        iu += 2;
+      if(iv < 0)	///< Rounding.
+        iv -= 2;
+      else
+        iv += 2;
+
+      pu[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127(iu >> 2) );
+      pv[chrOff] = (yuvType)( _chrOff + RRGB24YUVCI2_RANGECHECK_N128TO127(iv >> 2) );
+    }//end for xb & yb...
+}//end Convert.
 
