@@ -289,6 +289,8 @@ void RealYUV420toRGB24Converter::RotateConvert(void* pY, void* pU, void* pV, voi
 			double lum00 = (double)((int)(py[lumpos0++]));
 			double u		 = (double)(((int)(pu[uvpos])) - 128);
 			double v		 = (double)(((int)(pv[uvpos++])) - 128);
+      //double u		 = (double)(((int)(pu[uvpos])) - 0);
+      //double v		 = (double)(((int)(pv[uvpos++])) - 0);
 
 			// Lum00, u and v.
 

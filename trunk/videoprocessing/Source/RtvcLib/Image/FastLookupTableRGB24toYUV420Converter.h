@@ -47,12 +47,26 @@ class FastLookupTableRGB24toYUV420Converter: public RGBtoYUV420Converter
 {
 public:
     /// Construction and destruction.
-    FastLookupTableRGB24toYUV420Converter(void) {}
-    FastLookupTableRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) {}
-    FastLookupTableRGB24toYUV420Converter(int width, int height, int chrOff): RGBtoYUV420Converter(width,height, chrOff) {}
+    FastLookupTableRGB24toYUV420Converter(void) { initLookupTable(); }
+    FastLookupTableRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) { initLookupTable(); }
+    FastLookupTableRGB24toYUV420Converter(int width, int height, int chrOff): RGBtoYUV420Converter(width,height, chrOff) { initLookupTable(); }
     virtual ~FastLookupTableRGB24toYUV420Converter(void) {}
 
     /// Interface.
     void Convert(void* pRgb, void* pY, void* pU, void* pV);
+
+protected:
+
+  void initLookupTable();
+
+  float m_RRGB24YUVCI2_00[256];
+  float m_RRGB24YUVCI2_01[256];
+  float m_RRGB24YUVCI2_02[256];
+  float m_RRGB24YUVCI2_10[256];
+  float m_RRGB24YUVCI2_11[256];
+  float m_RRGB24YUVCI2_12[256];
+  float m_RRGB24YUVCI2_20[256];
+  float m_RRGB24YUVCI2_21[256];
+  float m_RRGB24YUVCI2_22[256];
 
 };
