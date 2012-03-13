@@ -40,8 +40,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include "RGBtoYUV420Converter.h"
 
-#include <emmintrin.h>
-
 /**
  * \ingroup ImageLib
  * Double precision floating point RGB 24 bit to YUV420 colour 
@@ -52,9 +50,9 @@ class RealRGB24toYUV420Converter: public RGBtoYUV420Converter
 {
 public:
     /// Construction and destruction.
-    RealRGB24toYUV420Converter(void) { initLookupTable(); }
-    RealRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) { initLookupTable(); }
-    RealRGB24toYUV420Converter(int width, int height, int chrOff): RGBtoYUV420Converter(width,height, chrOff) { initLookupTable(); }
+    RealRGB24toYUV420Converter(void) { }
+    RealRGB24toYUV420Converter(int width, int height): RGBtoYUV420Converter(width,height) {  }
+    RealRGB24toYUV420Converter(int width, int height, int chrOff): RGBtoYUV420Converter(width,height, chrOff) {  }
     virtual ~RealRGB24toYUV420Converter(void) {}
 
     /// Interface.
@@ -63,23 +61,6 @@ public:
 protected:
   void FlipConvert(void* pRgb, void* pY, void* pU, void* pV);
   void NonFlipConvert(void* pRgb, void* pY, void* pU, void* pV);
-
-  void initLookupTable();
-
-  float m_RRGB24YUVCI2_00[256];
-  float m_RRGB24YUVCI2_01[256];
-  float m_RRGB24YUVCI2_02[256];
-  float m_RRGB24YUVCI2_10[256];
-  float m_RRGB24YUVCI2_11[256];
-  float m_RRGB24YUVCI2_12[256];
-  float m_RRGB24YUVCI2_20[256];
-  float m_RRGB24YUVCI2_21[256];
-  float m_RRGB24YUVCI2_22[256];
-
-  // SSE
-  //__m128i m_xmm_y; 
-  //__m128i m_xmm_u; 
-  //__m128i m_xmm_v; 
 };//end _REALRGB24TOYUV420CONVERTERIMPL2_H.
 
 
