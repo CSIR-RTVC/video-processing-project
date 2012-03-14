@@ -49,7 +49,8 @@ int main(int argc, char** argv)
     std::cout << "<<mode>> 1: Lookup table" << std::endl;
     std::cout << "<<mode>> 2: Fixed-point" << std::endl;
     std::cout << "<<mode>> 3: SIMD" << std::endl;
-    std::cout << "<<mode>> 4: CUDA" << std::endl;
+    std::cout << "<<mode>> 4: CUDA (Not implemented)" << std::endl;
+    std::cout << "<<mode>> 5: MT (requires USE_MULTI_THREADED and boost)" << std::endl;
     return -1;
   }
 
@@ -57,6 +58,7 @@ int main(int argc, char** argv)
   // Check file name
   wchar_t* pwszFileName = new wchar_t[sFilename.length()];
   pwszFileName = StringUtil::stlToWide(sFilename);
+  bool bEraseTimeStamps = true;
   // TODO: check if file exists
 
   parseCmdLineArgs(argc, argv);
@@ -66,16 +68,22 @@ int main(int argc, char** argv)
   {
     int iMode = atoi(g_mArguments["mode"].c_str());
     eMode = static_cast<Mode>(iMode);
-    if (eMode > GPU) eMode = ORIGINAL;
+    if (eMode > MT) eMode = ORIGINAL;
   }
 
+  for (size_t i = 0; i < g_vArguments.size(); ++i)
+  {
+    if (g_vArguments[i] == "-t")
+      bEraseTimeStamps = false;
+  }
+  
   IGraphBuilderPtr pGraph = NULL;
   IMediaControlPtr pControl = NULL;
   IMediaEventPtr pEvent = NULL;
   IBaseFilterPtr pBaseFilter = NULL;
   ISampleGrabberPtr pSampleGrabber = NULL;
   // Create and configure sample grabber
-  CustomSampleGrabberCB* pSampleGrabberCB = new CustomSampleGrabberCB(eMode);
+  CustomSampleGrabberCB* pSampleGrabberCB = new CustomSampleGrabberCB(eMode, bEraseTimeStamps);
   
   StringList_t::iterator it = std::find(g_vArguments.begin(), g_vArguments.end(), "-PSNR");
   if (it != g_vArguments.end())
