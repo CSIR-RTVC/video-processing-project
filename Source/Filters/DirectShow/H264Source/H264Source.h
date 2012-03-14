@@ -66,7 +66,7 @@ static const GUID CLSID_H264Properties =
 { 0xe6a2ae5b, 0xf41a, 0x4595, { 0x84, 0xdb, 0xd9, 0x97, 0x24, 0x2b, 0x45, 0x87 } };
 
 // Filter name strings
-#define g_wszH264Source     L"CSIR RTVC H264 Source"
+#define g_wszH264Source     L"CSIR VPP H264 Source"
 
 #define SOURCE_DIMENSIONS	"sourcedimensions"
 #define SOURCE_FPS			  "fps"
