@@ -35,15 +35,17 @@ enum Mode
   LOOKUP_TABLE,
   FIXED_POINT,
   SIMD, 
-  GPU
+  GPU,
+  MT
 };
 
 class CustomSampleGrabberCB : public ISampleGrabberCB
 {
 public:
 
-  CustomSampleGrabberCB(Mode eMode)
+  CustomSampleGrabberCB(Mode eMode, bool bEraseTimestamp)
     : m_eMode(eMode),
+    m_bEraseTimestamp(bEraseTimestamp),
     m_pBbitmapInfoHeader(NULL),
     m_pRgbToYuvConverter(NULL),
     m_pYuvToRgbConverter(NULL),
@@ -105,16 +107,23 @@ public:
         m_pRgbToYuvConverter = new FastGpuRGB24toYUV420Converter();
         break;
       }
+    case MT:
+      {
+#ifdef USE_MULTI_THREADED
+        printf("Creating multi-threaded color converter\r\n");
+        m_pRgbToYuvConverter = new MtRGB24toYUV420Converter();
+        break;
+        // let fall through to standard
+#else
+        printf("Creating multi-threaded color converter requires USE_MULTI_THREADED\r\n");
+#endif
+      }
     default:
       {
+        printf("Creating standard color converter\r\n");
         m_pRgbToYuvConverter = new RealRGB24toYUV420Converter();
       }
     }
-
-#ifdef USE_MULTI_THREADED
-    // Use Multi-threaded converter
-    m_pRgbToYuvConverter = new MtRGB24toYUV420Converter();
-#endif
 
     m_pYuvToRgbConverter = new RealYUV420toRGB24Converter();
   }
@@ -195,7 +204,8 @@ public:
     // set time to NULL to allow for fast rendering since the 
     // the video renderer controls the rendering rate according
     // to the timestamps
-    pSample->SetTime(NULL, NULL);
+    if (m_bEraseTimestamp)
+      pSample->SetTime(NULL, NULL);
     
     // Get byte pointer
     BYTE* pbData(NULL);
@@ -288,6 +298,7 @@ public:
 private:
 
   Mode m_eMode;
+  bool m_bEraseTimestamp;
   BITMAPINFOHEADER* m_pBbitmapInfoHeader;
 
   RGBtoYUV420Converter* m_pRgbToYuvConverter;
