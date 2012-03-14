@@ -10,7 +10,7 @@ DESCRIPTION		: A class to hold H.264 block data and define all block
 								operations. This is a container class on which to "hang"
 								the processing functions.
 
-COPYRIGHT			:	(c)CSIR 2007-2009 all rights resevered
+COPYRIGHT			:	(c)CSIR 2007-2012 all rights resevered
 
 LICENSE				: Software License Agreement (BSD License)
 

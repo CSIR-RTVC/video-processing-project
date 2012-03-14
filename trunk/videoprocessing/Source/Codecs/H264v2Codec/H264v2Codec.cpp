@@ -61,10 +61,10 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 #include "BitStreamWriterMSB.h"
 #include "BitStreamReaderMSB.h"
 
-#include "RealRGB24toYUV420CCIR601Converter.h"
-#include "RealYUV420toRGB24CCIR601Converter.h"	
-#include "RealRGB24toYUV420ConverterImpl2.h"
-#include "RealYUV420toRGB24ConverterImpl2.h"
+#include "RealRGB24toYUV420CCIR601ConverterVer16.h"
+#include "RealYUV420toRGB24CCIR601ConverterVer16.h"	
+#include "RealRGB24toYUV420ConverterImpl2Ver16.h"
+#include "RealYUV420toRGB24ConverterImpl2Ver16.h"
 
 #include "FastForward4x4ITImpl2.h"
 #include "FastForward4x4ITImpl1.h"
@@ -76,6 +76,7 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 #include "FastForward4x4On16x16ITImpl1.h"
 #include "FastInverse4x4On16x16ITImpl1.h"
 #include "CAVLCH264Impl.h"
+#include "CAVLCH264Impl2.h"
 
 #include "MotionEstimatorH264ImplMultires.h"
 #include "MotionEstimatorH264ImplMultiresCross.h"
@@ -798,9 +799,9 @@ int H264v2Codec::Open(void)
 	{
 		/// Encoder input.
 #ifdef _CCIR601
-		_pInColourConverter = new RealRGB24toYUV420CCIR601Converter(_width, _height);
+		_pInColourConverter = new RealRGB24toYUV420CCIR601ConverterVer16(_width, _height, 128);
 #else
-		_pInColourConverter = new RealRGB24toYUV420ConverterImpl2(_width, _height, 128);
+		_pInColourConverter = new RealRGB24toYUV420ConverterImpl2Ver16(_width, _height, 128);
 #endif
 
 		if(_pInColourConverter == NULL)
@@ -818,9 +819,9 @@ int H264v2Codec::Open(void)
 	{
 		/// Decoder output.
 #ifdef _CCIR601
-			_pOutColourConverter = new RealYUV420toRGB24CCIR601Converter(_width, _height);
+			_pOutColourConverter = new RealYUV420toRGB24CCIR601ConverterVer16(_width, _height);
 #else
-			_pOutColourConverter = new RealYUV420toRGB24ConverterImpl2(_width, _height, 128);
+			_pOutColourConverter = new RealYUV420toRGB24ConverterImpl2Ver16(_width, _height, 128);
 #endif
 
 		if(_pOutColourConverter == NULL)

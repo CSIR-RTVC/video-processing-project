@@ -50,6 +50,7 @@ RESTRICTIONS	: Redistribution and use in source and binary forms, with or withou
 
 #include <string.h>
 #include "MacroBlockH264.h"
+#include "MeasurementTable.h"
 
 /// It is simpler to derive neighbourhoods of macroblocks if they are left in 
 /// rater scanning order right up until their encodings are written onto the
@@ -1132,4 +1133,66 @@ void MacroBlockH264::Mark(MacroBlockH264* mb, OverlayMem2Dv2* lum, OverlayMem2Dv
   }//end for i...
 
 }//end Mark.
+
+/** Dump the state variables of the macroblock to file.
+For debugging.
+@param  mb  : Macroblock to dump
+@param  filename  : File to write into
+@param  title     : Title of stored table data
+@return     : none.
+*/
+void MacroBlockH264::Dump(MacroBlockH264* mb, char* filename, const char* title)
+{
+  int j; 
+
+  MeasurementTable* pT = new MeasurementTable();
+	pT->SetTitle(title);
+	pT->Create(18, 1);
+  
+  pT->SetHeading(0, "Index");
+  pT->SetHeading(1, "Type");
+  pT->SetHeading(2, "SubType");
+  pT->SetHeading(3, "Skip");
+  pT->SetHeading(4, "QP");
+  pT->SetHeading(5, "DeltaQP");
+  pT->SetHeading(6, "IntraFlg");
+  pT->SetHeading(7, "PartPredMode");
+  pT->SetHeading(8, "SubPartPredMode");
+  pT->SetHeading(9, "Intra16x16PartPredMode");
+  pT->SetHeading(10, "IntraChrPredMode");
+  pT->SetHeading(11, "mvX[0]");
+  pT->SetHeading(12, "mvY[0]");
+  pT->SetHeading(13, "mvdX[0]");
+  pT->SetHeading(14, "mvdY[0]");
+  pT->SetHeading(15, "CodeBlkPattern");
+  pT->SetHeading(16, "CodeBlkPatternLum");
+  pT->SetHeading(17, "CodeBlkPatternChr");
+
+  for(j = 0; j < 18; j++)
+    pT->SetDataType(j, MeasurementTable::INT);
+
+	pT->WriteItem(0, 0, mb->_mbIndex);
+	pT->WriteItem(1, 0, mb->_mb_type);
+	pT->WriteItem(2, 0, mb->_sub_mb_type);
+	pT->WriteItem(3, 0, mb->_skip);
+	pT->WriteItem(4, 0, mb->_mbQP);
+	pT->WriteItem(5, 0, mb->_mb_qp_delta);
+	pT->WriteItem(6, 0, mb->_intraFlag);
+	pT->WriteItem(7, 0, mb->_mbPartPredMode);
+	pT->WriteItem(8, 0, mb->_mbSubPartPredMode);
+	pT->WriteItem(9, 0, mb->_intra16x16PredMode);
+	pT->WriteItem(10, 0, mb->_intraChrPredMode);
+	pT->WriteItem(11, 0, mb->_mvX[0]);
+	pT->WriteItem(12, 0, mb->_mvY[0]);
+	pT->WriteItem(13, 0, mb->_mvdX[0]);
+	pT->WriteItem(14, 0, mb->_mvdY[0]);
+	pT->WriteItem(15, 0, mb->_coded_blk_pattern);
+	pT->WriteItem(16, 0, mb->_codedBlkPatternLum);
+	pT->WriteItem(17, 0, mb->_codedBlkPatternChr);
+
+  pT->Save(filename, ",");
+
+  delete pT;
+}//end Dump.
+
 
