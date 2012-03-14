@@ -59,6 +59,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "CodecUtils", "Codecs\CodecU
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264v2", "Codecs\H264v2\H264v2.vcxproj", "{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VideoProcessingProjectInstaller", "VideoProcessingProjectInstaller\VideoProcessingProjectInstaller.vdproj", "{A21EB126-2BA3-40F8-B501-581467675A78}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -157,6 +159,8 @@ Global
 		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Debug|Win32.Build.0 = Debug|Win32
 		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Release|Win32.ActiveCfg = Release|Win32
 		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Release|Win32.Build.0 = Release|Win32
+		{A21EB126-2BA3-40F8-B501-581467675A78}.Debug|Win32.ActiveCfg = Debug
+		{A21EB126-2BA3-40F8-B501-581467675A78}.Release|Win32.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
