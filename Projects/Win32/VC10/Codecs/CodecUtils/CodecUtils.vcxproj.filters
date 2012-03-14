@@ -192,6 +192,9 @@
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\VectorStructList.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl2.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamReader.cpp">
@@ -306,6 +309,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\VectorStructList.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl2.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

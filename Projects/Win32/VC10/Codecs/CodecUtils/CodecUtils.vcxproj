@@ -19,6 +19,7 @@
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamWriterMSB.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\BlockH264.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl2.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcDecoder.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcEncoder.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\CoeffTokenH264VlcDecoder.h" />
@@ -78,6 +79,7 @@
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BitStreamWriterMSB.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\BlockH264.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CAVLCH264Impl2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcDecoder.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CodedBlkPatternH264VlcEncoder.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\CoeffTokenH264VlcDecoder.cpp" />
