@@ -112,14 +112,6 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ProjectReference Include="{AA24892C-09E3-47C6-A2E8-6EABECDC5A8A}">
-      <Project>{aa24892c-09e3-47c6-a2e8-6eabecdc5a8a}</Project>
-      <IncludeIsGuid>true</IncludeIsGuid>
-      <CopyLocalSatelliteAssemblies>true</CopyLocalSatelliteAssemblies>
-      <ReferenceOutputAssembly>true</ReferenceOutputAssembly>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="..\..\..\..\..\Source\Filters\DirectShow\H264DecoderFilter\DLLSetup.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Filters\DirectShow\H264DecoderFilter\H264DecoderFilter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Filters\DirectShow\H264DecoderFilter\stdafx.cpp" />
