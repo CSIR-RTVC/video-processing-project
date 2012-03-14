@@ -52,15 +52,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	Constants.
 ===========================================================================
 */
-#define RRGB24YUVCI2_00		 0.299
-#define RRGB24YUVCI2_01		 0.587
-#define RRGB24YUVCI2_02		 0.114
-#define RRGB24YUVCI2_10		-0.147
-#define RRGB24YUVCI2_11		-0.289
-#define RRGB24YUVCI2_12		 0.436
-#define RRGB24YUVCI2_20		 0.615
-#define RRGB24YUVCI2_21		-0.515
-#define RRGB24YUVCI2_22		-0.100
+#define RRGB24YUVCI2_00		 0.299f
+#define RRGB24YUVCI2_01		 0.587f
+#define RRGB24YUVCI2_02		 0.114f
+#define RRGB24YUVCI2_10		-0.147f
+#define RRGB24YUVCI2_11		-0.289f
+#define RRGB24YUVCI2_12		 0.436f
+#define RRGB24YUVCI2_20		 0.615f
+#define RRGB24YUVCI2_21		-0.515f
+#define RRGB24YUVCI2_22		-0.100f
 
 #define RRGB24YUVCI2_RANGECHECK_0TO255(x) ( (((x) <= 255)&&((x) >= 0))?((x)):( ((x) > 255)?(255):(0) ) )
 #define RRGB24YUVCI2_RANGECHECK_N128TO127(x) ( (((x) <= 127)&&((x) >= -128))?((x)):( ((x) > 127)?(127):(-128) ) )

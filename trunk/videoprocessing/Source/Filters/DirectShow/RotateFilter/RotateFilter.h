@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // CSIR includes
 #include <DirectShow/CustomBaseFilter.h>
+#include <Filters/DirectShow/FilterParameters.h>
 
 // {66888CFF-359B-414b-BC20-CFD6D811209B}
 static const GUID CLSID_RotateFilter = 

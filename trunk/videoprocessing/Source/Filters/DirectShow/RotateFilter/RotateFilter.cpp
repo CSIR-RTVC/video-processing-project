@@ -321,7 +321,7 @@ void RotateFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lAct
 		BYTE* pTo = pBufferOut;
 
 		int nBytesPerLine = m_nOutWidth * m_nBytesPerPixel;
-		for (size_t i = 0; i < m_nOutHeight; i++)
+		for (size_t i = 0; i < (size_t)m_nOutHeight; i++)
 		{
 			memcpy(pTo, pFrom, nBytesPerLine);
 			pFrom += nBytesPerLine;
@@ -329,7 +329,7 @@ void RotateFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lAct
 
 			if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24)
 			{
-				for (size_t j = 0; j < m_nPadding; j++)
+				for (size_t j = 0; j < (size_t)m_nPadding; j++)
 				{
 					//*pTo = 0;
 					//pTo++;

@@ -33,10 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "YUV420ToRGBFilter.h"
 
-// Media Types
+#include <DirectShow/CommonDefs.h>
 #include <DirectShow/CustomMediaTypes.h>
-
-//Color converters
 #include <Image/RealYUV420toRGB24Converter.h>
 
 DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,

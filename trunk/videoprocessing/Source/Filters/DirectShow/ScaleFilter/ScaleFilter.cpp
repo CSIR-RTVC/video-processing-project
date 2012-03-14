@@ -35,7 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // CSIR includes
 #include "ScaleFilter.h"
-
+#include <DirectShow/CommonDefs.h>
 #include <DirectShow/CustomMediaTypes.h>
 #include <Image/PicScalerRGB24Impl.h>
 #include <Image/PicScalerYUV420PImpl.h>

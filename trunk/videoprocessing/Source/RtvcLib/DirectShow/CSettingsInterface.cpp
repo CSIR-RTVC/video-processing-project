@@ -102,7 +102,7 @@ STDMETHODIMP CSettingsInterface::GetParameter( const char* type, int nBufferSize
 				std::string* pValue = m_stringParams.getParamAddress(sParamName);
 				if (pValue)
 				{
-					if (pValue->length() < nBufferSize)
+					if (pValue->length() < (size_t)nBufferSize)
 					{
 						memcpy(value, (void*)pValue->c_str(), pValue->length());
 						*length = pValue->length();
@@ -124,7 +124,7 @@ STDMETHODIMP CSettingsInterface::GetParameter( const char* type, int nBufferSize
 				if (pValue)
 				{
 					std::string sValue =  toString(*pValue);
-					if (sValue.length() < nBufferSize)
+					if (sValue.length() < (size_t)nBufferSize)
 					{
 						memcpy(value, (void*)sValue.c_str(), sValue.length());
 						*length = sValue.length();
@@ -168,7 +168,7 @@ STDMETHODIMP CSettingsInterface::GetParameter( const char* type, int nBufferSize
 				if (pValue)
 				{
 					std::string sValue =  StringUtil::boolToString(*pValue);
-					if (sValue.length() < nBufferSize)
+					if (sValue.length() < (size_t)nBufferSize)
 					{
 						memcpy(value, (void*)sValue.c_str(), sValue.length());
 						*length = sValue.length();
@@ -190,7 +190,7 @@ STDMETHODIMP CSettingsInterface::GetParameter( const char* type, int nBufferSize
 				if (pValue)
 				{
 					std::string sValue =  StringUtil::doubleToString(*pValue);
-					if (sValue.length() < nBufferSize)
+					if (sValue.length() < (size_t)nBufferSize)
 					{
 						memcpy(value, (void*)sValue.c_str(), sValue.length());
 						*length = sValue.length();
@@ -354,7 +354,7 @@ STDMETHODIMP CSettingsInterface::GetParameterSettings( char* szResult, int nSize
 
 	// TODO: bools and doubles
 
-	if (sResult.length()< nSize)
+	if (sResult.length() < (size_t)nSize)
 	{
 		memcpy(szResult, sResult.c_str(), sResult.length());
 		szResult[sResult.length()] = 0;

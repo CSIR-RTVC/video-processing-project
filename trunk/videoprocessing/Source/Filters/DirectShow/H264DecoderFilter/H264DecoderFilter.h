@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CustomBaseFilter.h>
 #include <DirectShow/CustomMediaTypes.h>
 #include <DirectShow/NotifyCodes.h>
+#include <Filters/DirectShow/FilterParameters.h>
 
 // {4F722923-7E4D-4263-926D-2A1F405B2619}
 static const GUID CLSID_RTVC_VPP_H264Decoder = 

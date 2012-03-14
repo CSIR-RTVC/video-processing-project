@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <DirectShow/VideoMixingBase.h>
 #include <DirectShow/CSettingsInterface.h>
+#include <Filters/DirectShow/FilterParameters.h>
 
 // {48E4D730-389D-4bdc-BEC1-F178FA6DCDBA}
 static const GUID CLSID_VideoMixingFilter = 

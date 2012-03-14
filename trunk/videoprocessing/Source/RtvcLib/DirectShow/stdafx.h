@@ -91,5 +91,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 
 //CSIR
-#include <DirectShow/SettingsInterface.h>
 #include <DirectShow/CommonDefs.h>
+#include <Filters/DirectShow/FilterParameters.h>
+#include <DirectShow/SettingsInterface.h>

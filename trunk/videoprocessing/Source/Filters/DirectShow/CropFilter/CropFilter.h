@@ -36,6 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // CSIR includes
 #include <DirectShow/CustomBaseFilter.h>
+#include <Filters/DirectShow/FilterParameters.h>
 
 // {F5E69199-7AB2-40f0-BFC0-6938430F4F19}
 static const GUID CLSID_CropFilter = 
