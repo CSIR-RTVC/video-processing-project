@@ -5,6 +5,7 @@ REM Set this to VC8 or VC9 depending on which VS version you want to use
 @IF %VS_VERSION% EQU VC8 GOTO SETUP_VC8_FOLDER
 @IF %VS_VERSION% EQU VC9 GOTO SETUP_VC9_FOLDER
 @IF %VS_VERSION% EQU VC10 GOTO SETUP_VC10_FOLDER
+@IF %VS_VERSION% EQU VC11 GOTO SETUP_VC11_FOLDER
 
 :SETUP_VC7_FOLDER
 @set VisualStudioFolder=Microsoft Visual Studio .NET 2003
@@ -23,6 +24,11 @@ REM Set this to VC8 or VC9 depending on which VS version you want to use
 
 :SETUP_VC10_FOLDER
 @set VisualStudioFolder=Microsoft Visual Studio 10.0
+@set VisualCDir=VC
+@GOTO SET_VC_PATH
+
+:SETUP_VC11_FOLDER
+@set VisualStudioFolder=Microsoft Visual Studio 11.0
 @set VisualCDir=VC
 @GOTO SET_VC_PATH
 
