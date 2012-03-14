@@ -82,6 +82,7 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastLookupTableRGB24toYUV420Converter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\MtRGB24toYUV420Converter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayExtMem2Dv2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayMem2Dv2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatRGB24Impl.cpp" />
@@ -95,11 +96,15 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicRotateRGBBase.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicScalerRGB24Impl.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\PicScalerYUV420PImpl.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420CCIR601ConverterVer16.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420Converter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2Ver16.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB32toYUV420Converter.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24CCIR601ConverterVer16.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24Converter.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2Ver16.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastFixedPointRGB24toYUV420Converter.h" />
@@ -107,6 +112,7 @@
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastLookupTableRGB24toYUV420Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\ImageHandlerV2.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\MtRGB24toYUV420Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayExtMem2Dv2.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\OverlayMem2Dv2.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatBase.h" />
@@ -125,11 +131,15 @@
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicScalerBase.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicScalerRGB24Impl.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicScalerYUV420PImpl.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420CCIR601ConverterVer16.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2Ver16.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB32toYUV420Converter.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24CCIR601ConverterVer16.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2.h" />
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2Ver16.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RGBtoRGBConverter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RGBtoYUV420Converter.h" />
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\YUV420toRGBConverter.h" />
