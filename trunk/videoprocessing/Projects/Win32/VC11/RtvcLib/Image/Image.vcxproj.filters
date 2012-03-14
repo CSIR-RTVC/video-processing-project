@@ -84,6 +84,21 @@
     <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\MtRGB24toYUV420Converter.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420CCIR601ConverterVer16.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2Ver16.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24CCIR601ConverterVer16.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2Ver16.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\PicConcatBase.h">
@@ -177,6 +192,21 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\FastSimdRGB24toYUV420Converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\MtRGB24toYUV420Converter.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420CCIR601ConverterVer16.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealRGB24toYUV420ConverterImpl2Ver16.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24CCIR601ConverterVer16.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\..\..\Source\RtvcLib\Image\RealYUV420toRGB24ConverterImpl2Ver16.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
