@@ -1,0 +1,695 @@
+/** @file
+
+MODULE				: CAVLCH264Impl2
+
+TAG						: CLRLH264I2
+
+FILE NAME			: CAVLCH264Impl2.cpp
+
+DESCRIPTION		: A class to implement a CAVLC codec on the 2-D quantised 
+								integer transformed and quantised coeffs of a coded block 
+								as defined in the H.264 standard. It implements the 
+								IRunLengthCodec interface. This 2nd implementation operates
+                on OverlayMem2Dv2 classes and not on the data directly. 
+
+COPYRIGHT			: (c)CSIR 2007-2012 all rights resevered
+
+LICENSE				: Software License Agreement (BSD License)
+
+RESTRICTIONS	: Redistribution and use in source and binary forms, with or without 
+								modification, are permitted provided that the following conditions 
+								are met:
+
+								* Redistributions of source code must retain the above copyright notice, 
+								this list of conditions and the following disclaimer.
+								* Redistributions in binary form must reproduce the above copyright notice, 
+								this list of conditions and the following disclaimer in the documentation 
+								and/or other materials provided with the distribution.
+								* Neither the name of the CSIR nor the names of its contributors may be used 
+								to endorse or promote products derived from this software without specific 
+								prior written permission.
+
+								THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+								"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+								LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+								A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+								CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+								EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+								PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+								PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+								LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+								NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+								SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+===========================================================================
+*/
+#ifdef _WINDOWS
+#define WIN32_LEAN_AND_MEAN		// Exclude rarely-used stuff from Windows headers
+#include <windows.h>
+#else
+#include <stdio.h>
+#endif
+
+#include <string.h>
+#include "IBitStreamReader.h"
+#include "IBitStreamWriter.h"
+#include "CAVLCH264Impl2.h"
+
+/*
+---------------------------------------------------------------------------
+	Constants.
+---------------------------------------------------------------------------
+*/
+const int CAVLCH264Impl2::zigZag8x8PosX[64] =
+{
+	 0,	 1,	 0,  0,	 1,	 2,	 3,	 2,
+	 1,  0,	 0,	 1,	 2,	 3,	 4,	 5,
+	 4,	 3,	 2,	 1,	 0,	 0,	 1,	 2,
+	 3,	 4,	 5,	 6,	 7,	 6,	 5,	 4,
+	 3,	 2,	 1,	 0,	 1,	 2,	 3,	 4,
+	 5,	 6,	 7,	 7,	 6,	 5,	 4,	 3,
+	 2,	 3,	 4,	 5,	 6,	 7,	 7,	 6,
+	 5,	 4,	 5,	 6,	 7,	 7,	 6,	 7
+};
+
+const int CAVLCH264Impl2::zigZag8x8PosY[64] =
+{
+	 0,	 0,	 1,  2,	 1,	 0,	 0,	 1,
+	 2,	 3,	 4,	 3,	 2,	 1,	 0,	 0,
+	 1,	 2,	 3,	 4,	 5,	 6,	 5,	 4,
+	 3,	 2,	 1,	 0,	 0,	 1,	 2,	 3,
+	 4,	 5,	 6,	 7,	 7,	 6,	 5,	 4,
+	 3,	 2,	 1,	 2,	 3,	 4,	 5,	 6,
+	 7,	 7,	 6,	 5,	 4,	 3,	 4,	 5,
+	 6,	 7,	 7,	 6,	 5,	 6,	 7,	 7
+};
+
+const int CAVLCH264Impl2::zigZag4x4PosX[16] =
+{
+	 0,	 1,	 0,  0,
+	 1,	 2,	 3,	 2,
+	 1,	 0,	 1,	 2,
+	 3,	 3,	 2,	 3
+};
+
+const int CAVLCH264Impl2::zigZag4x4PosY[16] =
+{
+	 0,	 1,	 1,  2,
+	 1,	 0,	 0,	 1,
+	 2,	 3,	 3,	 2,
+	 1,	 2,	 3,	 3
+};
+
+const int CAVLCH264Impl2::zigZag2x2PosX[4] =
+{
+	 0,	 1,
+	 0,	 1
+};
+
+const int CAVLCH264Impl2::zigZag2x2PosY[4] =
+{
+	 0,	 0,
+	 1,	 1
+};
+
+/*
+---------------------------------------------------------------------------
+	Construction and Destruction.
+---------------------------------------------------------------------------
+*/
+CAVLCH264Impl2::CAVLCH264Impl2(void)
+{
+	/// Default to 4x4.
+	_mode					= Mode4x4;
+	_zigZagX			= zigZag4x4PosX;
+	_zigZagX			= zigZag4x4PosY;
+	_maxNumCoeff	= 16;
+	_numCoeff			= 0;
+
+	_numTotNeighborCoeff	= 0;
+	_dcSkip								= 0;
+
+	/// Vlc encoders/decoders
+	_pCoeffTokenVlcEncoder	= NULL;
+	_pCoeffTokenVlcDecoder	= NULL;
+	_pPrefixVlcEncoder			= NULL;;
+	_pPrefixVlcDecoder			= NULL;;
+	_pTotalZerosVlcEncoder	= NULL;;
+	_pTotalZerosVlcDecoder	= NULL;;
+	_pRunBeforeVlcEncoder		= NULL;;
+	_pRunBeforeVlcDecoder		= NULL;;
+
+}//end constructor.
+
+CAVLCH264Impl2::~CAVLCH264Impl2(void)
+{
+}//end destructor.
+
+/*
+---------------------------------------------------------------------------
+	Interface Methods.
+---------------------------------------------------------------------------
+*/
+/** Encode the input to a CAVLC bit stream.
+Encode the input 2-D block of IT coeffs into the output run-level bit stream. The
+overlay dimensions and origin must be defined before calling this method and therefore,
+are assumed to be correct for this size block. A NULL stream will switch the encoder 
+to count the number of bits used without 
+writing to stream. Error codes are:
+	-1 = Vlc error (no such symbol).
+	-2 = Stream is full.
+@param in		:	Input block overlay to encode.
+@param rle	:	Run-level encoded stream.
+@return			: Total num of encoded bits. Negative values for errors.
+*/
+int CAVLCH264Impl2::Encode(void* in, void* stream)
+{
+	/// Interpret the param list for this implementation.
+	OverlayMem2Dv2*		coeffLevel	= (OverlayMem2Dv2 *)in;
+	IBitStreamWriter*	pBsw				= (IBitStreamWriter *)stream;
+
+	int totalEncBits = 0;
+	int level[64]; ///< Max size is for 8x8.
+	int runBefore[64];
+	int totalCoeff		= 0;
+	int trailingOnes	= 0;
+	int trailingOnesSignFlag[3];
+	int totalZeros		= 0;
+	int i;
+
+	/// Scan the input in reverse zigzag order and determine the context-aware
+	/// variables to code.
+	int pos		= 0;	///< A forward array index.
+	int count = 0;	///< Local zero counter.
+	for(i = (_maxNumCoeff-1); i >= _dcSkip; i--)
+	{
+		int x = coeffLevel->Read(_zigZagX[i], _zigZagY[i]);
+		/// Last trailing zeros are ignored and not coded. Wait for the 1st
+		/// non-zero coeff.
+		if(totalCoeff > 0)
+		{
+			if(x == 0)
+			{
+				count++;
+				totalZeros++;	///< Count all zeros including any at the head (low freq) end.
+			}//end if x == 0...
+			else	///< ...a non-zero coeff is detected.
+			{
+				/// Set the zero run for previous non-zero coeff and advance to next non-zero
+				/// pos. Reset the local zero counter.
+				runBefore[pos++] = count;
+				count = 0;
+				/// Load the next non-zero coeff.
+				level[pos] = x;
+				totalCoeff++;
+				/// Only 3 trailing ones are permitted. There must be no non-one values in-between
+				/// the trailing ones count.
+				if((trailingOnes < 3)&&(trailingOnes == (totalCoeff-1)))
+				{
+					if((x == -1)||(x == 1))	///< Trailing one.
+					{
+						if(x == -1)
+							trailingOnesSignFlag[trailingOnes] = 1;
+						else	///< x == 1.
+							trailingOnesSignFlag[trailingOnes] = 0;
+						trailingOnes++;
+					}//end if x...
+				}//end if trailingOnes...
+			}//end else...
+		}//end if totalCoeff...
+		else	
+		{
+			if(x != 0)	///< 1st non-zero coeff.
+			{
+				level[pos] = x;
+				totalCoeff++;
+				if((x == -1)||(x == 1))	///< Trailing one?
+				{
+					if(x == -1)
+						trailingOnesSignFlag[0] = 1;
+					else	///< x == 1.
+						trailingOnesSignFlag[0] = 0;
+					trailingOnes++;
+				}//end if x...
+			}//end if x != 0...
+		}//end else...
+	}//end for i...
+
+	/// Get the Vlc codes for each context-aware variable are write them to
+	/// the bit stream keeping count of the total no. of bits consumed.
+	int lclNumBits;
+
+	/// Write the coeff_token to the bit stream with error detection.
+	lclNumBits = _pCoeffTokenVlcEncoder->Encode3(totalCoeff, trailingOnes, _numTotNeighborCoeff);
+	if(pBsw != NULL)
+	{
+		if(pBsw->GetStreamBitsRemaining() >= lclNumBits)
+			pBsw->Write(lclNumBits, _pCoeffTokenVlcEncoder->GetCode());
+		else	///< Stream full error.
+			return(STREAM_ACCESS_DENIED);
+	}//end if pBsw...
+	if(lclNumBits > 0)
+		totalEncBits += lclNumBits;
+	else	///< Vlc symbol not recognised error.
+		return(VLC_SYMBOL_NOT_RECOGNISED);
+
+	/// Proceed if there is anything to code.
+	if(totalCoeff > 0)
+	{
+		int suffixLength	= 0;	///< Default and most likely case.
+		if((totalCoeff > 10) && (trailingOnes < 3))	///< Special condition for spatially active blocks.
+			suffixLength = 1;
+
+		/// Write all the non-zero coeffs that are stored in reverse order from high freq 
+		/// to low freq starting with the trailing ones.
+		for(i = 0; i < totalCoeff; i++)
+		{
+			if(i < trailingOnes)
+			{
+				/// trailing_ones_sign_flag is written to the bit stream.
+				if(pBsw != NULL)
+				{
+					if(pBsw->GetStreamBitsRemaining() >= 1)
+						pBsw->Write(trailingOnesSignFlag[i]);
+					else	///< Stream full error.
+						return(STREAM_ACCESS_DENIED);
+				}//end if pBsw...
+				totalEncBits++;
+			}//end if i...
+			else
+			{
+				/// Translate the level +/- codes into even/odd levelCode.
+				int levelCode;
+				if(level[i] > 0)	///< + is even.
+					levelCode = (2*level[i]) - 2;
+				else							///< - is odd.
+					levelCode = -((2*level[i]) + 1);
+
+				if((i == trailingOnes) && (trailingOnes < 3))	///< Special condition for non-ones in the trailing 3 positions.
+					levelCode -= 2;
+
+				/// Determine the prefix, suffix length & level code before writing to the stream.
+				int done						= 0;
+				int levelPrefix			= 0;
+				int levelSuffix			= 0;
+				int levelSuffixSize = suffixLength;
+				/// Use levelPrefix = 14 as an ESC code for 1st trailing large 
+				/// levels from 14 - 29 range.
+				if(suffixLength == 0)
+				{
+					if((levelCode >= 14)&&(levelCode <= 29))
+					{
+						levelSuffixSize = 4;
+						levelSuffix			= (levelCode - 14) & 0x0000000F;
+						levelPrefix			= 14;
+						done						= 1;	///< Early exit.
+					}//end if encLevelCode...
+				}//end if !suffixLength...
+
+				if(!done)
+				{
+					/// Max possible levelCode with this suffixLength and 
+					/// levelPrefix less than 15.
+					int maxLevelCode = (14 << suffixLength) + ~(0xFFFFFFFF << suffixLength);
+
+					/// Extract level prefix and suffix from the levelCode.
+					if(levelCode <= maxLevelCode)
+					{
+						levelPrefix = levelCode >> suffixLength;
+						levelSuffix = levelCode & ~(0xFFFFFFFF << suffixLength);
+					}//end if encLevelCode...
+					else	///< Large code levels.
+					{
+						/// Entering here the levelCode is always greater than the level 
+						/// associated with a max prefix = 15 therefore it can be subtracted 
+						/// to promote smaller levels.
+						levelCode -= (15 << suffixLength);
+						/// For a suffixLength of zero the max levelCode can be further 
+						/// reduced by 15 as levelCodes less than 30 are catered for by
+						/// the ESC code with LevelPrefix = 14 described above.
+						if(suffixLength == 0)
+							levelCode -= 15;
+						/// The levelPrefix to set defines the range between octaves in
+						/// the following way:
+						///	LevelPrefix		Range (2^(levelPrefix-3)) offset by (2^x - 1)(2^12)
+						///	15						0..((2^12)-1)
+						///	16												2^12..((2^13)+(2^12)-1)
+						///	17																							((2^13)+(2^12))..((2^14)+(2^12)-1)
+						///	etc.
+						/// Note that the min value for each range can be subtracted to save
+						/// 1 bit per range.
+						levelPrefix = 15;
+						/// Iterate the levelPrefix by checking if levelCode is larger than the min
+						/// levelCode for the next larger range. Put a hard limit max bit size to 32 (= 35 - 3).
+						while((levelCode >= ((1 << (levelPrefix-2)) - 4096))&&(levelPrefix < 35))
+							levelPrefix++;
+						if(levelPrefix >= 16)
+							levelCode -= (1 << (levelPrefix-3)) - 4096;	///< Reduce by min value for this range.
+
+						levelSuffixSize = levelPrefix - 3;
+						levelSuffix			= levelCode & ~(0xFFFFFFFF << levelSuffixSize);
+					}//end else...
+				}//end if !done...
+
+				/// Write the level_prefix and V to the bit stream.
+				lclNumBits = _pPrefixVlcEncoder->Encode(levelPrefix);
+				if(pBsw != NULL)
+				{
+					if(pBsw->GetStreamBitsRemaining() >= (lclNumBits + levelSuffixSize))
+					{
+						pBsw->Write(lclNumBits, _pPrefixVlcEncoder->GetCode());
+						pBsw->Write(levelSuffixSize, levelSuffix);
+					}//end if GetStreamBitsRemaining...
+					else	///< Stream is full.
+						return(STREAM_ACCESS_DENIED);
+				}//end if pBsw...
+				if(lclNumBits > 0)
+					totalEncBits += (lclNumBits + levelSuffixSize);
+				else
+					return(VLC_SYMBOL_NOT_RECOGNISED);
+
+				/// If the level is above a threshold then increment suffixLength for next write. Note
+				/// suffixLength cannot be longer than 6 bits.
+				if(suffixLength == 0)
+					suffixLength = 1;
+				int absLevel = level[i];
+				if(absLevel < 0)
+					absLevel = -absLevel;
+				if((absLevel > (3 << (suffixLength-1))) && (suffixLength < 6))
+					suffixLength++;
+			}//end else...
+		}//end for i...
+
+		/// Encode and write the total number of zeros in-between the non-zero 
+		/// coeffs to the bit stream.
+		int zerosLeft = totalZeros;
+		if(totalCoeff < (_maxNumCoeff - _dcSkip))	///< i.e. there are some zeros.
+		{
+			/// The total_zeros code is dependent on totalCoeff.
+			lclNumBits = _pTotalZerosVlcEncoder->Encode2(totalZeros, totalCoeff);
+			if(pBsw != NULL)
+			{
+				if(pBsw->GetStreamBitsRemaining() >= lclNumBits)
+					pBsw->Write(lclNumBits, _pTotalZerosVlcEncoder->GetCode());
+				else	///< Stream is full.
+					return(STREAM_ACCESS_DENIED);
+			}//end if pBsw...
+			if(lclNumBits > 0)
+				totalEncBits += lclNumBits;
+			else
+				return(VLC_SYMBOL_NOT_RECOGNISED);
+
+			/// The variable pos = total length of runBefore[] array, one less than
+			/// the level[] array.
+			for(i = 0; (i < pos) && zerosLeft; i++)
+			{
+				lclNumBits = _pRunBeforeVlcEncoder->Encode2(runBefore[i], zerosLeft);
+				if(pBsw != NULL)
+				{
+					if(pBsw->GetStreamBitsRemaining() >= lclNumBits)
+						pBsw->Write(lclNumBits, _pRunBeforeVlcEncoder->GetCode());
+					else	///< Stream is full.
+						return(STREAM_ACCESS_DENIED);
+				}//end if pBsw...
+				if(lclNumBits > 0)
+					totalEncBits += lclNumBits;
+				else
+					return(VLC_SYMBOL_NOT_RECOGNISED);
+				/// Update the context.
+				zerosLeft -= runBefore[i];
+			}//end for i...
+		}//end if totalCoeff...
+
+	}//end if totalCoeff...
+
+	/// Store total coeffs for this encode session.
+	_numCoeff = totalCoeff;
+
+	return(totalEncBits);
+}//end Encode.
+
+/** Decode a CAVLC bit stream to the output.
+Decode the input run-level bit stream into the output 2-D block of IT coeffs. The
+overlay dimensions and origin must be defined before calling this method and therefore,
+are assumed to be correct for this size block. It is unknown how many bits will come 
+off the stream for the next read so the error checking only looks for end of the 
+stream. A read is non-destructive so reading past the end of the stream will not 
+do bad things. Error codes are:
+	-1 = Vlc error (non-existent symbol).
+	-2 = Stream is empty.
+@param stream	:	Run-level stream to decode.
+@param out		:	Output block overlay generated by the decode.
+@return				: Total num of decoded bits. Negative values for errors.
+*/
+int CAVLCH264Impl2::Decode(void* stream, void* out)
+{
+	/// Interpret the param list for this implementation.
+	IBitStreamReader* pBsr				= (IBitStreamReader *)stream;
+	OverlayMem2Dv2*		coeffLevel	= (OverlayMem2Dv2 *)out;
+
+	int totalDecBits = 0;
+	int lclNumBits;
+	int level[64]; ///< Max size is for 8x8.
+	int runBefore[64];
+	int i;
+
+	/// Clear output array.
+  coeffLevel->Clear();
+	//memset(coeffLevel, 0, sizeof(short) * _maxNumCoeff);
+
+	/// coeff_token is parsed from the bit stream and decoded to give the totalCoeff
+	/// and trailingOnes where the vlc table selection is indicated by the 3rd symbol.
+	int totalCoeff,trailingOnes;
+	if(pBsr->GetStreamBitsRemaining() > 0)
+		lclNumBits = _pCoeffTokenVlcDecoder->Decode3(pBsr, &totalCoeff, &trailingOnes, &_numTotNeighborCoeff);
+	else	///< Stream is empty.
+		return(STREAM_ACCESS_DENIED);
+	if(lclNumBits > 0)
+		totalDecBits += lclNumBits;
+	else	///< Vlc error.
+		return(VLC_SYMBOL_NOT_RECOGNISED);
+
+	/// Only requires decoding if there are any non-zero coeffs.
+	if(totalCoeff > 0)
+	{
+		int suffixLength	= 0;	///< Default and most likely case.
+		if((totalCoeff > 10) && (trailingOnes < 3))	///< Special condition for spatially active blocks.
+			suffixLength = 1;
+
+		/// Extract all the non-zero coeffs that are stored in reverse order from high freq 
+		/// to low freq starting with the trailing ones.
+		for(i = 0; i < totalCoeff; i++)
+		{
+			if(i < trailingOnes)
+			{
+				int trailingOnesSignFlag;
+				/// trailing_ones_sign_flag is parsed from the bit stream.
+				if(pBsr->GetStreamBitsRemaining() > 0)
+					trailingOnesSignFlag = pBsr->Read();
+				else	///< Stream is empty.
+					return(STREAM_ACCESS_DENIED);
+				totalDecBits++;
+				level[i] = 1 - 2*trailingOnesSignFlag;
+			}//end if i...
+			else
+			{
+				int levelPrefix;
+				/// level_prefix is parsed from the bit stream by counting zeros.
+				if(pBsr->GetStreamBitsRemaining() > 0)
+					levelPrefix = _pPrefixVlcDecoder->Decode(pBsr);
+				else	///< Stream is empty.
+					return(STREAM_ACCESS_DENIED);
+				lclNumBits = _pPrefixVlcDecoder->GetNumDecodedBits();
+				if(lclNumBits > 0)
+					totalDecBits += lclNumBits;
+				else	///< Vlc error.
+					return(VLC_SYMBOL_NOT_RECOGNISED);
+
+				int levelSuffixSize = suffixLength;
+				/// Modify the suffix bits to extract large values.
+				if(levelPrefix >= 15)
+					levelSuffixSize = levelPrefix - 3;
+				else if((levelPrefix == 14)&&(suffixLength == 0))
+					levelSuffixSize = 4;
+
+				int levelSuffix = 0;
+				if(levelSuffixSize > 0)
+				{
+					/// level_suffix is parsed from the bit stream.
+					if(pBsr->GetStreamBitsRemaining() >= levelSuffixSize)
+						levelSuffix = pBsr->Read(levelSuffixSize);
+					else	///< Stream is empty.
+						return(STREAM_ACCESS_DENIED);
+					totalDecBits += levelSuffixSize;
+				}//end if levelSuffixSize...
+
+				/// Shift levelPrefix left into bit position defined by suffixLength
+				/// and add the levelSuffix.
+				int levelCode;
+				if(levelPrefix < 15)
+					levelCode = (levelPrefix << suffixLength) + levelSuffix;
+				else
+					levelCode = (15 << suffixLength) + levelSuffix;
+
+				if((levelPrefix >= 15) && (suffixLength == 0))	///< Special condition for large high freq trailing levels.
+					levelCode += 15;
+
+				if(levelPrefix >= 16)
+					levelCode += (1 << (levelPrefix-3)) - 4096;	///< Special condition for all large values.
+
+				if((i == trailingOnes) && (trailingOnes < 3))	///< Special condition for non-ones in the trailing 3 positions.
+					levelCode += 2;
+
+				/// Translate the levelCode into the +/- level stored as even/odd codes.
+				if(levelCode & 1)	///< Odd is -.
+					level[i] = (-levelCode - 1) >> 1;
+				else							///< Even is +.
+					level[i] = (levelCode + 2) >> 1;
+
+				/// If the level is above a threshold then increment suffixLength for next parse. Note
+				/// suffixLength cannot be longer than 6 bits.
+				if(suffixLength == 0)
+					suffixLength = 1;
+				int absLevel = level[i];
+				if(absLevel < 0)
+					absLevel = -absLevel;
+				if((absLevel > (3 << (suffixLength-1))) && (suffixLength < 6))
+					suffixLength++;
+			}//end else...
+		}//end for i...
+
+		/// Get the total no. of zeros inbetween the non-zero coeffs.
+		int zerosLeft = 0;
+		if(totalCoeff < (_maxNumCoeff - _dcSkip))	///< i.e. there are some zeros.
+		{
+			/// total_zeros is parsed from the bit stream and is dependent on totalCoeff.
+			if(pBsr->GetStreamBitsRemaining() > 0)
+				lclNumBits = _pTotalZerosVlcDecoder->Decode2(pBsr, &zerosLeft, &totalCoeff);
+			else	///< Stream is empty.
+				return(STREAM_ACCESS_DENIED);
+			if(lclNumBits > 0)
+				totalDecBits += lclNumBits;
+			else	///< Vlc error.
+				return(VLC_SYMBOL_NOT_RECOGNISED);
+		}//end if totalCoeff...
+
+		/// Set the run_before values for each non-zero coeff. Note that the last
+		/// (low freq) non-zero coeff run_before does not need decoding because it 
+		/// is implicit.
+		for(i = 0; i < (totalCoeff-1); i++)
+		{
+			runBefore[i] = 0;
+			if(zerosLeft > 0)
+			{
+				/// run_before is parsed from the bit stream and is dependent on the current zerosLeft.
+				if(pBsr->GetStreamBitsRemaining() > 0)
+					lclNumBits = _pRunBeforeVlcDecoder->Decode2(pBsr, &(runBefore[i]), &zerosLeft);
+				else	///< Stream is empty.
+					return(STREAM_ACCESS_DENIED);
+				if(lclNumBits > 0)
+					totalDecBits += lclNumBits;
+				else	///< Vlc error.
+					return(VLC_SYMBOL_NOT_RECOGNISED);
+			}//end if zerosLeft...
+			zerosLeft -= runBefore[i];
+		}//end for i...
+		runBefore[totalCoeff-1] = zerosLeft;	///< Set the implicit run_before.
+
+		/// Load the level non-zero coeffs into the output array in reverse order and
+		/// with zigzag conversion. The coeff level array was initialised to zeros so
+		/// only non-zero coeffs need to be added.
+		int coeffNum = -1;
+		for(i = (totalCoeff-1); i >= 0; i--)
+		{
+			coeffNum += (runBefore[i] + 1);
+//			coeffLevel[_zigZag[coeffNum + _dcSkip]] = (short)(level[i]);
+			coeffLevel->Write(_zigZagX[coeffNum + _dcSkip], _zigZagY[coeffNum + _dcSkip], (short)(level[i]));
+		}//end for i...
+
+	}//end if totalCoeff...
+
+	/// Store total coeffs for this decode session.
+	_numCoeff = totalCoeff;
+
+	return(totalDecBits);
+}//end Decode.
+
+/** Set the codec mode.
+The mode defines the block size choice in this implementation.
+@param mode	:	Block size selection defined by class consts.
+@return			: none.
+*/
+void CAVLCH264Impl2::SetMode(int mode)
+{
+	_mode = mode;
+	switch(mode)
+	{
+		case Mode2x2:
+			_zigZagX			= zigZag2x2PosX;
+			_zigZagY			= zigZag2x2PosY;
+			_maxNumCoeff	= 4;
+			break;
+		case Mode4x4:
+			_zigZagX			= zigZag4x4PosX;
+			_zigZagY			= zigZag4x4PosY;
+			_maxNumCoeff	= 16;
+			break;
+		case Mode8x8:
+			_zigZagX			= zigZag8x8PosX;
+			_zigZagY			= zigZag8x8PosY;
+			_maxNumCoeff	= 64;
+			break;
+		default:
+			_mode					= Mode4x4;
+			_zigZagX			= zigZag4x4PosX;
+			_zigZagY			= zigZag4x4PosY;
+			_maxNumCoeff	= 16;
+			break;
+	}//end switch mode...
+}//end SetMode.
+
+/** Set the codec parameters.
+The IDs are defined by the class consts and values by the 
+members. Do nothing if the param is not defined in this 
+implementation.
+@param paramID	: Parameter to set.
+@param paramVal	: Parameter value.
+@return					: none.
+*/
+void CAVLCH264Impl2::SetParameter(int paramID, int paramVal)
+{
+	switch(paramID)
+	{
+		case NUM_TOT_NEIGHBOR_COEFF_ID:
+			_numTotNeighborCoeff = paramVal;
+			break;
+		case DC_SKIP_FLAG_ID:
+			_dcSkip = paramVal;
+			break;
+	}//end switch paramID...
+}//end SetParameter.
+
+/** Get the codec parameters.
+Return -1 if the param is not defined in this implementation.
+@param paramID	: Parameter to get.
+@return					: Param value.
+*/
+int CAVLCH264Impl2::GetParameter(int paramID)
+{
+	int res = -1;
+	switch(paramID)
+	{
+		case NUM_TOT_NEIGHBOR_COEFF_ID:
+			res = _numTotNeighborCoeff;
+			break;
+		case DC_SKIP_FLAG_ID:
+			res = _dcSkip;
+			break;
+		case NUM_TOT_COEFF_ID:
+			res = _numCoeff;
+			break;
+	}//end switch paramID...
+
+	return(res);
+}//end GetParameter.
+

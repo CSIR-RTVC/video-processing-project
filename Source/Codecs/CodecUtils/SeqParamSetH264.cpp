@@ -59,7 +59,7 @@ SeqParamSetH264::SeqParamSetH264(int seqParamSetId)
 	_seq_parameter_set_id										= seqParamSetId;	///< The index for this definition of sequence params [0..31].
 
 	_profile_idc														= 66;							///< Baseline profile = 66.
-	_constraint_set0_flag										= 1;							///< = 1.
+	_constraint_set0_flag										= 0;							///< = 0.
 	_constraint_set1_flag										= 0;							///< = 0.
 	_constraint_set2_flag										= 0;							///< = 0.
 	_constraint_set3_flag										= 0;							///< = 0.
