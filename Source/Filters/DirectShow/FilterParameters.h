@@ -39,4 +39,11 @@
 #define PPS                     "pps"
 #define MAX_QP                  51
 
+#define ORIENTATION			        "orientation"
+#define ROTATION_MODE		        "rotationmode"
+#define SUB_PICTURE_POSITION	  "position"
+#define SUB_PIC_WIDTH			      "subpicwidth"
+#define SUB_PIC_HEIGHT			    "subpicheight"
+#define OFFSET_X				        "offsetx"
+#define OFFSET_Y				        "offsety"
 

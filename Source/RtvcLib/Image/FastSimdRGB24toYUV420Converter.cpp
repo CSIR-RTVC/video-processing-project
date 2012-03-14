@@ -55,15 +55,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	Constants.
 ===========================================================================
 */
-const float fRRGB24YUVCI2_00 = 0.299;
-const float fRRGB24YUVCI2_01 = 0.587;
-const float fRRGB24YUVCI2_02 = 0.114;
-const float fRRGB24YUVCI2_10 = -0.147;
-const float fRRGB24YUVCI2_11 = -0.289;
-const float fRRGB24YUVCI2_12 = 0.436;
-const float fRRGB24YUVCI2_20 = 0.615;
-const float fRRGB24YUVCI2_21 = -0.515;
-const float fRRGB24YUVCI2_22 = -0.100;
+const float fRRGB24YUVCI2_00 = 0.299f;
+const float fRRGB24YUVCI2_01 = 0.587f;
+const float fRRGB24YUVCI2_02 = 0.114f;
+const float fRRGB24YUVCI2_10 = -0.147f;
+const float fRRGB24YUVCI2_11 = -0.289f;
+const float fRRGB24YUVCI2_12 = 0.436f;
+const float fRRGB24YUVCI2_20 = 0.615f;
+const float fRRGB24YUVCI2_21 = -0.515f;
+const float fRRGB24YUVCI2_22 = -0.100f;
 
 // SSE
 static const __declspec(align(16)) float fCOEFF_0[4] = {fRRGB24YUVCI2_00, fRRGB24YUVCI2_01, fRRGB24YUVCI2_02, 0};

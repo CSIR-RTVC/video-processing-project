@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <DirectShow/CommonDefs.h>
 #include <DirectShow/FilterPropertiesBase.h>
+#include <Filters/DirectShow/FilterParameters.h>
 #include <Shared/StringUtil.h>
 
 #include "resource.h"

@@ -59,7 +59,7 @@ void CCustomBaseFilter::AddInputType( const GUID* pType, const GUID* pSubType, c
 
 HRESULT CCustomBaseFilter::CheckInputType( const CMediaType *pMediaType )
 {
-	for (int i = 0; i < m_vInTypes.size(); i++)
+	for (size_t i = 0; i < m_vInTypes.size(); i++)
 	{
 		if (((pMediaType->majortype == *m_vInTypes[i]) && (m_vInTypes[i]))||(!m_vInTypes[i]))
 		{

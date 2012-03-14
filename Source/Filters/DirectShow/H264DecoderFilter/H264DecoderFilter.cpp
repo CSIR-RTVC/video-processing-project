@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // RTVC
 #include <Codecs/H264v2/H264v2.h>
 #include <Codecs/CodecUtils/ICodecv2.h>
-
+#include <DirectShow/CommonDefs.h>
 #include <Shared/CommonDefs.h>
 #include <Shared/Conversion.h>
 

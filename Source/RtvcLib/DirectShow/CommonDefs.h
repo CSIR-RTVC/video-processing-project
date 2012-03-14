@@ -38,29 +38,3 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 const int BYTES_PER_PIXEL_RGB24 = 3;
 const int BYTES_PER_PIXEL_RGB32 = 4;
 const double BYTES_PER_PIXEL_YUV420P = 1.5;
-
-#define IN_COLOUR_RGB24		"0"
-#define IN_COLOUR_YUV420P	"16"
-
-#define IMAGE_WIDTH			"width"
-#define IMAGE_HEIGHT		"height"
-
-// Scale filter
-#define TARGET_WIDTH		"targetwidth"
-#define TARGET_HEIGHT		"targetheight"
-
-// Crop filter
-#define TOP_CROP			"topcrop"
-#define BOTTOM_CROP			"bottomcrop"
-#define LEFT_CROP			"leftcrop"
-#define RIGHT_CROP			"rightcrop"
-
-#define ORIENTATION			"orientation"
-
-#define ROTATION_MODE		"rotationmode"
-
-#define SUB_PICTURE_POSITION	"position"
-#define SUB_PIC_WIDTH			"subpicwidth"
-#define SUB_PIC_HEIGHT			"subpicheight"
-#define OFFSET_X				"offsetx"
-#define OFFSET_Y				"offsety"
