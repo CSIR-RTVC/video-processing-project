@@ -55,10 +55,10 @@ class RGBtoYUV420Converter;
 
 /**
 * \ingroup DirectShowFilters
-* DirectShow Filter that converts RGB24 or RGB32 media to our custom packet YUV 420 format.
+* DirectShow Filter that converts RGB24 or RGB32 media to I420 format.
 */
-class RGBtoYUV420Filter :   public CCustomBaseFilter,
-  public ISpecifyPropertyPages
+class RGBtoYUV420Filter : public CCustomBaseFilter,
+                          public ISpecifyPropertyPages
 {
 public:
   DECLARE_IUNKNOWN
@@ -107,7 +107,11 @@ public:
   virtual void initParameters()
   {
     addParameter(CHROMINANCE_OFFSET, &m_nChrominanceOffset, 128);
+#ifdef RTVC_INVERT_OPTIONAL
+    // YUV is always top-down: give user option to not flip image
+    // http://msdn.microsoft.com/en-us/library/windows/desktop/dd407212(v=vs.85).aspx
     addParameter(INVERT, &m_bInvert, true);
+#endif
   }
 
   STDMETHODIMP SetParameter( const char* type, const char* value);
@@ -154,6 +158,7 @@ private:
   int m_nSizeYUV;
   // Chrominance offset
   int m_nChrominanceOffset;
+
   // invert image
   bool m_bInvert;
 };

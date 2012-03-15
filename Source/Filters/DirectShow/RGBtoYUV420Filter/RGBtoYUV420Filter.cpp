@@ -34,12 +34,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "RGBtoYUV420Filter.h"
 
 // Media Type
+#include <DirectShow/CommonDefs.h>
 #include <DirectShow/CustomMediaTypes.h>
 
 // Color converters
 #include <Image/RealRGB24toYUV420Converter.h>
 #include <Image/RealRGB32toYUV420Converter.h>
-//#include <Image/RealRGB32toYUV420Converter.h>
 
 DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
@@ -48,7 +48,7 @@ RGBtoYUV420Filter::RGBtoYUV420Filter()
   : CCustomBaseFilter(NAME("CSIR VPP RGB 2 YUV420P Converter"), 0, CLSID_RGBtoYUV420ColorConverter),
   m_pConverter(NULL),
   m_nSizeYUV(0),
-  m_bInvert(false)
+  m_bInvert(true)
 {
   //Call the initialise input method to load all acceptable input types for this filter
   InitialiseInputTypes();
@@ -88,10 +88,22 @@ HRESULT RGBtoYUV420Filter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
 	HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
 	if (direction == PINDIR_INPUT)
 	{
-		m_nSizeYUV = m_nInPixels >> 2;
+   	m_nSizeYUV = m_nInPixels >> 2;
 		//Determine whether we are connected to a RGB24 or 32 source
 		if (pmt->majortype == MEDIATYPE_Video)
 		{
+      // Determine if we need to flip the image or not based on it's orientation
+      VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pmt->Format();
+      if (pvi->bmiHeader.biHeight < 0 )
+      {
+        // don't need to invert
+        m_bInvert = false;
+      }
+      else
+      {
+        m_bInvert = true;
+      }
+
 			//The converter might already exist if the filter has been connected previously
 			if (m_pConverter)
 			{
@@ -130,52 +142,25 @@ HRESULT RGBtoYUV420Filter::GetMediaType( int iPosition, CMediaType *pMediaType )
 		{
 			return hr;
 		}
-		// Change the output format to MEDIASUBTYPE_YUV420P 
+		// Change the output format to MEDIASUBTYPE_I420 
 		pMediaType->SetType(&MEDIATYPE_Video);
-		//pMediaType->SetSubtype(&MEDIASUBTYPE_YUV420P);
 		pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
 		pMediaType->SetFormatType(&FORMAT_VideoInfo);
-		// Get bitmap info header and modify
 
+		// Get bitmap info header and modify
 		VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->Format();
 		pvi->bmiHeader.biBitCount = 12;
 		pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
 
-    // try setting to -1 to indicate that image is inverted?
     // YUV420 is naturally top to bottom
-    
-    // TODO: Refactor below: inner ifs are the same, just leaving for now to make 4 scenarios explicit
-    // if input is already in YUV orientation: top to bottom
+    // YUV DIBS have no sign and ignore it
     if (pvi->bmiHeader.biHeight < 0 )
-    {
-      // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
-      if (!m_bInvert)
-      {
-        // leave -1 so that the converter can change the orientation
-        pvi->bmiHeader.biHeight = pvi->bmiHeader.biHeight;
-      }
-      else
-      {
-        // get rid of -1
-        pvi->bmiHeader.biHeight =  -1 * pvi->bmiHeader.biHeight;
-      }
-    }
-    else
-    {
-      // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
-      if (!m_bInvert)
-      {
-        // leave it, the downstream filter can simply convert the image
-        pvi->bmiHeader.biHeight = pvi->bmiHeader.biHeight;
-      }
-      else
-      {
-        // add -1 since we're turning the image upside down
-        pvi->bmiHeader.biHeight =  -1 * pvi->bmiHeader.biHeight;
-      }
-    }
+      pvi->bmiHeader.biHeight =  -1 * pvi->bmiHeader.biHeight; // get rid of -1
 
-
+    // update sample sizes
+    unsigned uiSampleSize = static_cast<unsigned>(m_nInPixels * BYTES_PER_PIXEL_YUV420P);
+    pvi->bmiHeader.biSizeImage = uiSampleSize;
+    pMediaType->SetSampleSize( uiSampleSize );
 		return S_OK;
 	}
 	return VFW_S_NO_MORE_ITEMS;
@@ -271,7 +256,6 @@ HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaT
 	}
 	else
 	{
-		//// TEST
 		VIDEOINFOHEADER *pVih1 = (VIDEOINFOHEADER*)mtIn->pbFormat;
 		VIDEOINFOHEADER *pVih2 = (VIDEOINFOHEADER*)mtOut->pbFormat;
 
@@ -280,69 +264,27 @@ HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaT
 			BITMAPINFOHEADER* pBi1 = &(pVih1->bmiHeader);
 			BITMAPINFOHEADER* pBi2 = &(pVih2->bmiHeader);
 
-			if (pBi1->biWidth != pBi2->biWidth )
-			{
-				return VFW_E_TYPE_NOT_ACCEPTED;
-			}
+			//if (pBi1->biWidth != pBi2->biWidth )
+			//{
+			//	return VFW_E_TYPE_NOT_ACCEPTED;
+			//}
 
       // TODO: refactor same as in GetMediaType
       if (pVih1->bmiHeader.biHeight < 0 )
       {
-        // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
-        if (!m_bInvert)
+        if (pVih1->bmiHeader.biHeight != (-1 * pVih2->bmiHeader.biHeight))
         {
-          if (pVih1->bmiHeader.biHeight !=  pVih2->bmiHeader.biHeight)
-          {
-            return VFW_E_TYPE_NOT_ACCEPTED;
-          }
-        }
-        else
-        {
-          if (pVih1->bmiHeader.biHeight != (-1 * pVih2->bmiHeader.biHeight))
-          {
-            return VFW_E_TYPE_NOT_ACCEPTED;
-          }
+          return VFW_E_TYPE_NOT_ACCEPTED;
         }
       }
       else
       {
-        // if inverting while converting to YUV, it means that input still needs to be inverted so leave negative sign
-        if (!m_bInvert)
+        if (pVih1->bmiHeader.biHeight != pVih2->bmiHeader.biHeight)
         {
-          if (pVih1->bmiHeader.biHeight !=  pVih2->bmiHeader.biHeight)
-          {
-            return VFW_E_TYPE_NOT_ACCEPTED;
-          }
-        }
-        else
-        {
-          if (pVih1->bmiHeader.biHeight != (-1 * pVih2->bmiHeader.biHeight))
-          {
-            return VFW_E_TYPE_NOT_ACCEPTED;
-          }
+          return VFW_E_TYPE_NOT_ACCEPTED;
         }
       }
-      //int iDestHeight = !m_bInvert ? (-1 * pBi2->biHeight) : pBi2->biHeight;
-      //if (pBi1->biHeight !=  iDestHeight )
-      //{
-      //  return VFW_E_TYPE_NOT_ACCEPTED;
-      //}
 		}
-		////Now we need to calculate the size of the output image
-		//BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
-		//int iNewStride = pBi->biWidth;
-		//// TEMP HACK TO TEST IF IMAGE RENDERS CORRECTLY
-		///*if (iNewStride != m_nOutWidth)
-		//{
-		//	return VFW_E_TYPE_NOT_ACCEPTED;
-		//}*/
-		//int iNewWidth = pVih->rcSource.right - pVih->rcSource.left;
-		//int iNewHeight = pBi->biHeight;
-		//if (iNewHeight < 0)
-		//{
-		//	// REJECT INVERTED PICTURES
-		//	return VFW_E_TYPE_NOT_ACCEPTED;
-		//}
 	}
 
 	if (mtOut->formattype != FORMAT_VideoInfo)
