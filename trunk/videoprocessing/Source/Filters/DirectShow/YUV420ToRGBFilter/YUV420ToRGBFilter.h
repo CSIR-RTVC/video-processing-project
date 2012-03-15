@@ -155,6 +155,7 @@ private:
   int m_nSizeUV;
   // Chrominance offset
   int m_nChrominanceOffset;
-  // invert image
+  // YUV is always top down: the invert flag determines whether the image
+  // is flipped during conversion, or whether the sign is simply set
   bool m_bInvert;
 };

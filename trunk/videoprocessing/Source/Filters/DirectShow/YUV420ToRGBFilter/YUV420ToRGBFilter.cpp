@@ -44,7 +44,7 @@ YUV420toRGBFilter::YUV420toRGBFilter()
   : CCustomBaseFilter(NAME("CSIR VPP YUV420P 2 RGB Converter"), 0, CLSID_YUV420toRGBColorConverter),
   m_pConverter(NULL),
   m_nSizeUV(0),
-  m_bInvert(false)
+  m_bInvert(true)
 {
   //Call the initialise input method to load all acceptable input types for this filter
   InitialiseInputTypes();
@@ -52,7 +52,7 @@ YUV420toRGBFilter::YUV420toRGBFilter()
  
   // init converter
   m_pConverter = new RealYUV420toRGB24Converter(m_nInWidth, m_nInHeight);
-  m_pConverter->SetFlip(true);
+  m_pConverter->SetFlip(m_bInvert);
   m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 }
 
@@ -109,10 +109,13 @@ HRESULT YUV420toRGBFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
     {
       return hr;
     }
-
+     
     VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->Format();
     //Adjust the bitmapinfo header
     BITMAPINFOHEADER *pbmi = HEADER(pMediaType->pbFormat);
+
+    // The hackery below should not be ncessary: we simply convert to RGB24
+#if 0
     if (pbmi->biBitCount == 32)
     {
       // Set the bit count to 24 since the RBGtoYUV filter also accepts 32 bit but this filter only
@@ -134,7 +137,28 @@ HRESULT YUV420toRGBFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
       // So we need to recalculate the size in RGB 24
       pbmi->biSizeImage = m_nInPixels * BYTES_PER_PIXEL_RGB24;
     }
+#else
 
+    pbmi->biBitCount = 24;
+    pbmi->biSizeImage = m_nInPixels * BYTES_PER_PIXEL_RGB24;
+
+#endif
+
+    // negative height of YUV DIBS should be ignored according to 
+    // http://msdn.microsoft.com/en-us/library/windows/desktop/dd407212(v=vs.85).aspx
+    // we will set our output height negative according to m_bInvert
+    if (m_bInvert)
+    {
+      if (pvi->bmiHeader.biHeight < 0) // make sure height is not already negative
+        pvi->bmiHeader.biHeight = -1 * pvi->bmiHeader.biHeight;
+    }
+    else
+    {
+      // we will flip the image: make sure height is positive
+      if (pvi->bmiHeader.biHeight > 0) // make sure height is not already negative
+        pvi->bmiHeader.biHeight = -1 * pvi->bmiHeader.biHeight;
+    }
+#if 0
     if (pvi->bmiHeader.biHeight < 0)
     {
       if (m_bInvert)
@@ -145,6 +169,7 @@ HRESULT YUV420toRGBFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
       if (m_bInvert)
         pvi->bmiHeader.biHeight = -1 * pvi->bmiHeader.biHeight;
     }
+#endif
 
     pMediaType->SetSampleSize( pbmi->biSizeImage );
     // adapt compression in case necessary
@@ -270,48 +295,18 @@ HRESULT YUV420toRGBFilter::CheckTransform( const CMediaType *mtIn, const CMediaT
         BITMAPINFOHEADER* pBi1 = &(pVih1->bmiHeader);
         BITMAPINFOHEADER* pBi2 = &(pVih2->bmiHeader);
 
-        int iDestHeight = m_bInvert ? (-1 * pBi2->biHeight) : pBi2->biHeight;
-        
-        /*if (pBi1->biWidth < 0)
-        {*/
-          if (m_bInvert)
-          {
-            if (pBi1->biHeight != (-1 * pBi2->biHeight))
-            {
-              return VFW_E_TYPE_NOT_ACCEPTED;
-            }
-          }
-          else
-          {
-            if (pBi1->biHeight != pBi2->biHeight)
-            {
-              return VFW_E_TYPE_NOT_ACCEPTED;
-            }
-          }
-        //}
-        //else
-        //{
-        //  if (m_bInvert)
-        //  {
-        //    if (pBi1->biHeight != (-1 * pBi2->biHeight))
-        //    {
-        //      return VFW_E_TYPE_NOT_ACCEPTED;
-        //    }
-        //  }
-        //  else
-        //  {
-        //    if (pBi1->biHeight != pBi2->biHeight)
-        //    {
-        //      return VFW_E_TYPE_NOT_ACCEPTED;
-        //    }
-        //  }
-        //}
-
-        // OLD
-        //if (pBi1->biHeight!= pBi2->biHeight )
-        //{
-        //  return VFW_E_TYPE_NOT_ACCEPTED;
-        //}
+        if (m_bInvert)
+        {
+          // make sure height is positive
+          if (pBi2->biHeight < 0)
+            return VFW_E_TYPE_NOT_ACCEPTED;
+        }
+        else
+        {
+          // make sure height is negative
+          if (pBi2->biHeight > 0)
+            return VFW_E_TYPE_NOT_ACCEPTED;
+        }
       }
     }
   }
