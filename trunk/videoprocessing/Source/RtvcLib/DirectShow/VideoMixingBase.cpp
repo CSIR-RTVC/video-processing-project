@@ -170,6 +170,13 @@ HRESULT VideoMixingBase::GetMediaType( int iPosition, CMediaType* pMediaType, in
 			bmh1->biSizeImage = m_nOutputSize;
 			//Set sample size
 			pMediaType->SetSampleSize(m_nOutputSize);
+      if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24)
+        pMediaType->SetSubtype(&MEDIASUBTYPE_RGB24);
+#ifdef RTVC_SUPPORT_RGB32
+      else if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB32)
+        pMediaType->SetSubtype(&MEDIASUBTYPE_RGB32);
+#endif
+      bmh1->biCompression = BI_RGB;
 
 			// Set source rect
 			pVih1->rcSource.left = 0;
@@ -391,3 +398,4 @@ HRESULT VideoMixingBase::StopStreaming()
 {
   return NO_ERROR;
 }
+

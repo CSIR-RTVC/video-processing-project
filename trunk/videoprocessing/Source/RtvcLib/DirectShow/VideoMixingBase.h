@@ -84,12 +84,16 @@ public:
 	virtual void InitialiseInputTypes()
 	{
 		AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24, &FORMAT_VideoInfo);
+#ifdef RTVC_SUPPORT_RGB32
 		AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32, &FORMAT_VideoInfo);
+#endif
 	}
 	virtual void InitialiseOutputTypes()
 	{
 		AddOutputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24, &FORMAT_VideoInfo);
+#ifdef RTVC_SUPPORT_RGB32
 		AddOutputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32, &FORMAT_VideoInfo);
+#endif
 	}
 
 	virtual int InitialNumberOfInputPins()	{ return 2; }
