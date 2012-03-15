@@ -87,9 +87,9 @@ RealYUV420toRGB24ConverterImpl2Ver16::RealYUV420toRGB24ConverterImpl2Ver16(int w
 void RealYUV420toRGB24ConverterImpl2Ver16::NonRotateConvert(void* pY, void* pU, void* pV, void* pRgb)
 {
 	unsigned char* 	optr	=	(unsigned char *)pRgb;
-	yuvType*				py		= (yuvType *)pY;
-	yuvType*				pu		= (yuvType *)pU;
-	yuvType*				pv		= (yuvType *)pV;
+	short*				py		= (short *)pY;
+	short*				pu		= (short *)pU;
+	short*				pv		= (short *)pV;
 	int		lumX	= _width;
 	int		lumY	= _height;
 	int		uvX		= _width >> 1;
@@ -177,9 +177,9 @@ void RealYUV420toRGB24ConverterImpl2Ver16::NonRotateConvert(void* pY, void* pU, 
 void RealYUV420toRGB24ConverterImpl2Ver16::RotateConvert(void* pY, void* pU, void* pV, void* pRgb)
 {
 	unsigned char* 	optr	=	(unsigned char *)pRgb;
-	yuvType*				py		= (yuvType *)pY;
-	yuvType*				pu		= (yuvType *)pU;
-	yuvType*				pv		= (yuvType *)pV;
+	short*				py		= (short *)pY;
+	short*				pu		= (short *)pU;
+	short*				pv		= (short *)pV;
 	int		lumX	= _width;
 	int		lumY	= _height;
 	int		uvX		= _width >> 1;
@@ -271,9 +271,9 @@ void RealYUV420toRGB24ConverterImpl2Ver16::RotateConvert(void* pY, void* pU, voi
 void RealYUV420toRGB24ConverterImpl2Ver16::FlipConvert( void* pY, void* pU, void* pV, void* pRgb )
 {
   unsigned char* 	optr	=	(unsigned char *)pRgb;
-  yuvType*				py		= (yuvType *)pY;
-  yuvType*				pu		= (yuvType *)pU;
-  yuvType*				pv		= (yuvType *)pV;
+  short*				py		= (short *)pY;
+  short*				pu		= (short *)pU;
+  short*				pv		= (short *)pV;
   int		lumX	= _width;
   int		lumY	= _height;
   int		uvX		= _width >> 1;
