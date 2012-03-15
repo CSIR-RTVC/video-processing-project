@@ -240,11 +240,19 @@ HRESULT H264EncoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
       ASSERT(pMediaType->formattype == FORMAT_VideoInfo);
       VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)pMediaType->pbFormat;
       BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
-      // We only support outputing 24bit RGB (This solves issues were RGB32 is encoded and decoded
+
+      // For compressed formats, this value is the implied bit 
+      // depth of the uncompressed image, after the image has been decoded.
       if (pBi->biBitCount != 24)
         pBi->biBitCount = 24;
+
+      pBi->biSizeImage = DIBSIZE(pVih->bmiHeader);
+      pBi->biSizeImage = DIBSIZE(pVih->bmiHeader);
+
+      // COMMENTING TO REMOVE
       // in the case of YUV I420 input to the H264 encoder, we need to change this back to RGB
-      pBi->biCompression = BI_RGB;
+      //pBi->biCompression = BI_RGB;
+      pBi->biCompression = DWORD('1cva');
 
       // Store SPS and PPS in media format header
       int nCurrentFormatBlockSize = pMediaType->cbFormat;
