@@ -92,6 +92,8 @@
               <li class="body"><a href="#audiomix">Audio mixing filter</a></li>
               <li class="body"><a href="#crop">Crop filter</a></li>
               <li class="body"><a href="#framerate">Framerate display filter</a></li>
+			  <li class="body"><a href="#h264enc">H264 encoder filter</a></li>
+			  <li class="body"><a href="#h264dec">H264 decoder filter</a></li>
               <li class="body"><a href="#h264">H264 source filter</a></li>
               <li class="body"><a href="#picinpic">Picture in picture filter</a></li>
               <li class="body"><a href="#rgb2yuv">RGB 2 YUV420P converter</a></li>
@@ -108,7 +110,8 @@
             <p class="body">We encourage community contributions for faster implementations that sit behind the same interfaces.</p>
             <p class="body"><span style="font-family: 'Trebuchet MS'; display: block; border-bottom: dashed 1px #cccccc; padding: 5px 0px 5px 0px; margin: 10px 0px 10px 0px; color:#617878; font-size: 20px; font-weight: bold; display: block;">Codecs</span></p>
             <p class="body"><del>An H.264 video codec (encoding and decoding) is currently under development using a bottom-up design approach.</del></p>
-	    <p class="style12">The first version of the H.264 codec is going to be released within the next month!</p><p class="body">The source code for the low level codec tools will appear and then be added to, periodically. We would like to offer these while the code is being developed to encourage comments early on in the design. Some of these raw classes may also be useful for other implementations.</p>
+	        <p class="body"><del>2012/03/03: The first version of the H.264 codec is going to be released within the next month!</del></p>
+            <p class="style12">2012/03/15: The first version of the H.264 codec has been released!</p><p class="body">The source code for the low level codec tools will appear and then be added to, periodically. We would like to offer these while the code is being developed to encourage comments early on in the design. Some of these raw classes may also be useful for other implementations.</p>
             <p class="body">We would like the community to contribute in conformance testing to the H.264 standard and faster implementations that use the defined interfaces.</p>
             <p class="style12">Please note that the use of the H.264 video standard may require the payment of license fees. These are governed by the MPEG Licensing Authority and the rules may be found at <a href="http://www.mpegla.com/index1.cfm">www.mpegla.com.</a> It is your responsibility, not the authors of this source code, to ensure that you comply. </p>
 			
@@ -119,7 +122,11 @@
               <p class="body">Filter that crops RGB media.</p>
               <h2 class="body"><a name="framerate">Framerate display filter</a></h2>
               <p class="body">Filter that estimates framerate and overlays it on the video using GDI.</p>
-              <h2 class="body"><a name="h264">H264 source filter</a></h2>
+              <h2 class="body"><a name="h264">H264 encoder filter</a></h2>
+              <p class="body">An H.264 encoder that implements the baseline profile. <a href="http://devcon-1.blogspot.com/2012/03/h.html" target="blank">More info</a></p>
+              <h2 class="body"><a name="h264">H264 decoder filter</a></h2>
+              <p class="body">An H.264 decoder designed for use with the provided encoder or H264 source filter. The decoder uses a custom media type which can be configured on the encoder and source filters. <a href="http://devcon-1.blogspot.com/2012/03/h.html" target="blank">More info</a></p>
+			  <h2 class="body"><a name="h264">H264 source filter</a></h2>
               <p class="body">Source filter that can read raw .264 files. <a href="./samples/foreman.264">Foreman sample file</a> <a href="http://devcon-1.blogspot.com/2012/03/implementing-directshow-h264-source.html" target="blank">More info</a></p>
               <h2 class="body"><a name="picinpic">Picture in picture filter</a></h2>
               <p class="body">Sample picture in picture filter.</p>
