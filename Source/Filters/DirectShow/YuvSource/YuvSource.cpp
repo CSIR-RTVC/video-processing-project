@@ -99,7 +99,9 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
   pvi->bmiHeader.biXPelsPerMeter = 0;
   pvi->bmiHeader.biYPelsPerMeter = 0;
   pvi->bmiHeader.biWidth = m_pYuvFilter->m_iWidth;
-  pvi->bmiHeader.biHeight = -1 * m_pYuvFilter->m_iHeight;
+  pvi->bmiHeader.biHeight = m_pYuvFilter->m_iHeight;
+  // should the sign of height is ignored for YUV DIB types?
+  // http://msdn.microsoft.com/en-us/library/windows/desktop/dd407212(v=vs.85).aspx
   pvi->bmiHeader.biSizeImage = m_pYuvFilter->m_iFrameSize;
   pvi->bmiHeader.biSize = 40;
 
@@ -113,7 +115,6 @@ HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
 
   // Both of these work
   pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
-  //pMediaType->SetSubtype(&MEDIASUBTYPE_IYUV);
 
   // Tried other media types MEDIASUBTYPE_IMC3, MEDIASUBTYPE_IMC2, MEDIASUBTYPE_IMC4, etc
   // These have no effect on the connection
@@ -186,8 +187,11 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
 
     memcpy( pData, m_pYuvFilter->m_pYuvBuffer, m_pYuvFilter->m_iFrameSize );
     
-#if 0
     // debug top-bottom
+    // The following code was used to determine the orientation of the image in the raw YUV file:
+    // The raw YUV used in the test sequences is top-down: http://msdn.microsoft.com/en-us/library/windows/desktop/dd407212(v=vs.85).aspx
+
+#if 0
     // set luminance for 1st row to zero
     int iW = m_pYuvFilter->m_iWidth;
     int iWUV = m_pYuvFilter->m_iWidth >> 1;
@@ -210,31 +214,35 @@ HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
     // Chrominance
     // change to grey scale
     memset( pData + iSY, 128, iSUV*2 );
-    //blue
+#if 0
+    // blue componenent
     memset( pData + iSY,            255, iWUV);
     memset( pData + iSY + iWUV,     255, iWUV);
     memset( pData + iSY + 2 * iWUV, 255, iWUV);
     memset( pData + iSY + 3 * iWUV, 255, iWUV);
     memset( pData + iSY + 4 * iWUV, 255, iWUV);
+#else
+    memset( pData + iSY,            0, iWUV);
+    memset( pData + iSY + iWUV,     0, iWUV);
+    memset( pData + iSY + 2 * iWUV, 0, iWUV);
+    memset( pData + iSY + 3 * iWUV, 0, iWUV);
+    memset( pData + iSY + 4 * iWUV, 0, iWUV);
+#endif    
 
-    //memset( pData + iSY,            0, iWUV);
-    //memset( pData + iSY + iWUV,     0, iWUV);
-    //memset( pData + iSY + 2 * iWUV, 0, iWUV);
-    //memset( pData + iSY + 3 * iWUV, 0, iWUV);
-    //memset( pData + iSY + 4 * iWUV, 0, iWUV);
-    
-    // red
-    //memset( pData + iSY + iSUV,            255, iWUV);
-    //memset( pData + iSY + iSUV + iWUV,     255, iWUV);
-    //memset( pData + iSY + iSUV + 2 * iWUV, 255, iWUV);
-    //memset( pData + iSY + iSUV + 3 * iWUV, 255, iWUV);
-    //memset( pData + iSY + iSUV + 4 * iWUV, 255, iWUV);
-
-    //memset( pData + iSY + iSUV,            0, iWUV);
-    //memset( pData + iSY + iSUV + iWUV,     0, iWUV);
-    //memset( pData + iSY + iSUV + 2 * iWUV, 0, iWUV);
-    //memset( pData + iSY + iSUV + 3 * iWUV, 0, iWUV);
-    //memset( pData + iSY + iSUV + 4 * iWUV, 0, iWUV);
+#if 1
+    // red component
+    memset( pData + iSY + iSUV,            255, iWUV);
+    memset( pData + iSY + iSUV + iWUV,     255, iWUV);
+    memset( pData + iSY + iSUV + 2 * iWUV, 255, iWUV);
+    memset( pData + iSY + iSUV + 3 * iWUV, 255, iWUV);
+    memset( pData + iSY + iSUV + 4 * iWUV, 255, iWUV);
+#else
+    memset( pData + iSY + iSUV,            0, iWUV);
+    memset( pData + iSY + iSUV + iWUV,     0, iWUV);
+    memset( pData + iSY + iSUV + 2 * iWUV, 0, iWUV);
+    memset( pData + iSY + iSUV + 3 * iWUV, 0, iWUV);
+    memset( pData + iSY + iSUV + 4 * iWUV, 0, iWUV);
+#endif
 #endif
 
     // Set the timestamps that will govern playback frame rate.
