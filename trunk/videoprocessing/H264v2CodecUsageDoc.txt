@@ -1,0 +1,260 @@
+This doc describes the programatic usage of the H264v2Codec class and factory.
+
+1. Implementation H.264 Mode Limitations
+
+1.1 Baseline compliance only. Profile = 66, Level = 2.0
+1.2 Only 16x16 modes are implemented in the encoder and decoder. There are no sub-partitions for both Intra and Inter prediction macroblocks. Macroblock type = (Intra_16x16, P_L0_16x16, P_Skip)
+1.3 P-frames have no Intra macroblocks.
+1.4 There is only one slice in every frame/picture.
+1.5 Fields are not supported.
+1.6 Only I and P slices are supported. Slice type = (0, 2, 5, 7)
+1.7 Only IDR, P, SPS and PPS NAL units are supported. NAL = (1, 5, 7, 8)
+
+2. Methodology
+
+Access to the codec methods is primarily through the ICodecv2 class interface. The concept of the operation is to SetParameters()/GetParameters() and, based on these parameter settings, Open() the codec. It is then ready for calling Code()/Decode() on every image frame in the video sequence. On completion of encoding/decoding all the video frames a Close() will release all the resources. Any changes in the codec parameters require the codec to Close(), SetParameters() and then Open() with the new parameters. The ICodecv2.h file provides further information on each of the public methods available through the interface.
+
+3. Instantiation
+
+A DLL approach has been taken as defined in H264v2.cpp and H264v2.h where a factory is used. The virtual destructor within ICodecv2() ensures propery memory cleanup. Typical usage is as follows:
+
+{
+	// Instantiation.
+	ICodecv2* _encoder = NULL;
+	...
+	H264v2Factory codecFactory;
+	ICodecv2* _encoder = codecFactory.GetCodecInstance();
+	...
+	...
+	...
+	// Destruction.
+	if(_encoder != NULL)
+	{
+		_encoder->Close();
+		codecFactory.ReleaseCodecInstance(_encoder);
+	}//end if _encoder...
+	_encoder = NULL;
+
+}
+
+4. Codec Parameters
+
+The codec parameters are set or retrieved via the SetParameter()/GetParameter() methods. Typical usage is as follows:
+
+{
+	char	Buffer[33];
+	...
+	int desiredWidth = 352;
+	int desiredHeight = 288;
+	_encoder->SetParameter((char *)("width"),(char *)_itoa(desiredWidth, Buffer, 10));
+	_encoder->SetParameter((char *)("height"),(char *)_itoa(desiredHeight, Buffer, 10));
+	...
+	...
+	int charLen	= 0;
+	_encoder->GetParameter((const char *)("width"), &charLen, (void *)Buffer);
+	int currWidth = atoi(Buffer);
+	...
+}
+
+The codec parameters are seperated into 2 categories. Those that are static throughout the life span of an Open()/Close() session and those that are dynamic and can be changed per picture Code()/Decode().
+ 
+A description of each of the parameters and their purpose follows:
+
+4.1 Static - "codecid" (Read Only)
+
+Unique codec identification. 
+
+4.2 Static - "parameters" (Read Only)
+
+The number of codec parmaeters that are supported. 
+
+4.3 Static - "width", "height"
+
+The dimensions of the image frames/pictures that are to be coded/decoded. A large portion of the internal codec memory allocations are dependent on these parameters.
+
+4.4 Static - "incolour", "outcolour"
+
+The format of the raw frame/picture pels that are passed as input to the Code() method and output from the Decode() method. The currently supported types are:
+
+#define H264V2_RGB24 = 0;	(Default) 8 bits/component of Red, Green & Blue with Blue in the least significant byte.
+#define H264V2_YUV420P16 = 16; Planar format with all Y followed by Cb (U) then followed by Cr (V) using 16 bits/component. The Cb and Cr components are 1/4 the size of the Y component.
+#define H264V2_YUV420P8  = 17; Planar format with all Y followed by Cb (U) then followed by Cr (V) using 8 bits/component. The Cb and Cr components are 1/4 the size of the Y component.
+
+4.5 Static - "mode of operation"
+
+The current codec version supports 2 modes of operation that effect the interpretation of the codeParameter variable passed into the Code() method and the "quality" parameter. The supported values are:
+
+#define H264V2_OPEN = 0; (Default) The "quality" parameter defines the Slice QP value to be used and is the same for all macroblocks in the frame/picture. The codeParameter in the Code() method is typically the size in bits of the compressed stream buffer. The Code() method will produce a variable number of bits per frame/picture encoded but will generate an error if it exceeds the value defined in the codeParameter variable.
+
+#define H264V2_MB_QP_MINMAX_ADAPTIVE = 1; This mode implements a MINMAX Rate-Distortion optimisation algorithm where a fixed number of bits is targetted per frame/picture. The total bits for the frame/picture is the defined by the codeParameter variable of the Code() method. The value of the "quality" parameter is ignored and the macroblock QP value is varied for every macroblock to produce the desired bit rate. Note that in this mode a different number of bits may be targetted for every different frame/picture.
+
+4.6 Static - "start code emulation prevention"
+
+Flag = 1 (Default)/0; Prevent start code emulation within a NAL. This parameter allows the programmer to switch it on/off.
+
+4.7 Dynamic - "quality"
+
+Defines the Slice QP value used for the frame/picture called by the Code()/Decode() method. It is set for the Code() method and read back for the Decode() method. Range of values [1..51].
+
+4.8 Dynamic - "picture coding type"
+
+Defines the NAL type. It is set for the Code() method and read back for the Decode() method. The following types are supported in this implementation.
+
+#define H264V2_INTRA = 0; IDR frames/pictures.
+#define H264V2_INTER = 1; P-frames.
+#define H264V2_SEQ_PARAM = 2; Sequence parameter set (SPS). There are restrictions on parameter set generation techniques. See below.
+#define H264V2_PIC_PARAM = 3; Picture parameter set (PPS). There are restrictions on parameter set generation techniques. See below.
+
+4.9 Dynamic - "last pic coding type" (Read Only)
+
+Reports on the frame/picture type previously encoded/decoded. The supported values are the same as "picture coding type" above.
+
+4.10 Dynamic - "autoipicture"
+
+Flag = 1 (Default)/0; Auto detect big changes between the current frame/picture and the previous frame/picture to force IDR encoding for this frame/picture.
+
+4.11 Dynamic - "ipicturemultiplier", "ipicturefraction"
+
+The integer multiplier has the range [1..9] and integer fraction [0..9] to produce a real number multiplier.fraction e.g. 2.4 This number modifies the codeParameter variable by multiplying with this compound number to allow more bits for IDR frames/pictures only. P-frames will use the original codeParameter value.
+
+4.12 Static - "seq param set", "pic param set"
+
+Sequence Parameter Set (SPS) and Picture Parameter Set (PPS) indicies to use for the current encoding or what was most recently decoded. These refer to the current active set. Typical parameter set handling is discussed in its own section below.
+
+4.13 Static - "generate param set on open"
+
+Flag = 1 (Default)/0; Use the current codec parameter settings to set the SPS and PPS structure values referenced by the "seq param set" and "pic param set" indices on the next call to the Open() method.
+
+4.14 Static - "prepend param sets to i-pictures"
+
+Flag = 1 (Default)/0; On the call to Open() the SPS and PPS stream are pre-packaged as NAL units. On every future Code() method where an IDR frame/picture is generated these two NAL units will be pre-pended to the IDR NAL unit. Note that the codeParameter of the Code() method must include bit sizes for these extra NAL units.
+
+5. Frame/Picture Encoding/Decoding
+
+The typical usage after instantiation for encoding and decoding frames/pictures proceeds as follows:
+
+{
+	// Encoder codec parameters
+	_encoder->SetParameter((char *)("quality"),(char*)_itoa(34,Buffer,10));	// QP = 34
+	_encoder->SetParameter((char *)("mode of operation"),(char*)_itoa(H264V2_OPEN,Buffer,10));
+	_encoder->SetParameter((char *)("width"),(char *)_itoa(352,Buffer,10));  // Image dimensions 352 x 288 pels
+	_encoder->SetParameter((char *)("height"),(char *)_itoa(288,Buffer,10));
+	_encoder->SetParameter((char *)("incolour"),(char *)_itoa(H264V2_RGB24,Buffer,10));
+	_encoder->SetParameter((char *)("autoipicture"),(char *)_itoa(1,Buffer,10)); // Auto detect change for forced IDR pictures.
+	_encoder->SetParameter((char *)("ipicturemultiplier"),(char *)_itoa(1,Buffer,10));	// Bit multiplier for I-frames = 1.0
+	_encoder->SetParameter((char *)("ipicturefraction"),(char *)_itoa(0,Buffer,10));
+	_encoder->SetParameter((char *)("generate param set on open"),(char *)_itoa(1,Buffer,10)); // On
+	_encoder->SetParameter((char *)("seq param set"),(char *)_itoa(0,Buffer,10)); // Use SPS[0]
+	_encoder->SetParameter((char *)("pic param set"),(char *)_itoa(0,Buffer,10)); // Use PPS[0]
+	_encoder->SetParameter((char *)("start code emulation prevention"),(char *)_itoa(1,Buffer,10)); // On
+	_encoder->SetParameter((char *)("prepend param sets to i-pictures"),(char *)_itoa(1,Buffer,10)); // On
+
+	// Decoder Codec Parameters
+	_decoder->SetParameter((char *)("width"),(char *)_itoa(352,Buffer,10));  // Image dimensions 352 x 288 pels
+	_decoder->SetParameter((char *)("height"),(char *)_itoa(288,Buffer,10));
+	_encoder->SetParameter((char *)("generate param set on open"),(char *)_itoa(1,Buffer,10)); // On
+	_encoder->SetParameter((char *)("seq param set"),(char *)_itoa(0,Buffer,10)); // Use SPS[0]
+	_encoder->SetParameter((char *)("pic param set"),(char *)_itoa(0,Buffer,10)); // Use PPS[0]
+	_encoder->SetParameter((char *)("start code emulation prevention"),(char *)_itoa(1,Buffer,10)); // On
+
+	...
+	
+	// Open
+    if(!_encoder->Open())
+    {
+	  MessageBox(NULL, (LPCSTR)_encoder->GetErrorStr(), NULL, MB_OK);
+      return(0);
+    }//end if !Open...
+
+	if(!_decoder->Open())
+	{
+		MessageBox(NULL, (LPCSTR)_decoder->GetErrorStr(), NULL, MB_OK);
+		return(0);
+	}//end if !Open...
+
+	...
+	
+	unsigned char _codedData[LARGE];
+	int allowedBits = 8 * LARGE;
+	while(morePictures)
+	{
+		_bmptr = GetNextPicture();
+	
+		if(!_encoder->Code((void *)_bmptr, (void *)_codedData, allowedBits))
+		{
+			CString msg = (LPCSTR)_encoder->GetErrorStr();
+			MessageBox(NULL, msg, NULL, MB_OK);
+			return(0);
+		}//end if !Code...
+		
+		int codedByteSize = _encoder->GetCompressedByteLength();
+		int codedBitSize = _encoder->GetCompressedBitLength();
+		
+		if(!_decoder->Decode((void *)_codedData, codedBitSize, (void *)_outbmptr))
+		{
+			CString msg = (LPCSTR)_decoder->GetErrorStr();
+  			MessageBox(NULL, msg, NULL, MB_OK);
+			return(0);
+		}//end if !Decode..
+		
+		PutNextPicture(_outbmptr);
+	
+	}//end while morePictures...
+	
+	...
+	
+	_encoder->Close();
+	_decoder->Close();
+}
+
+Points to note:
+
+The call to Open() will automatically set the "picture coding type" to H264V2_INTRA and therefore by default the 1st frame/picture in the sequence will be encoded as an IDR frame. On subsequent calls to Code() the "picture coding type" is also auto modified to H264V2_INTER for all frames/pictures after and IDR frame. Therefore with "autoipicture" set ON, no explicit SetParameter() is required between frame/picture encodings.
+
+The Decode() method will automatically decode pre-pended SPS and PPS to the IDR frames without explicitly separating them. If the decoded SPS and/or PPS have different structure values for the given indeces then the Decode() method will automatically Close() and re- Open() the codec with the new settings.
+ 
+6. SPS and PPS Encoding/Decoding
+
+The parameter set encoding/decoding process operates differently depending on whether or not the codec is open. For independent out-of-band encoding/decoding of SPS and PPS the codec should NOT be open. For in stream encoding and decoding where the parameter sets are changed on-the-fly then the codec must be open.
+
+6.1 Codec not open case: This is typically only used for the encoding process to independently produced encoded streams for SPS and PPS. (The Decode() process will set the internal SPS and PPS of the codec but not translate them to the codec parameters.) 
+
+{
+	// Set the codec parameters for the desired SPS and PPS.
+	_encoder->SetParameter((char *)("quality"),(char*)_itoa(34,Buffer,10));	// Slice QP = 34
+	_encoder->SetParameter((char *)("width"),(char *)_itoa(352,Buffer,10));  // Image dimensions 352 x 288 pels
+	_encoder->SetParameter((char *)("height"),(char *)_itoa(288,Buffer,10));
+	_encoder->SetParameter((char *)("seq param set"),(char *)_itoa(0,Buffer,10)); // Use SPS[0]
+	_encoder->SetParameter((char *)("pic param set"),(char *)_itoa(0,Buffer,10)); // Use PPS[0]
+	_encoder->SetParameter((char *)("picture coding type"),(char *)_itoa(2,Buffer,10));	// Seq param set = H264V2_SEQ_PARAM.
+	
+	...
+	
+	void* pEncodedSeqParamSet = (void *) new unsigned char[100];
+	if(!_encoder->Code(NULL, pEncodedSeqParamSet, 100 * 8))
+	{
+		CString msg = (LPCSTR)_encoder->GetErrorStr();
+		MessageBox(NULL, msg, NULL, MB_OK);
+		return(0);
+	}//end if !Code...
+	
+	...
+	
+	_encoder->SetParameter((char *)("picture coding type"),(char *)_itoa(3,Buffer,10));	///< Pic param set = H264V2_PIC_PARAM.
+	void* pEncodedPicParamSet = (void *) new unsigned char[100];
+	if(!_encoder->Code(NULL, pEncodedPicParamSet, 100 * 8))
+	{
+		CString msg = (LPCSTR)_encoder->GetErrorStr();
+		MessageBox(NULL, msg, NULL, MB_OK);
+		return(0);
+	}//end if !Code...
+	
+	...
+}
+ 
+6.2 Codec open case: This is typically used for in-band signalling at the decoder. On receiving a SPS or PPS encoded NAL stream, the Decode() method will check if it is different to the current SPS or PPS under use. If different then the decoder will Close() the codec and re-Open() to ensure these new settings are now active. The effect on the codec parameters can be determined by accessing the codec parametrs through the GetParameter() interface method.
+
+
+ 
+ 
+
