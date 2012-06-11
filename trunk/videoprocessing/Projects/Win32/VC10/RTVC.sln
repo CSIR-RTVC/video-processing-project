@@ -61,6 +61,18 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264v2", "Codecs\H264v2\H26
 EndProject
 Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "VideoProcessingProjectInstaller", "VideoProcessingProjectInstaller\VideoProcessingProjectInstaller.vdproj", "{A21EB126-2BA3-40F8-B501-581467675A78}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FrameSkippingFilter", "DirectShowFilters\FrameSkippingFilter\FrameSkippingFilter.vcxproj", "{D2C91DE1-EC29-4214-BFA8-BFDCF96849DD}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SkewingFilter", "DirectShowFilters\SkewingFilter\SkewingFilter.vcxproj", "{22D46634-B1CA-489D-B8D0-B3C7850D2EF8}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
@@ -161,6 +173,14 @@ Global
 		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}.Release|Win32.Build.0 = Release|Win32
 		{A21EB126-2BA3-40F8-B501-581467675A78}.Debug|Win32.ActiveCfg = Debug
 		{A21EB126-2BA3-40F8-B501-581467675A78}.Release|Win32.ActiveCfg = Release
+		{D2C91DE1-EC29-4214-BFA8-BFDCF96849DD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D2C91DE1-EC29-4214-BFA8-BFDCF96849DD}.Debug|Win32.Build.0 = Debug|Win32
+		{D2C91DE1-EC29-4214-BFA8-BFDCF96849DD}.Release|Win32.ActiveCfg = Release|Win32
+		{D2C91DE1-EC29-4214-BFA8-BFDCF96849DD}.Release|Win32.Build.0 = Release|Win32
+		{22D46634-B1CA-489D-B8D0-B3C7850D2EF8}.Debug|Win32.ActiveCfg = Debug|Win32
+		{22D46634-B1CA-489D-B8D0-B3C7850D2EF8}.Debug|Win32.Build.0 = Debug|Win32
+		{22D46634-B1CA-489D-B8D0-B3C7850D2EF8}.Release|Win32.ActiveCfg = Release|Win32
+		{22D46634-B1CA-489D-B8D0-B3C7850D2EF8}.Release|Win32.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
