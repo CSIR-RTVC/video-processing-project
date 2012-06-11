@@ -5,7 +5,7 @@ MODULE				: H264
 FILE NAME			: H264DecoderFilter.cpp
 
 DESCRIPTION			: H.264 decoder filter implementation
-					  
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2012, CSIR
@@ -55,24 +55,24 @@ H264DecoderFilter::H264DecoderFilter()
   m_pPicParamSet(NULL),
   m_uiPicParamSetLen(0)
 {
-	//Call the initialise input method to load all acceptable input types for this filter
-	InitialiseInputTypes();
-	// Init parameters
-	initParameters();
-	H264v2Factory factory;
-	m_pCodec = factory.GetCodecInstance();
-	// Set default codec properties 
-	if (m_pCodec)
-	{
-		//16 = YUV
-		//m_pCodec->SetParameter(IN_COLOUR, "16");
-		//0 = RGB only RGB is supported as an output
-		m_pCodec->SetParameter("outcolour", "0");
-	}
-	else
-	{
-		SetLastError("Unable to create H264 Encoder from Factory.", true);
-	}
+  //Call the initialise input method to load all acceptable input types for this filter
+  InitialiseInputTypes();
+  // Init parameters
+  initParameters();
+  H264v2Factory factory;
+  m_pCodec = factory.GetCodecInstance();
+  // Set default codec properties 
+  if (m_pCodec)
+  {
+    //16 = YUV
+    //m_pCodec->SetParameter(IN_COLOUR, "16");
+    //0 = RGB only RGB is supported as an output
+    m_pCodec->SetParameter("outcolour", "0");
+  }
+  else
+  {
+    SetLastError("Unable to create H264 Encoder from Factory.", true);
+  }
 }
 
 H264DecoderFilter::~H264DecoderFilter()
@@ -80,53 +80,53 @@ H264DecoderFilter::~H264DecoderFilter()
   SafeDeleteArray(m_pSeqParamSet);
   SafeDeleteArray(m_pPicParamSet);
 
-	if (m_pCodec)
-	{
-		m_pCodec->Close();
-		H264v2Factory factory;
-		factory.ReleaseCodecInstance(m_pCodec);
-	}
+  if (m_pCodec)
+  {
+    m_pCodec->Close();
+    H264v2Factory factory;
+    factory.ReleaseCodecInstance(m_pCodec);
+  }
 }
 
 CUnknown * WINAPI H264DecoderFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 {
-	H264DecoderFilter *pFilter = new H264DecoderFilter();
-	if (pFilter== NULL) 
-	{
-		*pHr = E_OUTOFMEMORY;
-	}
-	return pFilter;
+  H264DecoderFilter *pFilter = new H264DecoderFilter();
+  if (pFilter== NULL) 
+  {
+    *pHr = E_OUTOFMEMORY;
+  }
+  return pFilter;
 }
 
 void H264DecoderFilter::InitialiseInputTypes()
 {
-	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_VPP_H264,		&FORMAT_VideoInfo);
-	//RG Test 18012008
-	AddInputType(&MEDIATYPE_Stream, &MEDIASUBTYPE_VPP_H264,		&FORMAT_VideoInfo);
+  AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_VPP_H264,		&FORMAT_VideoInfo);
+  //RG Test 18012008
+  AddInputType(&MEDIATYPE_Stream, &MEDIASUBTYPE_VPP_H264,		&FORMAT_VideoInfo);
 }
 
 HRESULT H264DecoderFilter::SetMediaType( PIN_DIRECTION direction, const CMediaType *pmt )
 {
-	HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
-	if (direction == PINDIR_INPUT)
-	{
-		// Configure codec
-		m_pCodec->SetParameter(IMAGE_WIDTH, toString(m_nInWidth).c_str());
-		m_pCodec->SetParameter(IMAGE_HEIGHT, toString(m_nInHeight).c_str());
+  HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
+  if (direction == PINDIR_INPUT)
+  {
+    // Configure codec
+    m_pCodec->SetParameter(IMAGE_WIDTH, toString(m_nInWidth).c_str());
+    m_pCodec->SetParameter(IMAGE_HEIGHT, toString(m_nInHeight).c_str());
     // always flip the image on windows to get it into the desired YUV format
     m_pCodec->SetParameter("flip",            "1");
 
 #define RTVC_NEW_MOTION_EST
 #ifdef RTVC_NEW_MOTION_EST
-		// NB: New codec settings for auto-iframe detection: These settings need to correlate to the settings of the DECODER
-		m_pCodec->SetParameter("unrestrictedmotion",	"1");
-		m_pCodec->SetParameter("extendedpicturetype",	"1");
-		m_pCodec->SetParameter("unrestrictedmotion",	"1");
-		m_pCodec->SetParameter("advancedintracoding",	"1");
-		m_pCodec->SetParameter("alternativeintervlc",	"1");
-		m_pCodec->SetParameter("modifiedquant",			"1");
-		m_pCodec->SetParameter("autoipicture",			"1");
-		m_pCodec->SetParameter("ipicturefraction",		"0");
+    // NB: New codec settings for auto-iframe detection: These settings need to correlate to the settings of the DECODER
+    m_pCodec->SetParameter("unrestrictedmotion",	"1");
+    m_pCodec->SetParameter("extendedpicturetype",	"1");
+    m_pCodec->SetParameter("unrestrictedmotion",	"1");
+    m_pCodec->SetParameter("advancedintracoding",	"1");
+    m_pCodec->SetParameter("alternativeintervlc",	"1");
+    m_pCodec->SetParameter("modifiedquant",			"1");
+    m_pCodec->SetParameter("autoipicture",			"1");
+    m_pCodec->SetParameter("ipicturefraction",		"0");
 #endif
 
     // Check for private codec data
@@ -203,38 +203,38 @@ HRESULT H264DecoderFilter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
     }
 
 
-		if (!m_pCodec->Open())
-		{
-			//Houston: we have a failure
-			char* szErrorStr = m_pCodec->GetErrorStr();
-			printf("%s\n", szErrorStr);
-			// report the error to the main application
-			SetLastError(szErrorStr, true);
-		}
-	}
-	return hr;
+    if (!m_pCodec->Open())
+    {
+      //Houston: we have a failure
+      char* szErrorStr = m_pCodec->GetErrorStr();
+      printf("%s\n", szErrorStr);
+      // report the error to the main application
+      SetLastError(szErrorStr, true);
+    }
+  }
+  return hr;
 }
 
 HRESULT H264DecoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 {
-	if (iPosition < 0)
-	{
-		return E_INVALIDARG;
-	}
-	else if (iPosition == 0)
-	{
-		// Get the input pin's media type and return this as the output media type - we want to retain
-		// all the information about the image
-		HRESULT hr = m_pInput->ConnectionMediaType(pMediaType);
-		if (FAILED(hr))
-		{
-			return hr;
-		}
-		ASSERT(pMediaType->formattype == FORMAT_VideoInfo);
-		VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)pMediaType->pbFormat;
-		//Now we need to calculate the size of the output image
-		BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
-		
+  if (iPosition < 0)
+  {
+    return E_INVALIDARG;
+  }
+  else if (iPosition == 0)
+  {
+    // Get the input pin's media type and return this as the output media type - we want to retain
+    // all the information about the image
+    HRESULT hr = m_pInput->ConnectionMediaType(pMediaType);
+    if (FAILED(hr))
+    {
+      return hr;
+    }
+    ASSERT(pMediaType->formattype == FORMAT_VideoInfo);
+    VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)pMediaType->pbFormat;
+    //Now we need to calculate the size of the output image
+    BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+
     // We only support outputing 24bit RGB (This solves issues were RGB32 is encoded and decoded
     if (pBi->biBitCount != 24)
       pBi->biBitCount = 24;
@@ -243,7 +243,7 @@ HRESULT H264DecoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
     pBi->biCompression = BI_RGB;
 
     // Set subtype of stream
-  	pMediaType->subtype = MEDIASUBTYPE_RGB24;
+    pMediaType->subtype = MEDIASUBTYPE_RGB24;
 
     // get rid of decoder specific data
     // Store SPS and PPS in media format header
@@ -253,59 +253,59 @@ HRESULT H264DecoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
     memcpy(&uiAdditionalSize, pFormat + nSize - sizeof(int), sizeof(int));
     pMediaType->ReallocFormatBuffer(nSize - uiAdditionalSize);
 
-		return S_OK;
-	}
-	return VFW_S_NO_MORE_ITEMS;
+    return S_OK;
+  }
+  return VFW_S_NO_MORE_ITEMS;
 }
 
 HRESULT H264DecoderFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp )
 {
-	AM_MEDIA_TYPE mt;
-	HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
-	//Make sure that the format type is our custom format
-	ASSERT(mt.formattype == FORMAT_VideoInfo);
-	BITMAPINFOHEADER *pbmi = HEADER(mt.pbFormat);
-	pProp->cbBuffer = DIBSIZE(*pbmi);
+  AM_MEDIA_TYPE mt;
+  HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
+  if (FAILED(hr))
+  {
+    return hr;
+  }
+  //Make sure that the format type is our custom format
+  ASSERT(mt.formattype == FORMAT_VideoInfo);
+  BITMAPINFOHEADER *pbmi = HEADER(mt.pbFormat);
+  pProp->cbBuffer = DIBSIZE(*pbmi);
 
-	if (pProp->cbAlign == 0)
-	{
-		pProp->cbAlign = 1;
-	}
-	if (pProp->cBuffers == 0)
-	{
-		pProp->cBuffers = 30;
-	}
-	// Release the format block.
-	FreeMediaType(mt);
+  if (pProp->cbAlign == 0)
+  {
+    pProp->cbAlign = 1;
+  }
+  if (pProp->cBuffers == 0)
+  {
+    pProp->cBuffers = 30;
+  }
+  // Release the format block.
+  FreeMediaType(mt);
 
-	// Set allocator properties.
-	ALLOCATOR_PROPERTIES Actual;
-	hr = pAlloc->SetProperties(pProp, &Actual);
-	if (FAILED(hr)) 
-	{
-		return hr;
-	}
-	// Even when it succeeds, check the actual result.
-	if (pProp->cbBuffer > Actual.cbBuffer) 
-	{
-		return E_FAIL;
-	}
-	return S_OK;
+  // Set allocator properties.
+  ALLOCATOR_PROPERTIES Actual;
+  hr = pAlloc->SetProperties(pProp, &Actual);
+  if (FAILED(hr)) 
+  {
+    return hr;
+  }
+  // Even when it succeeds, check the actual result.
+  if (pProp->cbBuffer > Actual.cbBuffer) 
+  {
+    return E_FAIL;
+  }
+  return S_OK;
 }
 
 void H264DecoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength )
 {
-	//make sure we were able to initialise our converter
-	if (m_pCodec)
-	{
-		if (m_pCodec->Ready())
-		{
- 			// Mult by 8 to get number of bits
-			int nBitLength = lActualDataLength * 8;
+  //make sure we were able to initialise our converter
+  if (m_pCodec)
+  {
+    if (m_pCodec->Ready())
+    {
+      // Mult by 8 to get number of bits
+      int nBitLength = lActualDataLength * 8;
 
       // check if starts with start code: in that case strip it out
       //unsigned char startCode[4] = { 0, 0, 0, 1 };  
@@ -316,74 +316,74 @@ void H264DecoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, lon
       //  nBitLength -= 32;
       //}
 
-			//header.Extract((void*)pBufferIn, nBitLength);
-			int nResult = m_pCodec->Decode(pBufferIn, nBitLength, pBufferOut);
-			
-			if (nResult)
-			{
-				//Encoding was successful
-				lOutActualDataLength = m_nInWidth * m_nInHeight * BYTES_PER_PIXEL_RGB24;
-			}
-			else
-			{
-				//An error has occurred
-				DbgLog((LOG_TRACE, 0, TEXT("H264 Decode Error: %s"), m_pCodec->GetErrorStr()));
-				std::string sError = "H264 decode error has occurred: " + std::string(m_pCodec->GetErrorStr());
-				SetLastError(sError.c_str(), true);
-			}
-		}
-	}
+      //header.Extract((void*)pBufferIn, nBitLength);
+      int nResult = m_pCodec->Decode(pBufferIn, nBitLength, pBufferOut);
+
+      if (nResult)
+      {
+        //Encoding was successful
+        lOutActualDataLength = m_nInWidth * m_nInHeight * BYTES_PER_PIXEL_RGB24;
+      }
+      else
+      {
+        //An error has occurred
+        DbgLog((LOG_TRACE, 0, TEXT("H264 Decode Error: %s"), m_pCodec->GetErrorStr()));
+        std::string sError = "H264 decode error has occurred: " + std::string(m_pCodec->GetErrorStr());
+        SetLastError(sError.c_str(), true);
+      }
+    }
+  }
 }
 
 STDMETHODIMP H264DecoderFilter::GetParameter( const char* type, int* length, void* value )
 {
-	if (m_pCodec)
-	{
-		if (m_pCodec->GetParameter(type, length, value))
-		{
-			return S_OK;
-		}
-	}
-	return E_FAIL;
+  if (m_pCodec)
+  {
+    if (m_pCodec->GetParameter(type, length, value))
+    {
+      return S_OK;
+    }
+  }
+  return E_FAIL;
 }
 
 STDMETHODIMP H264DecoderFilter::SetParameter( const char* type, const char* value )
 {
-	if (m_pCodec)
-	{
-		if (m_pCodec->SetParameter(type, value))
-		{
-			return S_OK;
-		}
-	}
-	return E_FAIL;
+  if (m_pCodec)
+  {
+    if (m_pCodec->SetParameter(type, value))
+    {
+      return S_OK;
+    }
+  }
+  return E_FAIL;
 }
 
 
 HRESULT H264DecoderFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )
 {
-	// Check the major type.
-	if (mtOut->majortype != MEDIATYPE_Video)
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+  // Check the major type.
+  if (mtOut->majortype != MEDIATYPE_Video)
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
 
-	// Check subtypes
-	if (mtIn->subtype == MEDIASUBTYPE_VPP_H264)
-	{
-		if (mtOut->subtype != MEDIASUBTYPE_RGB24)
-		{
-			return VFW_E_TYPE_NOT_ACCEPTED;
-		}
-	}
-	else
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+  // Check subtypes
+  if (mtIn->subtype == MEDIASUBTYPE_VPP_H264)
+  {
+    if (mtOut->subtype != MEDIASUBTYPE_RGB24)
+    {
+      return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+  }
+  else
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
 
-	if (mtOut->formattype != FORMAT_VideoInfo)
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
-	return S_OK;
+  if (mtOut->formattype != FORMAT_VideoInfo)
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
+  return S_OK;
 }
