@@ -5,7 +5,7 @@ MODULE				: H264
 FILE NAME			: stdafx.cpp
 
 DESCRIPTION			: stdafx.cpp
-					  
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2012, CSIR
