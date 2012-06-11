@@ -5,7 +5,7 @@ MODULE				: H264
 FILE NAME			: H264DecoderFilter.cpp
 
 DESCRIPTION			: H.264 encoder filter implementation
-					  
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2012, CSIR
@@ -45,11 +45,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <wmcodecdsp.h>
 
 // Define used to switch between the actual switching version of the codec and the non switching
-	#ifdef _DEBUG
-		#pragma comment(lib, "H264v2d.lib")
-	#else
-		#pragma comment(lib, "H264v2.lib")
-	#endif
+#ifdef _DEBUG
+#pragma comment(lib, "H264v2d.lib")
+#else
+#pragma comment(lib, "H264v2.lib")
+#endif
 
 H264EncoderFilter::H264EncoderFilter()
   :CCustomBaseFilter(NAME("CSIR VPP H264 Encoder"), 0, CLSID_RTVC_VPP_H264Encoder),
@@ -63,37 +63,37 @@ H264EncoderFilter::H264EncoderFilter()
   m_uiIFramePeriod(0),
   m_uiCurrentFrame(0)
 {
-	//Call the initialise input method to load all acceptable input types for this filter
-	InitialiseInputTypes();
-	initParameters();
-	H264v2Factory factory;
-	m_pCodec = factory.GetCodecInstance();
-	// Set default codec properties 
-	if (m_pCodec)
-	{
-		//Set default quality to 16
-		m_pCodec->SetParameter( QUALITY, "1");
-		//16 = YUV
-		m_pCodec->SetParameter(IN_COLOUR, "16");
-		//16 = YUV
-		m_pCodec->SetParameter(OUT_COLOUR, "16");
-		// This multiplies the bit size of every i-frame by 2
-		m_pCodec->SetParameter(I_PICTURE_MULTIPLIER, "2");
-	}
-	else
-	{
-		SetLastError("Unable to create H264 Encoder from Factory.", true);
-	}
+  //Call the initialise input method to load all acceptable input types for this filter
+  InitialiseInputTypes();
+  initParameters();
+  H264v2Factory factory;
+  m_pCodec = factory.GetCodecInstance();
+  // Set default codec properties 
+  if (m_pCodec)
+  {
+    //Set default quality to 16
+    m_pCodec->SetParameter( QUALITY, "1");
+    //16 = YUV
+    m_pCodec->SetParameter(IN_COLOUR, "16");
+    //16 = YUV
+    m_pCodec->SetParameter(OUT_COLOUR, "16");
+    // This multiplies the bit size of every i-frame by 2
+    m_pCodec->SetParameter(I_PICTURE_MULTIPLIER, "2");
+  }
+  else
+  {
+    SetLastError("Unable to create H264 Encoder from Factory.", true);
+  }
 }
 
 H264EncoderFilter::~H264EncoderFilter()
 {
-	if (m_pCodec)
-	{
-		m_pCodec->Close();
-		H264v2Factory factory;
-		factory.ReleaseCodecInstance(m_pCodec);
-	}
+  if (m_pCodec)
+  {
+    m_pCodec->Close();
+    H264v2Factory factory;
+    factory.ReleaseCodecInstance(m_pCodec);
+  }
 
   SafeDeleteArray(m_pSeqParamSet);
   SafeDeleteArray(m_pPicParamSet);
@@ -101,59 +101,59 @@ H264EncoderFilter::~H264EncoderFilter()
 
 CUnknown * WINAPI H264EncoderFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 {
-	H264EncoderFilter *pFilter = new H264EncoderFilter();
-	if (pFilter== NULL) 
-	{
-		*pHr = E_OUTOFMEMORY;
-	}
-	return pFilter;
+  H264EncoderFilter *pFilter = new H264EncoderFilter();
+  if (pFilter== NULL) 
+  {
+    *pHr = E_OUTOFMEMORY;
+  }
+  return pFilter;
 }
 
- 
+
 void H264EncoderFilter::InitialiseInputTypes()
 {
-	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24,		&FORMAT_VideoInfo);
-	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_YUV420P,	&FORMAT_VideoInfo);
-	AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_I420,	&FORMAT_VideoInfo);
+  AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24,		&FORMAT_VideoInfo);
+  AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_YUV420P,	&FORMAT_VideoInfo);
+  AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_I420,	&FORMAT_VideoInfo);
 }
 
 
 HRESULT H264EncoderFilter::SetMediaType( PIN_DIRECTION direction, const CMediaType *pmt )
 {
-	HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
-	if (direction == PINDIR_INPUT)
-	{
+  HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
+  if (direction == PINDIR_INPUT)
+  {
     // try close just in case
     m_pCodec->Close();
 
     if (pmt->subtype == MEDIASUBTYPE_RGB24)
-		{
-			m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_RGB24);
-		}
-		else if (pmt->subtype == MEDIASUBTYPE_YUV420P)
-		{
+    {
+      m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_RGB24);
+    }
+    else if (pmt->subtype == MEDIASUBTYPE_YUV420P)
+    {
       // NOTE: RG: _BUILD_FOR_SHORT has been elminated outside of the H.264 codec
       // We will only use 8 bit YUV outside of the codec!
-			//m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P);
-			m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P8);
-		}
+      //m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P);
+      m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P8);
+    }
     else if (pmt->subtype == MEDIASUBTYPE_I420)
     {
-			m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P8);
-		}
+      m_pCodec->SetParameter(IN_COLOUR, IN_COLOUR_YUV420P8);
+    }
 
-		m_pCodec->SetParameter(IMAGE_WIDTH, toString(m_nInWidth).c_str());
-		m_pCodec->SetParameter(IMAGE_HEIGHT, toString(m_nInHeight).c_str());
+    m_pCodec->SetParameter(IMAGE_WIDTH, toString(m_nInWidth).c_str());
+    m_pCodec->SetParameter(IMAGE_HEIGHT, toString(m_nInHeight).c_str());
 
-		// NB: New codec settings for auto-iframe detection: These settings need to correlate to the settings of the DECODER
-		m_pCodec->SetParameter("unrestrictedmotion",	"1");
-		m_pCodec->SetParameter("extendedpicturetype",	"1");
-		m_pCodec->SetParameter("unrestrictedmotion",	"1");
-		m_pCodec->SetParameter("advancedintracoding",	"1");
-		m_pCodec->SetParameter("alternativeintervlc",	"1");
-		m_pCodec->SetParameter("modifiedquant",			  "1");
-		m_pCodec->SetParameter("autoipicture",			  "1");
-		m_pCodec->SetParameter("ipicturefraction",		"0");
+    // NB: New codec settings for auto-iframe detection: These settings need to correlate to the settings of the DECODER
+    m_pCodec->SetParameter("unrestrictedmotion",	"1");
+    m_pCodec->SetParameter("extendedpicturetype",	"1");
+    m_pCodec->SetParameter("unrestrictedmotion",	"1");
+    m_pCodec->SetParameter("advancedintracoding",	"1");
+    m_pCodec->SetParameter("alternativeintervlc",	"1");
+    m_pCodec->SetParameter("modifiedquant",			  "1");
+    m_pCodec->SetParameter("autoipicture",			  "1");
+    m_pCodec->SetParameter("ipicturefraction",		"0");
 
     // On Windows we will always flip the color-converted image by default
     m_pCodec->SetParameter("flip",		            "1");
@@ -205,26 +205,26 @@ HRESULT H264EncoderFilter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
     m_pCodec->SetParameter((char *)("picture coding type"),	  "0");	///< I-frame = H264V2_INTRA.
     m_pCodec->SetParameter((char *)("generate param set on open"),  "1");
 
-		if (!m_pCodec->Open())
-		{
-			//Houston: we have a failure
-			char* szErrorStr = m_pCodec->GetErrorStr();
-			printf("%s\n", szErrorStr);
-			SetLastError(szErrorStr, true);
+    if (!m_pCodec->Open())
+    {
+      //Houston: we have a failure
+      char* szErrorStr = m_pCodec->GetErrorStr();
+      printf("%s\n", szErrorStr);
+      SetLastError(szErrorStr, true);
       return hr;
-		}
-	}
-	return hr;
+    }
+  }
+  return hr;
 }
 
 HRESULT H264EncoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
 {
-	if (iPosition < 0)
-	{
-		return E_INVALIDARG;
-	}
-	else if (iPosition == 0)
-	{
+  if (iPosition < 0)
+  {
+    return E_INVALIDARG;
+  }
+  else if (iPosition == 0)
+  {
     if (!m_bUseMsH264)
     {
       // Get the input pin's media type and return this as the output media type - we want to retain
@@ -316,19 +316,19 @@ HRESULT H264EncoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
       pvi2->dwPictAspectRatioX = m_nInWidth;
       pvi2->dwPictAspectRatioY = m_nInHeight;
     }
-		return S_OK;
-	}
-	return VFW_S_NO_MORE_ITEMS;
+    return S_OK;
+  }
+  return VFW_S_NO_MORE_ITEMS;
 }
 
 HRESULT H264EncoderFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp )
 {
-	AM_MEDIA_TYPE mt;
-	HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
-	if (FAILED(hr))
-	{
-		return hr;
-	}
+  AM_MEDIA_TYPE mt;
+  HRESULT hr = m_pOutput->ConnectionMediaType(&mt);
+  if (FAILED(hr))
+  {
+    return hr;
+  }
 
   if (m_bUseMsH264)
   {
@@ -347,30 +347,30 @@ HRESULT H264EncoderFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
     pProp->cbBuffer = DIBSIZE(*pbmi);
   }
 
-	if (pProp->cbAlign == 0)
-	{
-		pProp->cbAlign = 1;
-	}
-	if (pProp->cBuffers == 0)
-	{
-		pProp->cBuffers = 1;
-	}
-	// Release the format block.
-	FreeMediaType(mt);
+  if (pProp->cbAlign == 0)
+  {
+    pProp->cbAlign = 1;
+  }
+  if (pProp->cBuffers == 0)
+  {
+    pProp->cBuffers = 1;
+  }
+  // Release the format block.
+  FreeMediaType(mt);
 
-	// Set allocator properties.
-	ALLOCATOR_PROPERTIES Actual;
-	hr = pAlloc->SetProperties(pProp, &Actual);
-	if (FAILED(hr)) 
-	{
-		return hr;
-	}
-	// Even when it succeeds, check the actual result.
-	if (pProp->cbBuffer > Actual.cbBuffer) 
-	{
-		return E_FAIL;
-	}
-	return S_OK;
+  // Set allocator properties.
+  ALLOCATOR_PROPERTIES Actual;
+  hr = pAlloc->SetProperties(pProp, &Actual);
+  if (FAILED(hr)) 
+  {
+    return hr;
+  }
+  // Even when it succeeds, check the actual result.
+  if (pProp->cbBuffer > Actual.cbBuffer) 
+  {
+    return E_FAIL;
+  }
+  return S_OK;
 }
 
 inline unsigned H264EncoderFilter::getParameterSetLength() const
@@ -392,11 +392,11 @@ inline unsigned H264EncoderFilter::copySequenceAndPictureParameterSetsIntoBuffer
 void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength )
 {
   lOutActualDataLength = 0;
-	//make sure we were able to initialise our Codec
-	if (m_pCodec)
-	{
-		if (m_pCodec->Ready())
-		{
+  //make sure we were able to initialise our Codec
+  if (m_pCodec)
+  {
+    if (m_pCodec->Ready())
+    {
       if (m_uiIFramePeriod)
       {
         ++m_uiCurrentFrame;
@@ -406,12 +406,12 @@ void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, lon
         }
       }
 
-			int nFrameBitLimit = 0;
-			if (m_nFrameBitLimit == 0)
-				// An encoded frame can never be bigger than an RGB format frame
-				nFrameBitLimit = m_nInWidth * m_nInHeight * 3 /* RGB */ * 8 /*8 bits*/ ;
-			else
-				nFrameBitLimit = m_nFrameBitLimit;
+      int nFrameBitLimit = 0;
+      if (m_nFrameBitLimit == 0)
+        // An encoded frame can never be bigger than an RGB format frame
+        nFrameBitLimit = m_nInWidth * m_nInHeight * 3 /* RGB */ * 8 /*8 bits*/ ;
+      else
+        nFrameBitLimit = m_nFrameBitLimit;
 
       BYTE* pOutBufferPos = pBufferOut;
 
@@ -435,27 +435,27 @@ void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, lon
           }
         }
 
-				DbgLog((LOG_TRACE, 0, TEXT("H264 Codec Success: Bit Length: %d Byte Length: %d"), m_pCodec->GetCompressedBitLength(), m_pCodec->GetCompressedByteLength()));
-			}
-			else
-			{
-				//An error has occurred
-				DbgLog((LOG_TRACE, 0, TEXT("H264 Codec Error: %s"), m_pCodec->GetErrorStr()));
-				std::string sError = m_pCodec->GetErrorStr();
-				sError += ". Requested frame bit limit=" + toString(nFrameBitLimit) + ".";
-				SetLastError(sError.c_str(), true);
-			}
-		}
-	}
+        DbgLog((LOG_TRACE, 0, TEXT("H264 Codec Success: Bit Length: %d Byte Length: %d"), m_pCodec->GetCompressedBitLength(), m_pCodec->GetCompressedByteLength()));
+      }
+      else
+      {
+        //An error has occurred
+        DbgLog((LOG_TRACE, 0, TEXT("H264 Codec Error: %s"), m_pCodec->GetErrorStr()));
+        std::string sError = m_pCodec->GetErrorStr();
+        sError += ". Requested frame bit limit=" + toString(nFrameBitLimit) + ".";
+        SetLastError(sError.c_str(), true);
+      }
+    }
+  }
 }
 
 HRESULT H264EncoderFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )
 {
-	// Check the major type.
-	if (mtOut->majortype != MEDIATYPE_Video)
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+  // Check the major type.
+  if (mtOut->majortype != MEDIATYPE_Video)
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
 
   if (m_bUseMsH264)
   {
@@ -483,42 +483,42 @@ HRESULT H264EncoderFilter::CheckTransform( const CMediaType *mtIn, const CMediaT
   }
 
   // Everything is good.
-	return S_OK;
+  return S_OK;
 }
 
 STDMETHODIMP H264EncoderFilter::GetParameter( const char* szParamName, int nBufferSize, char* szValue, int* pLength )
 {
-	if (SUCCEEDED(CCustomBaseFilter::GetParameter(szParamName, nBufferSize, szValue, pLength)))
-	{
-		return S_OK;
-	}
-	else
-	{
-		// Check if its a codec parameter
-		if (m_pCodec && m_pCodec->GetParameter(szParamName, pLength, szValue))
-		{
-			return S_OK;
-		}
-		return E_FAIL;
-	}
+  if (SUCCEEDED(CCustomBaseFilter::GetParameter(szParamName, nBufferSize, szValue, pLength)))
+  {
+    return S_OK;
+  }
+  else
+  {
+    // Check if its a codec parameter
+    if (m_pCodec && m_pCodec->GetParameter(szParamName, pLength, szValue))
+    {
+      return S_OK;
+    }
+    return E_FAIL;
+  }
 }
 
 STDMETHODIMP H264EncoderFilter::SetParameter( const char* type, const char* value )
 {
-	if (SUCCEEDED(CCustomBaseFilter::SetParameter(type, value)))
-	{
-		return S_OK;
-	}
-	else
-	{
-		// Check if it's a codec parameter
-		if (m_pCodec && m_pCodec->SetParameter(type, value))
-		{
+  if (SUCCEEDED(CCustomBaseFilter::SetParameter(type, value)))
+  {
+    return S_OK;
+  }
+  else
+  {
+    // Check if it's a codec parameter
+    if (m_pCodec && m_pCodec->SetParameter(type, value))
+    {
       // re-open codec if certain parameters have changed
       if ( 
-           (_strnicmp(type, MODE_OF_OPERATION_H264, strlen(type)) == 0 ) ||
-           (_strnicmp(type, QUALITY, strlen(type)) == 0 )
-         )
+        (_strnicmp(type, MODE_OF_OPERATION_H264, strlen(type)) == 0 ) ||
+        (_strnicmp(type, QUALITY, strlen(type)) == 0 )
+        )
       {
         if (!m_pCodec->Open())
         {
@@ -529,59 +529,59 @@ STDMETHODIMP H264EncoderFilter::SetParameter( const char* type, const char* valu
           return E_FAIL;
         }
       }
-			return S_OK;
-		}
-		return E_FAIL;
-	}
+      return S_OK;
+    }
+    return E_FAIL;
+  }
 }
 
 STDMETHODIMP H264EncoderFilter::GetParameterSettings( char* szResult, int nSize )
 {
-	if (SUCCEEDED(CCustomBaseFilter::GetParameterSettings(szResult, nSize)))
-	{
-		// Now add the codec parameters to the output:
-		int nLen = strlen(szResult);
-		char szValue[10];
-		int nParamLength = 0;
-		std::string sCodecParams("Codec Parameters:\r\n");
-		if( m_pCodec->GetParameter("parameters", &nParamLength, szValue))
-		{
-			int nParamCount = atoi(szValue);
-			char szParamValue[256];
-			memset(szParamValue, 0, 256);
+  if (SUCCEEDED(CCustomBaseFilter::GetParameterSettings(szResult, nSize)))
+  {
+    // Now add the codec parameters to the output:
+    int nLen = strlen(szResult);
+    char szValue[10];
+    int nParamLength = 0;
+    std::string sCodecParams("Codec Parameters:\r\n");
+    if( m_pCodec->GetParameter("parameters", &nParamLength, szValue))
+    {
+      int nParamCount = atoi(szValue);
+      char szParamValue[256];
+      memset(szParamValue, 0, 256);
 
-			int nLenName = 0, nLenValue = 0;
-			for (int i = 0; i < nParamCount; i++)
-			{
-				// Get parameter name
-				const char* szParamName;
-				m_pCodec->GetParameterName(i, &szParamName, &nLenName);
-				// Now get the value
-				m_pCodec->GetParameter(szParamName, &nLenValue, szParamValue);
-				sCodecParams += "Parameter: " + std::string(szParamName) + " : Value:" + std::string(szParamValue) + "\r\n";
-			}
-			// now check if the buffer is big enough:
-			int nTotalSize = sCodecParams.length() + nLen;
-			if (nTotalSize < nSize)
-			{
-				memcpy(szResult + nLen, sCodecParams.c_str(), sCodecParams.length());
-				// Set null terminator
-				szResult[nTotalSize] = 0;
-				return S_OK;
-			}
-			else
-			{
-				return E_FAIL;
-			}
-		}
-		else
-		{
-			return E_FAIL;
-		}
-	}
-	else
-	{
-		return E_FAIL;
-	}
+      int nLenName = 0, nLenValue = 0;
+      for (int i = 0; i < nParamCount; i++)
+      {
+        // Get parameter name
+        const char* szParamName;
+        m_pCodec->GetParameterName(i, &szParamName, &nLenName);
+        // Now get the value
+        m_pCodec->GetParameter(szParamName, &nLenValue, szParamValue);
+        sCodecParams += "Parameter: " + std::string(szParamName) + " : Value:" + std::string(szParamValue) + "\r\n";
+      }
+      // now check if the buffer is big enough:
+      int nTotalSize = sCodecParams.length() + nLen;
+      if (nTotalSize < nSize)
+      {
+        memcpy(szResult + nLen, sCodecParams.c_str(), sCodecParams.length());
+        // Set null terminator
+        szResult[nTotalSize] = 0;
+        return S_OK;
+      }
+      else
+      {
+        return E_FAIL;
+      }
+    }
+    else
+    {
+      return E_FAIL;
+    }
+  }
+  else
+  {
+    return E_FAIL;
+  }
 }
 

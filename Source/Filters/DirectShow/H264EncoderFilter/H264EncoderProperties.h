@@ -70,7 +70,7 @@ public:
 
     // Mode of operation
     HRESULT hr = setComboTextFromFilterParameter(MODE_OF_OPERATION_H264, IDC_CMB_MODE_OF_OPERATION);
-    
+
     // frame bit limit
     hr = setEditTextFromIntFilterParameter(FRAME_BIT_LIMIT, IDC_EDIT_BITRATE_LIMIT);
     if (FAILED(hr)) return hr;
