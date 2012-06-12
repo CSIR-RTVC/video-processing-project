@@ -108,7 +108,7 @@ public:
   /// Overridden from CSettingsInterface
   STDMETHODIMP GetParameter( const char* szParamName, int nBufferSize, char* szValue, int* pLength );
   /// Overridden from CSettingsInterface
-  STDMETHODIMP CSetParameter( const char* type, const char* value);
+  STDMETHODIMP SetParameter( const char* type, const char* value);
   /// Overridden from CSettingsInterface
   STDMETHODIMP GetParameterSettings( char* szResult, int nSize );
 
