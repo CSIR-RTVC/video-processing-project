@@ -53,13 +53,15 @@ REM Set this to VC8 or VC9 depending on which VS version you want to use
   @goto SET_VISUAL_STUDIO
 
 :SET_VC_PATH
+REDM try the D drive first
+@IF exist "D:\Program Files (x86)\%VisualStudioFolder%" GOTO SET_D_X86
+
+@IF exist "D:\Program Files\%VisualStudioFolder%" GOTO SET_D
+
 @IF exist "C:\Program Files (x86)\%VisualStudioFolder%" GOTO SET_C_X86
   
 @IF exist "C:\Program Files\%VisualStudioFolder%" GOTO SET_C
 
-@IF exist "D:\Program Files (x86)\%VisualStudioFolder%" GOTO SET_D_X86
-
-@IF exist "D:\Program Files\%VisualStudioFolder%" GOTO SET_D
 
 :SET_VISUAL_STUDIO
   @set VisualStudioRoot=%InstallRoot%\%VisualStudioFolder%
