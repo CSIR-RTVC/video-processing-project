@@ -91,7 +91,7 @@ public:
 		return ReadSettings();
 	}
 
-	BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		//TODO: only SetDirty if the spin message was intercepted
 		SetDirty();

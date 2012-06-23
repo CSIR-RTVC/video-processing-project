@@ -58,7 +58,7 @@ public:
   FilterPropertiesBase(NAME("H264 Properties"), pUnk, IDD_SWITCH_DIALOG, IDS_SWITCH_CAPTION)
   {;}
 
-  BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+  INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
   {
     // Let the parent class handle the message.
     return FilterPropertiesBase::OnReceiveMessage(hwnd,uMsg,wParam,lParam);

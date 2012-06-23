@@ -62,7 +62,7 @@ public:
 	FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION)
 	{;}
 
-	BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		// Let the parent class handle the message.
 		return FilterPropertiesBase::OnReceiveMessage(hwnd,uMsg,wParam,lParam);
