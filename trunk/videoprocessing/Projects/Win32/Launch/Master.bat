@@ -24,13 +24,13 @@
 @set RTVCLibDir=%SourceDir%\RtvcLib
 @echo -- RTVCLibDir set to %RTVCLibDir%
 
-@set BuildDir=%RTVCRootDir%\Build\%VS_VERSION%
+@set BuildDir=%RTVCRootDir%\Build\%VS_VERSION%%TARGET_DIR%
 @echo -- BuildDir set to %BuildDir%
 @set ReleaseBuildDir=%BuildDir%\Release
 @echo -- ReleaseBuildDir set to %ReleaseBuildDir%
 @set DebugBuildDir=%BuildDir%\Debug
 @echo -- DebugBuildDir set to %DebugBuildDir%
-@set LibDir=%RTVCRootDir%\Lib\%VS_VERSION%
+@set LibDir=%RTVCRootDir%\Lib%TARGET_DIR%\%VS_VERSION%
 @echo -- LibDir set to %LibDir%
 
 @echo Setting up 3rd party directories
@@ -50,7 +50,7 @@
 @set PATH=%VisualStudioRoot%\Common7\Tools\Bin;%PATH%
 @set PATH=%VisualStudioRoot%\Common7\IDE;%PATH%
 @set PATH=%VisualStudioRoot%\Common7\Tools;%PATH%
-@set PATH=%VisualStudioRoot%\VC\bin;%PATH%
+@set PATH=%VisualStudioRoot%\VC\%VC_BIN%;%PATH%
 @set PATH=%WindowsSDKDir%\Bin;%PATH%
 
 @echo Setting up System INCLUDE...
@@ -65,9 +65,9 @@
 @set INCLUDE=%RTVCLibDir%;%INCLUDE%
 
 @echo Setting up System LIB...
-@set LIB=%VCInstallDir%\lib;
-@set LIB=%VCInstallDir%\atlmfc\lib;%LIB%
+@set LIB=%VCInstallDir%\%VC_LIB%;
+@set LIB=%VCInstallDir%\atlmfc\%VC_LIB%;%LIB%
 @set LIB=%VSInstallDir%;%LIB%
 @set LIB=%DXSDKDir%\lib;%LIB%
-@set LIB=%WindowsSDKDir%\lib;%LIB%
+@set LIB=%WindowsSDKDir%\%SDK_LIB%;%LIB%
 @set LIB=%LibDir%;%LIB%

@@ -69,8 +69,35 @@ REM try the D drive first
 :SET_VISUAL_STUDIO
   @set VisualStudioRoot=%InstallRoot%\%VisualStudioFolder%
   @set VisualStudio=%VisualStudioRoot%\Common7\IDE\%VC_EXE%
+  @goto SET_TARGET
+
+REM Set target to X86_64 here to target 64-bit
+:SET_TARGET
+  @set TARGET=X86_64
+
+  @IF %TARGET% EQU X86_64 GOTO SETUP_X86_64
+
+REM Default: target native
+  @GOTO SETUP_NATIVE
+
+
+:SETUP_X86_64:
+  @set VC_BIN=bin\x86_amd64
+  @set VC_LIB=lib\amd64
+  @set SDK_LIB=lib\x64
+  @set TARGET_DIR=
   @goto END
+
+:SETUP_NATIVE:
+  @set VC_BIN=bin
+  @set VC_LIB=lib
+  @set SDK_LIB=lib
+
+@goto END
 
 :END
 @echo -- VisualStudioRoot set to %VisualStudioRoot%
 @echo -- VisualStudio set to %VisualStudio%
+@echo -- VC_BIN set to %VC_BIN%
+@echo -- VC_LIB set to %VC_LIB%
+@echo -- SDK_LIB set to %SDK_LIB%
