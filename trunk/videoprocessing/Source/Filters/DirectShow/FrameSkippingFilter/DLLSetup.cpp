@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "FrameSkippingProperties.h"
 //////////////////////////////////////////////////////////////////////////
 //###############################  Standard Filter DLL Code ###############################
-static const WCHAR g_wszName[] = L"CSIR RTVC Frame Skipping Filter";   /// A name for the filter 
+static const WCHAR g_wszName[] = L"CSIR VPP Frame Skipping Filter";   /// A name for the filter 
 
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
