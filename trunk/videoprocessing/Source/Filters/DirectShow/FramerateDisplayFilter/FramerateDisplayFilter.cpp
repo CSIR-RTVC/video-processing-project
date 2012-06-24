@@ -273,10 +273,20 @@ HRESULT FramerateDisplayFilter::CheckInputType(const CMediaType* mtIn)
 		return VFW_E_TYPE_NOT_ACCEPTED;
 	}
 
+  // for now reject FORMAT_VideoInfo2 as well to be safe
 	if (mtIn->formattype != FORMAT_VideoInfo)
 	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
+    return VFW_E_TYPE_NOT_ACCEPTED;
 	}
+  else
+  {
+    // for now only support non-upside down video: otherwise our text could be upside-down in
+    // in the final rendered video
+		VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)mtIn->pbFormat;
+		BITMAPINFOHEADER* pBi = &(pVih->bmiHeader);
+		if (pBi->biHeight < 0 )		
+      return VFW_E_TYPE_NOT_ACCEPTED;
+  }
   return S_OK;
 }
 

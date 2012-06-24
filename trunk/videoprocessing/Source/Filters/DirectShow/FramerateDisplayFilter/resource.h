@@ -1,6 +1,6 @@
 //{{NO_DEPENDENCIES}}
 // Microsoft Visual C++ generated include file.
-// Used by TimestampFilter.rc
+// Used by FramerateDisplayFilter.rc
 //
 #define IDS_FRAMERATE_CAPTION           101
 #define IDD_DIALOG1                     102
@@ -16,6 +16,8 @@
 #define IDC_EDIT3                       1009
 #define IDC_EDIT_RIGHT                  1009
 #define IDC_SPIN4                       1010
+#define CMB_MODE                        1011
+#define IDC_CMB_MODE                    1011
 
 // Next default values for new objects
 // 
@@ -23,7 +25,7 @@
 #ifndef APSTUDIO_READONLY_SYMBOLS
 #define _APS_NEXT_RESOURCE_VALUE        102
 #define _APS_NEXT_COMMAND_VALUE         40001
-#define _APS_NEXT_CONTROL_VALUE         1011
+#define _APS_NEXT_CONTROL_VALUE         1012
 #define _APS_NEXT_SYMED_VALUE           101
 #endif
 #endif

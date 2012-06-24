@@ -32,12 +32,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #pragma once
-
+#include <cassert>
 #include <DirectShow/FilterPropertiesBase.h>
 
 #include "resource.h"
 
 #define BUFFER_SIZE 256
+#define UF_MODE "mode"
+#define UF_FPS_TS "FPS Timestamp (TS)"
+#define UF_FPS_ST "FPS Timestamp (ST)"
 
 class FramerateDisplayProperties : public FilterPropertiesBase
 {
@@ -59,45 +62,42 @@ public:
 
 	HRESULT ReadSettings()
 	{
-		short lower = 0;
-		short upper = SHRT_MAX;
+    initialiseControls();
 
-		// Init UI
-		long lResult = SendMessage(			// returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN1),	// handle to destination control
-			(UINT) UDM_SETRANGE,			// message ID
-			(WPARAM) 0,						// = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			);
-		lResult = SendMessage(			// returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN2),	// handle to destination control
-			(UINT) UDM_SETRANGE,			// message ID
-			(WPARAM) 0,						// = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			);
+    int nLength = 0;
+    char szBuffer[BUFFER_SIZE];
 
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
-		HRESULT hr = m_pSettingsInterface->GetParameter("X", sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-		{
-			SetDlgItemText(m_Dlg, IDC_EDIT_X, szBuffer);
-			m_uiX = atoi(szBuffer);
-		}
-		else
-		{
-			return E_FAIL;
-		}
-		hr = m_pSettingsInterface->GetParameter("Y", sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-		{
-			SetDlgItemText(m_Dlg, IDC_EDIT_Y, szBuffer);
-			m_uiY = atoi(szBuffer);
-		}
-		else
-		{
-			return E_FAIL;
-		}
+    // Mode of operation
+    HRESULT hr = m_pSettingsInterface->GetParameter("mode", sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+    {
+      unsigned uiMode = atoi(szBuffer);
+      switch (uiMode)
+      {
+      case 0:
+        {
+          SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_SELECTSTRING,  0, (LPARAM)UF_FPS_TS);
+          break;
+        }
+      case 1:
+        {
+          SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_SELECTSTRING,  0, (LPARAM)UF_FPS_ST);
+          break;
+        }
+      }
+    }
+    else
+    {
+      return E_FAIL;
+    }
+
+    // X
+    hr = setEditTextFromIntFilterParameter("X", IDC_EDIT_X);
+    if (FAILED(hr)) return hr;
+
+    // Y
+    hr = setEditTextFromIntFilterParameter("Y", IDC_EDIT_Y);
+    if (FAILED(hr)) return hr;
 		
 		return hr;
 	}
@@ -106,16 +106,45 @@ public:
 	{
 		int nLength = 0;
 		char szBuffer[BUFFER_SIZE];
-		nLength = GetDlgItemText(m_Dlg, IDC_EDIT_X, szBuffer, BUFFER_SIZE);
-		m_uiX = atoi(szBuffer);
-		m_pSettingsInterface->SetParameter("X", szBuffer);
-		nLength = GetDlgItemText(m_Dlg, IDC_EDIT_Y, szBuffer, BUFFER_SIZE);
-		m_uiY = atoi(szBuffer);
-		m_pSettingsInterface->SetParameter("Y", szBuffer);
+
+    // mode of operation
+    int index = ComboBox_GetCurSel(GetDlgItem(m_Dlg, IDC_CMB_MODE));
+    ASSERT (index != CB_ERR);
+    itoa(index, szBuffer, 10);
+    m_pSettingsInterface->SetParameter(UF_MODE, szBuffer);
+    //nLength = GetDlgItemText(m_Dlg, IDC_CMB_MODE, szBuffer, BUFFER_SIZE);
+    //if (strcmp(szBuffer, UF_FPS_TS_DATE_TIME) == 0)
+    //{
+
+    //}
+    m_pSettingsInterface->SetParameter(UF_MODE, szBuffer);
+
+        // chrom offset
+    HRESULT hr = setIntFilterParameterFromEditText("X", IDC_EDIT_X);
+    assert(SUCCEEDED(hr));
+
+    hr = setIntFilterParameterFromEditText("Y", IDC_EDIT_Y);
+    assert(SUCCEEDED(hr));
+
 		return S_OK;
 	} 
 
 private:
+  void initialiseControls()
+  {
+    InitCommonControls();
+
+    // mode of operation
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_RESETCONTENT, 0, 0);
+    //Add default option
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_ADDSTRING,	   0, (LPARAM)UF_FPS_TS);
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_SELECTSTRING,  0, (LPARAM)UF_FPS_TS);
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_INSERTSTRING,  1, (LPARAM)UF_FPS_ST);
+    SendMessage(GetDlgItem(m_Dlg, IDC_CMB_MODE), CB_SETMINVISIBLE, 2, 0);
+
+    setSpinBoxRange(IDC_SPIN1, 0, SHRT_MAX);
+    setSpinBoxRange(IDC_SPIN2, 0, SHRT_MAX);
+  }
 
 	unsigned m_uiX;
 	unsigned m_uiY;
