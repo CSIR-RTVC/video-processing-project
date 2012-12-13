@@ -1,5 +1,5 @@
 REM Set this to VC8 or VC9 depending on which VS version you want to use
-@set VS_VERSION=VC10
+@set VS_VERSION=VC11
 
 REM Set this to devenv.exe or VCExpress.exe
 @set VC_EXE=devenv.exe
@@ -73,7 +73,8 @@ REM try the D drive first
 
 REM Set target to X86_64 here to target 64-bit
 :SET_TARGET
-  @set TARGET=X86_64
+  @set TARGET=X86
+REM  @set TARGET=X86_64
 
   @IF %TARGET% EQU X86_64 GOTO SETUP_X86_64
 
