@@ -18,10 +18,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
     <ConfigurationType>DynamicLibrary</ConfigurationType>
     <CharacterSet>MultiByte</CharacterSet>
+    <PlatformToolset>v110</PlatformToolset>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.props" />
   <ImportGroup Label="ExtensionSettings">
@@ -76,6 +78,7 @@
       <TargetMachine>MachineX86</TargetMachine>
       <Profile>true</Profile>
       <AdditionalOptions>/Verbose:lib %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalDependencies>libRtvcImageD.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -100,20 +103,13 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(LibDir)/H264v2.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
+      <AdditionalDependencies>libRtvcImage.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="..\..\..\..\..\Source\Codecs\H264v2\ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\..\RtvcLib\GeneralUtils\GeneralUtils.vcxproj">
-      <Project>{363ef880-9103-4b83-a363-824960f932b9}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
-    <ProjectReference Include="..\..\RtvcLib\Image\Image.vcxproj">
-      <Project>{00930375-8b79-4d36-9b1f-e45d3eac51a0}</Project>
-      <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
-    </ProjectReference>
     <ProjectReference Include="..\CodecUtils\CodecUtils.vcxproj">
       <Project>{17550f11-33b8-4454-80bc-ee7177d39752}</Project>
       <ReferenceOutputAssembly>false</ReferenceOutputAssembly>
