@@ -1,6 +1,6 @@
 /** @file
 
-MODULE				: H264
+MODULE				: H264Source
 
 FILE NAME			: H264Source.h
 
@@ -45,6 +45,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // UNITS = 10 ^ 7  
 // UNITS / 30 = 30 fps;
 // UNITS / 20 = 20 fps, etc
+const REFERENCE_TIME FPS_60 = UNITS / 60;
 const REFERENCE_TIME FPS_30 = UNITS / 30;
 const REFERENCE_TIME FPS_25 = UNITS / 25;
 const REFERENCE_TIME FPS_20 = UNITS / 20;
@@ -74,6 +75,7 @@ static const GUID CLSID_H264Properties =
 
 // fwd
 class H264OutputPin;
+class ICodecv2;
 
 class H264SourceFilter :  public CSource,
                           public CSettingsInterface,  /* Rtvc Settings Interface */
@@ -101,6 +103,7 @@ public:
   {
     addParameter( SOURCE_FPS, &m_iFramesPerSecond, 30);
     addParameter( USE_RTVC_H264, &m_bUseRtvcH264, false);
+    addParameter( SOURCE_DIMENSIONS, &m_sDimensions, "", true);
   }
 
   STDMETHODIMP SetParameter( const char* type, const char* value );
@@ -200,6 +203,7 @@ private:
     return isSps(nalUnitHeader) || isPps(nalUnitHeader);
   }
 
+  bool parseParameterSets();
   void recalculate();
   void reset();
   bool readNalUnit();
@@ -212,12 +216,14 @@ private:
 
   int m_iWidth;
   int m_iHeight;
+  std::string m_sDimensions;
   std::string m_sFile;
 
   unsigned char* m_pSeqParamSet;
   unsigned m_uiSeqParamSetLen;
   unsigned char* m_pPicParamSet;
   unsigned m_uiPicParamSetLen;
+  ICodecv2* m_pCodec;
 
   unsigned m_uiCurrentBufferSize;
   unsigned char* m_pBuffer;

@@ -32,9 +32,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #include "stdafx.h"
+#include <sstream>
 #include "H264Source.h"
 #include "H264OutputPin.h"
-
+#include <Codecs/H264v2/H264v2.h>
+#include <Codecs/CodecUtils/ICodecv2.h>
 #include <Shared/Conversion.h>
 #include <Shared/StringUtil.h>
 
@@ -44,10 +46,17 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
   &MEDIASUBTYPE_NULL      // Minor type
 };
 
-#define DEFAULT_WIDTH 352
-#define DEFAULT_HEIGHT 288
+// TODO: parse width and height from sequence parameter set
+#define DEFAULT_WIDTH 176
+#define DEFAULT_HEIGHT 144
 
 const unsigned char g_startCode[] = { 0, 0, 0, 1};
+
+#ifdef _DEBUG
+#pragma comment(lib, "H264v2d.lib")
+#else
+#pragma comment(lib, "H264v2.lib")
+#endif
 
 CUnknown * WINAPI H264SourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
 {
@@ -65,8 +74,8 @@ CUnknown * WINAPI H264SourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)
 const unsigned MINIMUM_BUFFER_SIZE = 1024;
 H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
   : CSource(NAME("CSIR VPP H264 Source"), pUnk, CLSID_H264Source),
-  m_iWidth(DEFAULT_WIDTH),
-  m_iHeight(DEFAULT_HEIGHT),
+  m_iWidth(0),
+  m_iHeight(0),
   m_iFramesPerSecond(25),
   m_uiCurrentBufferSize(MINIMUM_BUFFER_SIZE),
   m_pBuffer(NULL),
@@ -92,7 +101,16 @@ H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
       *phr = E_OUTOFMEMORY;
     else
       *phr = S_OK;
-  }  
+  }
+
+  H264v2Factory factory;
+  m_pCodec = factory.GetCodecInstance();
+  // Set default codec properties 
+  if (!m_pCodec)
+  {
+    SetLastError("Unable to create H264 Encoder from Factory.", true);
+    *phr = E_OUTOFMEMORY;
+  }
 }
 
 H264SourceFilter::~H264SourceFilter()
@@ -108,6 +126,13 @@ H264SourceFilter::~H264SourceFilter()
     delete[] m_pBuffer;
 
   delete m_pPin;
+
+  if (m_pCodec)
+  {
+    m_pCodec->Close();
+    H264v2Factory factory;
+    factory.ReleaseCodecInstance(m_pCodec);
+  }
 }
 
 void H264SourceFilter::reset()
@@ -191,6 +216,14 @@ STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
 
     // check if we found the parameter sets
     if (!(bSps && bPps)) return E_FAIL;
+    // parse sequence parameter set
+    // Only fail if using the RTVC decoder
+    // The MS one might be more forgiving
+    if (!parseParameterSets() && m_bUseRtvcH264)
+    {
+      SetLastError("Failed to parse parameter required for RTVC codec sets in: " + m_sFile, true);
+      return E_FAIL;
+    }
 
     // reset file pointer
     reset();
@@ -201,6 +234,51 @@ STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
   {
     SetLastError("Failed to open file: " + m_sFile, true);
     return E_FAIL;
+  }
+}
+
+bool H264SourceFilter::parseParameterSets()
+{
+  BYTE buffer[256];
+  // now configure the codec
+  int nResult = m_pCodec->Decode(m_pSeqParamSet, m_uiSeqParamSetLen * 8, buffer);
+  if (nResult)
+  {
+    //Encoding was successful
+    nResult = m_pCodec->Decode(m_pPicParamSet, m_uiPicParamSetLen * 8, buffer);
+    if (nResult)
+    {
+      // success
+      int len = 0;
+      int res = m_pCodec->GetParameter("width", &len, buffer);
+      ASSERT (res);
+      buffer[len] = 0;
+      m_iWidth = atoi((const char*)buffer);
+      res = m_pCodec->GetParameter("height", &len, buffer);
+      ASSERT (res);
+      buffer[len] = 0;
+      m_iHeight = atoi((const char*)buffer);
+      std::ostringstream ostr;
+      ostr << m_iWidth << "x" << m_iHeight;
+      m_sDimensions = ostr.str();
+      return true;
+    }
+    else
+    {
+      //An error has occurred
+      DbgLog((LOG_TRACE, 0, TEXT("H264 Decode Error: %s"), m_pCodec->GetErrorStr()));
+      std::string sError = "H264 decode error has occurred: " + std::string(m_pCodec->GetErrorStr());
+      SetLastError(sError.c_str(), true);
+      return false;
+    }
+  }
+  else
+  {
+    //An error has occurred
+    DbgLog((LOG_TRACE, 0, TEXT("H264 Decode Error: %s"), m_pCodec->GetErrorStr()));
+    std::string sError = "H264 decode error has occurred: " + std::string(m_pCodec->GetErrorStr());
+    SetLastError(sError.c_str(), true);
+    return false;
   }
 }
 
