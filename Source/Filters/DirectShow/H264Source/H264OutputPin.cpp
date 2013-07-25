@@ -41,10 +41,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 H264OutputPin::H264OutputPin(HRESULT *phr, H264SourceFilter* pFilter)
   : CSourceStream(NAME("CSIR RTVC H264 Source"), phr, pFilter, L"Out"),
   m_pFilter(pFilter),
-  //m_iWidth(DEFAULT_WIDTH),
-  //m_iHeight(DEFAULT_HEIGHT),
   m_iCurrentFrame(0),
-  m_rtFrameLength(FPS_25) 
+  m_rtFrameLength(FPS_30) 
 {
 
 }
@@ -160,100 +158,22 @@ HRESULT H264OutputPin::GetMediaType(CMediaType *pMediaType)
       }
   }
   return S_OK;
-
-#if 0
-//#define TRY_USE_MS_H264_DECODER
-#ifdef TRY_USE_MS_H264_DECODER
-  
-  pMediaType->InitMediaType();    
-  pMediaType->SetType(&MEDIATYPE_Video);
-  pMediaType->SetSubtype(&MEDIASUBTYPE_H264);
-  pMediaType->SetFormatType(&FORMAT_VideoInfo2);
-  VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pMediaType->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2));
-  ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
-  pvi2->bmiHeader.biBitCount = 24;
-  pvi2->bmiHeader.biSize = 40;
-  pvi2->bmiHeader.biPlanes = 1;
-  pvi2->bmiHeader.biWidth = m_pFilter->m_iWidth;
-  pvi2->bmiHeader.biHeight = m_pFilter->m_iHeight;
-  pvi2->bmiHeader.biSize = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
-  pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
-  pvi2->bmiHeader.biCompression = DWORD('1cva');
-  //pvi2->AvgTimePerFrame = m_tFrame;
-  //pvi2->AvgTimePerFrame = 1000000;
-  const REFERENCE_TIME FPS_25 = UNITS / 25;
-  pvi2->AvgTimePerFrame = FPS_25;
-  //SetRect(&pvi2->rcSource, 0, 0, m_cx, m_cy);
-  SetRect(&pvi2->rcSource, 0, 0, m_pFilter->m_iWidth, m_pFilter->m_iHeight);
-  pvi2->rcTarget = pvi2->rcSource;
-
-  pvi2->dwPictAspectRatioX = m_pFilter->m_iWidth;
-  pvi2->dwPictAspectRatioY = m_pFilter->m_iHeight;
-  return S_OK;
-#else
-  // Allocate enough room for the VIDEOINFOHEADER
-  VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->AllocFormatBuffer( sizeof(VIDEOINFOHEADER) );
-  if (pvi == 0) 
-    return(E_OUTOFMEMORY);
-
-  ZeroMemory(pvi, pMediaType->cbFormat);   
-  pvi->AvgTimePerFrame = m_rtFrameLength;
-  //pvi->dwBitRate = ((int)(m_pFilter->m_iFramesPerSecond * m_pFilter->m_iFrameSize * m_pFilter->m_dBitsPerPixel)) << 3;
-
-  pvi->bmiHeader.biBitCount = 12;
-  pvi->bmiHeader.biCompression = DWORD('1cva');
-
-  pvi->bmiHeader.biClrImportant = 0;
-  pvi->bmiHeader.biClrUsed = 0;
-  pvi->bmiHeader.biPlanes = 1;
-  pvi->bmiHeader.biXPelsPerMeter = 0;
-  pvi->bmiHeader.biYPelsPerMeter = 0;
-  pvi->bmiHeader.biWidth = m_pFilter->m_iWidth;
-  pvi->bmiHeader.biHeight = m_pFilter->m_iHeight;
-
-
-  unsigned uiFramesize = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
-  pvi->bmiHeader.biSizeImage = uiFramesize;
-  pvi->bmiHeader.biSize = 40;
-
-  // Clear source and target rectangles
-  SetRectEmpty(&(pvi->rcSource)); // we want the whole image area rendered
-  SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
-
-  pMediaType->SetType(&MEDIATYPE_Video);
-  pMediaType->SetFormatType(&FORMAT_VideoInfo);
-  pMediaType->SetTemporalCompression(FALSE);
-
-  static const GUID MEDIASUBTYPE_H264M = 
-  { 0xbdf25152, 0x46b, 0x4509, { 0x8e, 0x55, 0x6c, 0x73, 0x83, 0x1c, 0x8d, 0xc4 } };
-
-  pMediaType->SetSubtype(&MEDIASUBTYPE_H264M);
-
-  pMediaType->SetSampleSize( uiFramesize );
-  return S_OK;
-#endif
-#endif
 }
-
 
 HRESULT H264OutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest)
 {
   HRESULT hr;
   CAutoLock cAutoLock(m_pFilter->pStateLock());
-
   CheckPointer(pAlloc, E_POINTER);
   CheckPointer(pRequest, E_POINTER);
-
-  //VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*) m_mt.Format();
-
   // Ensure a minimum number of buffers
   if (pRequest->cBuffers == 0)
   {
     pRequest->cBuffers = 1;
   }
   //pRequest->cbBuffer = pvi->bmiHeader.biSizeImage;
-  // hard-coding for now
-  pRequest->cbBuffer = 352 * 288 * 3;
+  // TODO: hard-coding for now
+  pRequest->cbBuffer = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
 
   ALLOCATOR_PROPERTIES Actual;
   hr = pAlloc->SetProperties(pRequest, &Actual);
@@ -270,7 +190,6 @@ HRESULT H264OutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERT
 
   return S_OK;
 }
-
 
 // This is where we insert the H264 NAL units into the video stream.
 // FillBuffer is called once for every sample in the stream.
@@ -296,9 +215,9 @@ HRESULT H264OutputPin::FillBuffer(IMediaSample *pSample)
 
   ASSERT(m_pFilter->m_uiCurrentNalUnitSize > 0);
   memcpy( pData, m_pFilter->m_pBuffer, m_pFilter->m_uiCurrentNalUnitSize );
+
 #if 1
-#if 1
-  if (!m_pFilter->isParameterSet(m_pFilter->m_pBuffer[0]))
+  if (!m_pFilter->isParameterSet(m_pFilter->m_pBuffer[4]))
   {
     // TODO: non VLC NAL units should not increment the timestamp
     REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
@@ -315,7 +234,7 @@ HRESULT H264OutputPin::FillBuffer(IMediaSample *pSample)
   pSample->SetTime( NULL, NULL );
 #endif
 
-  if (m_pFilter->isIdrFrame(m_pFilter->m_pBuffer[0]))
+  if (m_pFilter->isIdrFrame(m_pFilter->m_pBuffer[4]))
   {
     pSample->SetSyncPoint(TRUE);
   }
@@ -323,31 +242,7 @@ HRESULT H264OutputPin::FillBuffer(IMediaSample *pSample)
   {
     pSample->SetSyncPoint(false);
   }
-
-  pSample->SetActualDataLength(m_pFilter->m_uiCurrentNalUnitSize);
-#else
-#if 0
-  // TODO: non VLC NAL units should not increment the timestamp
-  REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
-  REFERENCE_TIME rtStop  = rtStart + m_rtFrameLength;
-  pSample->SetTime( &rtStart, &rtStop );
-#else
-  // setting timestamps to NULL until we can parse the NAL units to check the type
-  pSample->SetTime( NULL, NULL );
-#endif
-
-  // Set TRUE on every sample for uncompressed frames
-  pSample->SetSyncPoint(TRUE);
-
   pSample->SetActualDataLength(m_pFilter->m_uiCurrentNalUnitSize);
 
-  m_iCurrentFrame++;
-#endif
-
-  //Sleep(30);
-  //Sleep(30);
-  //Sleep(30);
-  //Sleep(30);
-  //Sleep(100);
   return S_OK;
 }

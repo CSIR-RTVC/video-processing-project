@@ -61,8 +61,6 @@ public:
 protected:
   H264SourceFilter* m_pFilter;
 
-  //int m_iWidth;
-  //int m_iHeight;
   int m_iCurrentFrame;
   REFERENCE_TIME m_rtFrameLength;
 

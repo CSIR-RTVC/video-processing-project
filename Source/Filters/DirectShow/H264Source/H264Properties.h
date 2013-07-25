@@ -1,6 +1,6 @@
 /** @file
 
-MODULE				: H264
+MODULE				: H264Properties
 
 FILE NAME			: H264Properties.h
 
@@ -78,6 +78,15 @@ public:
 				(LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
 				);
 		}
+
+    hr = m_pSettingsInterface->GetParameter(SOURCE_FPS, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+      SetDlgItemText(m_Dlg, IDC_FPS, szBuffer);
+
+    hr = m_pSettingsInterface->GetParameter(SOURCE_DIMENSIONS, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+      SetDlgItemText(m_Dlg, IDC_CMB_DIMENSIONS, szBuffer);
+
 		return hr;
   }
 
