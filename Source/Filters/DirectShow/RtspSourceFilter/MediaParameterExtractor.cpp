@@ -105,18 +105,16 @@ bool MediaParameterExtractor::initialiseParameterExtractionMap( unsigned uiChann
     {
       m_mInitMap[uiChannelId] = true;
     }
+    // MP3
     else if ( strcmp(szCodec, "MPA")==0 )
     {
       m_mInitMap[uiChannelId] = false;
     }
-    // INCOMPLETE: AAC audio
-    /*
+    // AAC audio
     else if ( strcmp(szCodec, "MPEG4-GENERIC")==0 )
     {
-      // TOREVISE: does AAC need any inband data?
       m_mInitMap[uiChannelId] = true;
     }
-    */
     else
     {
       // Unsupported audio codec

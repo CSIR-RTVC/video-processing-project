@@ -278,8 +278,7 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         m_pMediaType->bFixedSizeSamples = TRUE;
         m_pMediaType->bTemporalCompression = FALSE;
       }
-      // INCOMPLETE: AAC not working yet
-      /*
+      // AAC audio
       else if ( strcmp(szCodec, "MPEG4-GENERIC")==0 )
       {
         const int SamplingFrequencies[] = 
@@ -303,17 +302,25 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         };
 
         // RG
-        long m_cDecoderSpecific=0;
+        long m_cDecoderSpecific=2;
         const int WAVE_FORMAT_AAC = 0x00ff;
+        // get AAC format string and convert from stringified hex 
+        int hexConfig;
+        sscanf(pSubsession->fmtp_config(), "%x", &hexConfig);
         unsigned char m_pDecoderSpecific[2];
+        unsigned char* pConfig = (unsigned char*)&hexConfig;
+        // sscanf inverts order
+        m_pDecoderSpecific[0] = pConfig[1];
+        m_pDecoderSpecific[1] = pConfig[0];
 
         m_pMediaType->InitMediaType();
         m_pMediaType->SetType(&MEDIATYPE_Audio);
         FOURCCMap faad(WAVE_FORMAT_AAC);
         m_pMediaType->SetSubtype(&faad);
         m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
-        WAVEFORMATEX* pwfx = (WAVEFORMATEX*)m_pMediaType->AllocFormatBuffer(sizeof(WAVEFORMATEX) + m_cDecoderSpecific);
-        ZeroMemory(pwfx,  sizeof(WAVEFORMATEX));
+        unsigned uiSize = sizeof(WAVEFORMATEX) + m_cDecoderSpecific;
+        WAVEFORMATEX* pwfx = (WAVEFORMATEX*)m_pMediaType->AllocFormatBuffer(uiSize);
+        ZeroMemory(pwfx,  uiSize);
         pwfx->cbSize = WORD(m_cDecoderSpecific);
         CopyMemory((pwfx+1),  m_pDecoderSpecific,  m_cDecoderSpecific);
 
@@ -325,7 +332,6 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         pwfx->wFormatTag = WAVE_FORMAT_AAC;
         pwfx->nChannels = (m_pDecoderSpecific[1] & 0x78) >> 3;
       }
-      */
       else
       {
         // Unsupported
