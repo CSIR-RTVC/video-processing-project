@@ -33,6 +33,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "stdafx.h"
 #include "RtspClientSessionManager.h"
+// live555
+#include <MPEG4LATMAudioRTPSource.hh>
 
 // RTVC
 #include "RtvcRtpSink.h"
@@ -202,6 +204,14 @@ bool RtspClientSessionManager::createRtpSource( MediaSubsession* pSubsession )
       unsigned curBufferSize = getReceiveBufferSize(*m_pEnv, socketNum);
       unsigned newBufferSize = setReceiveBufferTo(*m_pEnv, socketNum, socketInputBufferSize);
       *m_pEnv << "Changed socket receive buffer size for the \"" << pSubsession->mediumName() << "/" << pSubsession->codecName() << "\" subsession from " << curBufferSize << " to " << newBufferSize << " bytes\n";
+    }
+
+    // for AAC LATM we want to only the raw AAC data
+    if (strcmp(pSubsession->codecName(), "MP4A-LATM") == 0) 
+    { 
+      // MPEG-4 LATM audio
+      MPEG4LATMAudioRTPSource* pSource = (MPEG4LATMAudioRTPSource*)pSubsession->rtpSource();
+      pSource->omitLATMDataLengthField();
     }
     return true;
   }

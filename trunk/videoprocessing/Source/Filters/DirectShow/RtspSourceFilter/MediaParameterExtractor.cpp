@@ -115,6 +115,10 @@ bool MediaParameterExtractor::initialiseParameterExtractionMap( unsigned uiChann
     {
       m_mInitMap[uiChannelId] = true;
     }
+    else if ( strcmp(szCodec, "MP4A-LATM")==0 )
+    {
+      m_mInitMap[uiChannelId] = true;
+    }
     else
     {
       // Unsupported audio codec
