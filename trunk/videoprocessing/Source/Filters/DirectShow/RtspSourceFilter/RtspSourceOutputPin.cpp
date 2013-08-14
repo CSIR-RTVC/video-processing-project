@@ -46,8 +46,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // RTVC
 #include <Shared/MediaSample.h>
 
-#include <MPEG4LATMAudioRTPSource.hh>
-
 // {726D6173-0000-0010-8000-00AA00389B71}
 DEFINE_GUID(MEDIASUBTYPE_AMR, 
 			0x726d6173, 0x000, 0x0010, 0x80, 0x00, 0x0, 0xaa, 0x00, 0x38, 0x9b, 0x71);
@@ -361,8 +359,6 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
           0,
         };
 
-        MPEG4LATMAudioRTPSource* pSource = (MPEG4LATMAudioRTPSource*)pSubsession->rtpSource();
-
         unsigned audioSpecificConfigSize = 0;
         unsigned char* pAudioConfig = parseStreamMuxConfigStr(pSubsession->fmtp_config(),
 				       audioSpecificConfigSize);
@@ -370,37 +366,6 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         m_pMediaType->InitMediaType();
         m_pMediaType->SetType(&MEDIATYPE_Audio);
 
-#if 0
-        // DOESN'T SEEM TO WORK
-        // ATTEMPT: convert hex string to char representation
-        const char* hex_string2 = "40002610";
-        const char* hex_string2b = "3FC0";
-        int hexConfig2;
-        sscanf(hex_string2, "%x", &hexConfig2);
-        unsigned char m_pDecoderSpecific2[7];
-        unsigned char* pConfig2 = (unsigned char*)&hexConfig2;
-        int hexConfig2b;
-        sscanf(hex_string2b, "%x", &hexConfig2b);
-        unsigned char* pConfig2b = (unsigned char*)&hexConfig2b;
-        m_pDecoderSpecific2[0] = pConfig2[3];
-        m_pDecoderSpecific2[1] = pConfig2[2];
-        m_pDecoderSpecific2[2] = pConfig2[1];
-        m_pDecoderSpecific2[3] = pConfig2[0];
-        m_pDecoderSpecific2[4] = pConfig2b[1];
-        m_pDecoderSpecific2[5] = pConfig2b[0];
-        m_pDecoderSpecific2[6] = '\0';
-
-        int m_cDecoderSpecific = 6;
-        unsigned uiSize = sizeof(WAVEFORMATEX) + m_cDecoderSpecific;
-        WAVEFORMATEX* pwfx = (WAVEFORMATEX*)m_pMediaType->AllocFormatBuffer(uiSize);
-        ZeroMemory(pwfx,  uiSize);
-        pwfx->cbSize = WORD(m_cDecoderSpecific);
-        CopyMemory((pwfx+1),  m_pDecoderSpecific2,  m_cDecoderSpecific);
-
-#else
-        // hack for now: testing if we need to set the extra data for monogram aac to work
-
-#if 1
         // Seems to get decoded in GS!
         long m_cDecoderSpecific = audioSpecificConfigSize;
         unsigned uiSize = sizeof(WAVEFORMATEX) + m_cDecoderSpecific;
@@ -409,83 +374,14 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         pwfx->cbSize = WORD(m_cDecoderSpecific);
         
         CopyMemory((pwfx+1),  pAudioConfig,  m_cDecoderSpecific);
-
-#else
-        // try not adding any decoder specific data
-        unsigned uiSize = sizeof(WAVEFORMATEX);
-        WAVEFORMATEX* pwfx = (WAVEFORMATEX*)m_pMediaType->AllocFormatBuffer(uiSize);
-        ZeroMemory(pwfx,  uiSize);
-        pwfx->cbSize = WORD(0);
-
-#endif
-#endif
         
-        // option 1: raw aac
-#define USE_RAW_AAC
-#ifdef USE_RAW_AAC
         m_pMediaType->SetSubtype(&MEDIASUBTYPE_RAW_AAC1);
         m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
         pwfx->wFormatTag = WAVE_FORMAT_RAW_AAC1;
-        // pSource->omitLATMDataLengthField();
-#endif
-
-        // option 2: LATM
-// #define USE_LATM
-#ifdef USE_LATM
-        // LATM?
-        m_pMediaType->SetSubtype(&MEDIASUBTYPE_LATM_AAC);
-        m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
-        // #define WAVE_FORMAT_LATM_AAC 0x01FF
-        pwfx->wFormatTag = 0x01FF;
-
-//        DWORD a = MAKEFOURCC('m','p','4','a');
-//        DWORD b = MAKEFOURCC('a','4','p','m');
-        // pSource->omitLATMDataLengthField();
-
-#endif
-
-        // OPTION 3: std aac
-// #define USE_AAC
-#ifdef USE_AAC
-        // AAC?
-        const int WAVE_FORMAT_AAC = 0x00ff;
-        FOURCCMap faad(WAVE_FORMAT_AAC);
-        m_pMediaType->SetSubtype(&faad);
-        m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
-        pwfx->wFormatTag = WAVE_FORMAT_AAC;
-
-        pSource->omitLATMDataLengthField();
-#endif 
-
-// #define USE_LOAS
-#ifdef USE_LOAS
-        m_pMediaType->SetSubtype(&MEDIASUBTYPE_MPEG_LOAS);
-        m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
-        pwfx->wFormatTag = 0x1602;
-
-#endif
         pwfx->nBlockAlign = 1;
         pwfx->wBitsPerSample = 16;
-        // pwfx->wFormatTag = MAKEFOURCC('m','p','4','a');
-        //pwfx->nChannels = (m_pDecoderSpecific[1] & 0x78) >> 3;
         pwfx->nChannels = pSubsession->numChannels();
-        // pwfx->nChannels = 1;
         pwfx->nSamplesPerSec = 24000;
-        // pwfx->nSamplesPerSec = 
-        int t = 0;
-
-        // https://github.com/Kovensky/mplayer-kovensky/blob/master/libmpdemux/demux_rtp_codec.cpp
-        // wf->wFormatTag = sh_audio->format = mmioFOURCC('m','p','4','a');
-        // For the codec to work correctly, it needs "AudioSpecificConfig"
-    // data, which is parsed from the "StreamMuxConfig" string that
-    // was present (hopefully) in the SDP description:
-    //unsigned codecdata_len;
-    //sh_audio->codecdata
-    //  = parseStreamMuxConfigStr(subsession->fmtp_config(),
-				//codecdata_len);
-    //sh_audio->codecdata_len = codecdata_len;
-    ////faad doesn't understand LATM's data length field, so omit it
-    //((MPEG4LATMAudioRTPSource*)subsession->rtpSource())->omitLATMDataLengthField();
       }
       else
       {
