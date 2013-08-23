@@ -29,11 +29,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 #include <DirectShow/FilterPropertiesBase.h>
+#include <Shared/Conversion.h>
 
 #include <climits>
 #include "resource.h"
 
 #define BUFFER_SIZE 256
+
+const int RADIO_BUTTON_IDS[] = {IDC_RADIO_VPP, IDC_RADIO_H264, IDC_RADIO_AVC1};
 
 class H264EncoderProperties : public FilterPropertiesBase
 {
@@ -82,9 +85,26 @@ public:
     hr = setCheckBoxFromBoolFilterParameter(NOTIFYONIFRAME, IDC_CHECK_NOTIFY);
     ASSERT(SUCCEEDED(hr));
 
-    // use MS H264 decoder
-    hr = setCheckBoxFromBoolFilterParameter(USE_MS_H264, IDC_USE_MS_H264);
-    ASSERT(SUCCEEDED(hr));
+    // H264 type
+    int nLength = 0;
+    char szBuffer[BUFFER_SIZE];
+    hr = m_pSettingsInterface->GetParameter(H264_TYPE, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+    {
+      int nH264Type = atoi(szBuffer);
+      int nRadioID = RADIO_BUTTON_IDS[nH264Type];
+      long lResult = SendMessage(				// returns LRESULT in lResult
+        GetDlgItem(m_Dlg, nRadioID),		// handle to destination control
+        (UINT) BM_SETCHECK,					// message ID
+        (WPARAM) 1,							// = 0; not used, must be zero
+        (LPARAM) 0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+        );
+      return S_OK;
+    }
+    else
+    {
+      return E_FAIL;
+    }
 
     return hr;
   }
@@ -111,8 +131,19 @@ public:
     hr = setBoolFilterParameterFromCheckBox(NOTIFYONIFRAME, IDC_CHECK_NOTIFY);
     if (FAILED(hr)) return hr;
 
-    // use MS H264 decoder
-    hr = setBoolFilterParameterFromCheckBox(USE_MS_H264, IDC_USE_MS_H264);
+    //// use MS H264 decoder
+    //hr = setBoolFilterParameterFromCheckBox(USE_MS_H264, IDC_USE_MS_H264);
+    for (int i = 0; i <= 2; ++i)
+    {
+      int nRadioID = RADIO_BUTTON_IDS[i];
+      int iCheck = SendMessage( GetDlgItem(m_Dlg, nRadioID),	(UINT) BM_GETCHECK,	0, 0);
+      if (iCheck != 0)
+      {
+        std::string sID = toString(i);
+        HRESULT hr = m_pSettingsInterface->SetParameter(H264_TYPE, sID.c_str());
+        break;
+      }
+    }
 
     return hr;
   } 

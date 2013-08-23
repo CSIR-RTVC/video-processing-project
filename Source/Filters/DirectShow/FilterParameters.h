@@ -32,7 +32,7 @@
 #define	I_PICTURE_MULTIPLIER    "ipicturemultiplier"
 #define	AUTO_IFRAME_DETECT_FLAG "autoiframedetectflag"
 #define IFRAME_PERIOD           "iframeperiod"
-#define USE_MS_H264             "usems264"
+#define H264_TYPE               "h264type"
 #define PREFIX_START_CODE       "prefix start codes"
 #define PREPEND_PARAMETER_SETS  "prepend parameter sets"
 #define SPS                     "sps"
@@ -47,3 +47,6 @@
 #define OFFSET_X				        "offsetx"
 #define OFFSET_Y				        "offsety"
 
+#define H264_VPP 0
+#define H264_H264 1
+#define H264_AVC1 2

@@ -33,6 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <DirectShow/stdafx.h>
 #include "CustomBaseFilter.h"
+#include <Dvdmedia.h>
 
 CCustomBaseFilter::CCustomBaseFilter(TCHAR *pObjectName, LPUNKNOWN lpUnk, CLSID clsid)
 : CTransformFilter(pObjectName, lpUnk, clsid),
@@ -94,6 +95,24 @@ HRESULT CCustomBaseFilter::SetMediaType( PIN_DIRECTION direction, const CMediaTy
 			//Set these values now so we don't have to repeat it for each transform
 			m_nInHeight = abs(m_videoInHeader.bmiHeader.biHeight);
 			m_nInWidth = m_videoInHeader.bmiHeader.biWidth;
+			m_nInPixels = m_nInHeight * m_nInWidth;
+			m_nBitCount = m_videoInHeader.bmiHeader.biBitCount;
+		}
+    else if (pmt->formattype == FORMAT_VideoInfo2)
+		{
+			VIDEOINFOHEADER2* pVih = (VIDEOINFOHEADER2*) pmt->pbFormat;
+			//Set these values now so we don't have to repeat it for each transform
+			m_nInHeight = abs(pVih->bmiHeader.biHeight);
+			m_nInWidth = pVih->bmiHeader.biWidth;
+			m_nInPixels = m_nInHeight * m_nInWidth;
+			m_nBitCount = m_videoInHeader.bmiHeader.biBitCount;
+		}
+    else if (pmt->formattype == FORMAT_MPEG2Video)
+		{
+			MPEG2VIDEOINFO* pMpeg2Vih = (MPEG2VIDEOINFO*) pmt->pbFormat;
+			//Set these values now so we don't have to repeat it for each transform
+			m_nInHeight = abs(pMpeg2Vih->hdr.bmiHeader.biHeight);
+			m_nInWidth = pMpeg2Vih->hdr.bmiHeader.biWidth;
 			m_nInPixels = m_nInHeight * m_nInWidth;
 			m_nBitCount = m_videoInHeader.bmiHeader.biBitCount;
 		}

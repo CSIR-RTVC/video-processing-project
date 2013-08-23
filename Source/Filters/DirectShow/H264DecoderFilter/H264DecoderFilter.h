@@ -104,10 +104,20 @@ private:
   */
   virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
+  HRESULT initialiseH264Decoder();
+  void resizeEncodedPictureBufferIfNecessary(long lActualDataLength);
+
   ICodecv2* m_pCodec;
 
   unsigned char* m_pSeqParamSet;
   unsigned m_uiSeqParamSetLen;
   unsigned char* m_pPicParamSet;
   unsigned m_uiPicParamSetLen;
+
+  // only set if media subtype == MEDIASUBTYPE_AVC1
+  // and stores length of length field preceding H264 data
+  unsigned m_uiAvc1PrefixLength;
+  // buffer in case we have to copy the incoming data
+  BYTE* m_pEncodedPictureBuffer;
+  unsigned m_uiEncodedPictureBufferLength;
 };
