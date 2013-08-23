@@ -27,8 +27,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ===========================================================================
 */
 #include "stdafx.h"
-
 #include "H264DecoderFilter.h"
+#include "wmcodecdsp.h"
 
 //////////////////////////////////////////////////////////////////////////
 //###############################  Standard Filter DLL Code ###############################
@@ -39,9 +39,12 @@ const AMOVIESETUP_MEDIATYPE sudMediaTypes[] =
   { 
     &MEDIATYPE_Video, &MEDIASUBTYPE_VPP_H264
   },
+  {
+    &MEDIATYPE_Video, &MEDIASUBTYPE_AVC1
+  },
   { 
     &MEDIATYPE_Video, &MEDIASUBTYPE_RGB24
-    },
+  },
 };
 
 const AMOVIESETUP_PIN sudPin[] = 
@@ -54,7 +57,7 @@ const AMOVIESETUP_PIN sudPin[] =
       FALSE,            // Does the filter create multiple instances?
       &GUID_NULL,       // Obsolete.
       NULL,             // Obsolete.
-      1,                // Number of media types.
+      2,                // Number of media types.
       &sudMediaTypes[0] // Pointer to media types.
   },
   {

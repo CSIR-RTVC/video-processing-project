@@ -220,7 +220,7 @@ HRESULT H264EncoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
   }
   else if (iPosition == 0)
   {
-    if (!m_bUseMsH264)
+    if (m_nH264Type == H264_VPP)
     {
       // Get the input pin's media type and return this as the output media type - we want to retain
       // all the information about the image
@@ -278,17 +278,11 @@ HRESULT H264EncoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
         memset(pFormat + nCurrentFormatBlockSize, 0, sizeof(int));
       }
     }
-    else
+    else if (m_nH264Type == H264_H264)
     {
       pMediaType->InitMediaType();    
       pMediaType->SetType(&MEDIATYPE_Video);
       pMediaType->SetSubtype(&MEDIASUBTYPE_H264);
-      //MEDIASUBTYPE_h264
-      //MEDIASUBTYPE_X264
-      //MEDIASUBTYPE_x264
-      //MEDIASUBTYPE_AVC1
-      //FORMAT_MPEG2Video
-
       pMediaType->SetFormatType(&FORMAT_VideoInfo2);
       VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pMediaType->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2));
       ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
@@ -298,6 +292,58 @@ HRESULT H264EncoderFilter::GetMediaType( int iPosition, CMediaType *pMediaType )
       pvi2->bmiHeader.biWidth = m_nInWidth;
       pvi2->bmiHeader.biHeight = m_nInHeight;
       pvi2->bmiHeader.biSize = m_nInWidth * m_nInHeight * 3;
+      pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
+      pvi2->bmiHeader.biCompression = DWORD('1cva');
+      //pvi2->AvgTimePerFrame = m_tFrame;
+      //pvi2->AvgTimePerFrame = 1000000;
+      const REFERENCE_TIME FPS_25 = UNITS / 25;
+      pvi2->AvgTimePerFrame = FPS_25;
+      //SetRect(&pvi2->rcSource, 0, 0, m_cx, m_cy);
+      SetRect(&pvi2->rcSource, 0, 0, m_nInWidth, m_nInHeight);
+      pvi2->rcTarget = pvi2->rcSource;
+
+      pvi2->dwPictAspectRatioX = m_nInWidth;
+      pvi2->dwPictAspectRatioY = m_nInHeight;
+    }
+    else if (m_nH264Type == H264_AVC1)
+    {
+      pMediaType->InitMediaType();    
+      pMediaType->SetType(&MEDIATYPE_Video);
+      pMediaType->SetSubtype(&MEDIASUBTYPE_AVC1);
+      pMediaType->SetFormatType(&FORMAT_MPEG2Video);
+
+      ASSERT(m_uiSeqParamSetLen > 0 && m_uiPicParamSetLen > 0);
+
+      // ps have start codes: for this media type we replace each start code with 2 byte lenght prefix
+      int psLen = m_uiSeqParamSetLen + m_uiPicParamSetLen - 4;
+      BYTE* pFormatBuffer = pMediaType->AllocFormatBuffer(sizeof(MPEG2VIDEOINFO) + psLen);
+      MPEG2VIDEOINFO* pMpeg2Vih = (MPEG2VIDEOINFO*)pFormatBuffer;
+
+      ZeroMemory(pMpeg2Vih, sizeof(MPEG2VIDEOINFO) + psLen);
+
+      pMpeg2Vih->dwFlags = 4;
+      pMpeg2Vih->dwProfile = 66;
+      pMpeg2Vih->dwLevel = 20;
+
+      pMpeg2Vih->cbSequenceHeader = psLen;
+      int iCurPos = 0;
+
+      BYTE* pSequenceHeader = (BYTE*)&pMpeg2Vih->dwSequenceHeader[0];
+      // parameter set length includes start code
+      pSequenceHeader[iCurPos] = ((m_uiSeqParamSetLen - 4) >> 8);
+      pSequenceHeader[iCurPos + 1] = ((m_uiSeqParamSetLen - 4) & 0xFF);
+      memcpy(pSequenceHeader + iCurPos + 2, m_pSeqParamSet + 4, m_uiSeqParamSetLen - 4);
+      iCurPos += m_uiSeqParamSetLen - 4 + 2;
+      pSequenceHeader[iCurPos] = ((m_uiPicParamSetLen - 4) >> 8);
+      pSequenceHeader[iCurPos + 1] = ((m_uiPicParamSetLen - 4) & 0xFF);
+      memcpy(pSequenceHeader + iCurPos + 2, m_pPicParamSet + 4, m_uiPicParamSetLen - 4);
+
+      VIDEOINFOHEADER2* pvi2 = &pMpeg2Vih->hdr;
+      pvi2->bmiHeader.biBitCount = 24;
+      pvi2->bmiHeader.biSize = 40;
+      pvi2->bmiHeader.biPlanes = 1;
+      pvi2->bmiHeader.biWidth = m_nInWidth;
+      pvi2->bmiHeader.biHeight = m_nInHeight;
       pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
       pvi2->bmiHeader.biCompression = DWORD('1cva');
       //pvi2->AvgTimePerFrame = m_tFrame;
@@ -325,7 +371,7 @@ HRESULT H264EncoderFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
     return hr;
   }
 
-  if (m_bUseMsH264)
+  if (m_nH264Type == H264_H264)
   {
     //Make sure that the format type is our custom format
     ASSERT(mt.formattype == FORMAT_VideoInfo2);
@@ -334,7 +380,16 @@ HRESULT H264EncoderFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
     //TOREVISE: Should actually change mode and see what the maximum size is per frame?
     pProp->cbBuffer = DIBSIZE(*pbmi);
   }
-  else
+  else if (m_nH264Type == H264_AVC1)
+  {
+    //Make sure that the format type is our custom format
+    ASSERT(mt.formattype == FORMAT_MPEG2Video);
+    MPEG2VIDEOINFO* pMpeg2Vih = (MPEG2VIDEOINFO*)mt.pbFormat;
+    BITMAPINFOHEADER *pbmi = &pMpeg2Vih->hdr.bmiHeader;
+    //TOREVISE: Should actually change mode and see what the maximum size is per frame?
+    pProp->cbBuffer = DIBSIZE(*pbmi);
+  }
+  else if (m_nH264Type == H264_VPP)
   {
     ASSERT(mt.formattype == FORMAT_VideoInfo);
     BITMAPINFOHEADER *pbmi = HEADER(mt.pbFormat);
@@ -430,6 +485,40 @@ void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, lon
           }
         }
 
+        // if we're outputting AVC1 we need to replace start codes with length prefixes
+        // This will have to be inefficient for now
+        if (m_nH264Type == H264_AVC1)
+        {
+          std::vector<int> vStartCodePositions;
+          vStartCodePositions.push_back(0);
+          const BYTE startCode[4] = {0, 0, 0, 1};
+          for (int i = 4; i < m_pCodec->GetCompressedByteLength(); ++i)
+          {
+            if (memcmp(pOutBufferPos + i, startCode, 4) == 0)
+            {
+              vStartCodePositions.push_back(i);
+            }
+          }
+          int remaining = m_pCodec->GetCompressedByteLength();
+          for (size_t i = 0; i < vStartCodePositions.size() - 1; ++i)
+          {
+            int len = vStartCodePositions[i+1] - vStartCodePositions[i] - 4;
+            // update length in buffer
+            int pos = vStartCodePositions[i];
+            pOutBufferPos[pos] = (len >> 24);
+            pOutBufferPos[pos + 1] = (len >> 16);
+            pOutBufferPos[pos + 2] = (len >> 8);
+            pOutBufferPos[pos + 3] = (len & 0xFF);
+            remaining -= (len + 4);
+          }
+          // replace last element
+          int len = remaining - 4;
+          int pos = vStartCodePositions[vStartCodePositions.size() - 1];
+          pOutBufferPos[pos] = (len >> 24);
+          pOutBufferPos[pos + 1] = (len >> 16);
+          pOutBufferPos[pos + 2] = (len >> 8);
+          pOutBufferPos[pos + 3] = (len & 0xFF);
+        }
         DbgLog((LOG_TRACE, 0, TEXT("H264 Codec Success: Bit Length: %d Byte Length: %d"), m_pCodec->GetCompressedBitLength(), m_pCodec->GetCompressedByteLength()));
       }
       else
@@ -452,7 +541,7 @@ HRESULT H264EncoderFilter::CheckTransform( const CMediaType *mtIn, const CMediaT
     return VFW_E_TYPE_NOT_ACCEPTED;
   }
 
-  if (m_bUseMsH264)
+  if (m_nH264Type == H264_H264)
   {
     if (mtOut->subtype != MEDIASUBTYPE_H264)
     {
@@ -464,7 +553,19 @@ HRESULT H264EncoderFilter::CheckTransform( const CMediaType *mtIn, const CMediaT
       return VFW_E_TYPE_NOT_ACCEPTED;
     }
   }
-  else
+  else if (m_nH264Type == H264_AVC1)
+  {
+    if (mtOut->subtype != MEDIASUBTYPE_AVC1)
+    {
+      return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+
+    if (mtOut->formattype != FORMAT_MPEG2Video)
+    {
+      return VFW_E_TYPE_NOT_ACCEPTED;
+    }
+  }
+  else if (m_nH264Type == H264_VPP)
   {
     if (mtOut->subtype != MEDIASUBTYPE_VPP_H264) 
     {

@@ -97,7 +97,7 @@ public:
     addParameter(IFRAME_PERIOD, &m_uiIFramePeriod, 0);
     addParameter(SPS, &m_sSeqParamSet, "", true); // read-only
     addParameter(PPS, &m_sPicParamSet, "", true); // read-only
-    addParameter(USE_MS_H264, &m_bUseMsH264, false);
+    addParameter(H264_TYPE, &m_nH264Type, H264_VPP);
   }
 
   /// Overridden from CSettingsInterface
@@ -156,6 +156,8 @@ private:
   */
   virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
   
+  int m_nH264Type;
+
   ICodecv2* m_pCodec; 
   int m_nFrameBitLimit;
   bool m_bNotifyOnIFrame;
@@ -165,8 +167,6 @@ private:
   unsigned m_uiPicParamSetLen;
   std::string m_sSeqParamSet;
   std::string m_sPicParamSet;
-  /// flag to use MS Win7 decoder
-  bool m_bUseMsH264;
   /// For auto i-frame generation
   unsigned m_uiIFramePeriod;
   /// frame counter for i-frame generation
