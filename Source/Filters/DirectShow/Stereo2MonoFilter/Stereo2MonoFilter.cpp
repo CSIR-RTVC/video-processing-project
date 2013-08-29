@@ -61,16 +61,13 @@ CUnknown * WINAPI Stereo2MonoFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pH
 
 STDMETHODIMP Stereo2MonoFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
 {
-  if(riid == (IID_ISettingsInterface))
-  {
-    return GetInterface((ISettingsInterface*) this, ppv);
-  }
-  if (riid == (IID_ISpecifyPropertyPages))
+  if (riid == IID_ISpecifyPropertyPages)
   {
     return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
   }
   else
   {
+    // Call the parent class.
     return CCustomBaseFilter::NonDelegatingQueryInterface(riid, ppv);
   }
 }
