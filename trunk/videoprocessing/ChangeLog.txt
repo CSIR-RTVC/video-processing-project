@@ -1,14 +1,19 @@
-2010/10/08
-- Checked in live555 source code to make sure that RtspSourceFilter is built with correct live555 version.
-- Simplified bat startup files
+2013/10/23
+- Added Stereo2Mono filter
+- Updated H.264 codec to include many bug-fixes and compatibility changes
+
+2010/11/03
+- Added AudioMixingFilter alpha version
+- Corrected VS project build dependencies thanks to a hint from jamiefaye
+
+2010/10/28
+- Added FramerateDisplayFilter alpha version
+
 2010/10/09
 Thanks to John Orr for the following fixes
 - Fixed leaked handles in RtspSourceFilter
 - Fixed incorrect assignment in RtspSourceFilter.cpp/RtspSourceFilter::GetCurFile()
 
-2010/10/28
-- Added FramerateDisplayFilter alpha version
-
-2010/11/03
-- Added AudioMixingFilter alpha version
-- Corrected VS project build dependencies thanks to a hint from jamiefaye
+2010/10/08
+- Checked in live555 source code to make sure that RtspSourceFilter is built with correct live555 version.
+- Simplified bat startup files
