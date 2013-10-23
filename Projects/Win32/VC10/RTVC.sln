@@ -42,6 +42,9 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "FrameGrabber", "Apps\FrameG
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264Source", "DirectShowFilters\H264Source\H264Source.vcxproj", "{32555076-FCD7-4C50-890C-B28C7880E3D4}"
+	ProjectSection(ProjectDependencies) = postProject
+		{F60D6588-6C1A-4C43-9DD1-6A9C6B46931C} = {F60D6588-6C1A-4C43-9DD1-6A9C6B46931C}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "H264EncoderFilter", "DirectShowFilters\H264EncoderFilter\H264EncoderFilter.vcxproj", "{593034DE-A5B8-4E71-BBC5-BC8DE613C21B}"
 	ProjectSection(ProjectDependencies) = postProject
@@ -74,6 +77,10 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SkewingFilter", "DirectShow
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Stereo2MonoFilter", "DirectShowFilters\Stereo2MonoFilter\Stereo2MonoFilter.vcxproj", "{5E76AEF2-B927-4398-AF79-8228B8C496BE}"
+	ProjectSection(ProjectDependencies) = postProject
+		{E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA} = {E8A3F6FA-AE1C-4C8E-A0B6-9C8480324EAA}
+		{382B7FFF-3C67-4370-8D39-2FB7FD1693E1} = {382B7FFF-3C67-4370-8D39-2FB7FD1693E1}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
