@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -41,6 +41,31 @@ CStatusInterface::CStatusInterface()
 m_pMediaEventSink(NULL),
 m_lFriendlyId(-1)
 {}
+
+STDMETHODIMP CStatusInterface::GetNotificationMessage( char* szMessage, int nBufferSize)
+{
+  return E_FAIL;
+  //int nLength = strlen(m_szNotification);
+  //if (nLength >= nBufferSize)
+  //{
+  //  // If this happens we know that we have to increase the buffer size
+  //  return E_FAIL;
+  //}
+  //memcpy(szMessage, m_szNotification, nLength);
+  //return S_OK;
+}
+
+STDMETHODIMP CStatusInterface::SetNotificationMessage( const char* szMessage )
+{
+  return E_FAIL;
+  //if (strlen(szMessage) > MAX_MESSAGE_LENGTH)
+  //  return E_FAIL;
+  //// Clear memory first
+  //ZeroMemory(m_szNotification, MAX_MESSAGE_LENGTH);
+  //memcpy(m_szNotification, szMessage, strlen(szMessage));
+  //NotifyApplication(WM_GRAPHNOTIFY_INFO, m_lFriendlyId);
+  //return S_OK;
+}
 
 STDMETHODIMP CStatusInterface::SetLastError( std::string sError, bool bNotifyApplication)
 {
@@ -81,27 +106,4 @@ void CStatusInterface::NotifyApplication( long lEventCode, LONG_PTR lEventParam1
 	//Notify sending the friendly ID as a parameter
 	if (m_pMediaEventSink)
 		m_pMediaEventSink->Notify(lEventCode, m_lFriendlyId, lEventParam1);
-}
-
-STDMETHODIMP CStatusInterface::GetNotificationMessage( char* szMessage, int nBufferSize)
-{
-  int nLength = strlen(m_szNotification);
-  if (nLength >= nBufferSize)
-  {
-    // If this happens we know that we have to increase the buffer size
-    return E_FAIL;
-  }
-  memcpy(szMessage, m_szNotification, nLength);
-  return S_OK;
-}
-
-STDMETHODIMP CStatusInterface::SetNotificationMessage( const char* szMessage )
-{
-  if (strlen(szMessage) > MAX_MESSAGE_LENGTH)
-    return E_FAIL;
-  // Clear memory first
-  ZeroMemory(m_szNotification, MAX_MESSAGE_LENGTH);
-  memcpy(m_szNotification, szMessage, strlen(szMessage));
-  NotifyApplication(WM_TM_GRAPHNOTIFY, m_lFriendlyId);
-  return S_OK;
 }
