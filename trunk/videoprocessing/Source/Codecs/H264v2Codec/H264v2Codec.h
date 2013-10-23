@@ -12,7 +12,7 @@ DESCRIPTION		: A 2nd generation of video codecs based on the H.264 standard
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -52,6 +52,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "VectorStructList.h"
 #include "IMotionEstimator.h"
 #include "IMotionCompensator.h"
+#include "IMotionVectorPredictor.h"
 
 #include "IVlcEncoder.h"
 #include "IVlcDecoder.h"
@@ -62,6 +63,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "PicparamSetH264.h"
 
 #include "MacroBlockH264.h" 
+
+/// For storing measurements during testing.
+//#define H264V2_DUMP_HEADERS 1
+#include "GeneralUtils/MeasurementTable.h"
 
 /*
 ===========================================================================
@@ -133,11 +138,14 @@ private:
   int		_height;																				///< "height"
 	int		_inColour;																			///< "incolour"
 	int		_outColour;																			///< "outcolour"
-  bool  _flip;                                          ///< "stores whether the internal color converters should flip the image during conversion
+  bool  _flip;                                          ///< "flip" Stores whether the internal color converters should flip the image during conversion.
 
 
 	/// Modes of operation (bit allocation strategies).
 	int		_modeOfOperation;																///< "mode of operation"
+  int   _intraIterations;                               ///< "intra iteration limit"
+  int   _interIterations;                               ///< "inter iteration limit"
+  int   _timeLimitMs;                                   ///< "time limit msec"
 
   /// Parameter set handling.
 	int		_currSeqParam;																	///< "seq param set"
@@ -160,6 +168,8 @@ private:
 	int		_autoIPicture;																	///"autoipicture"
 	int		_iPictureMultiplier;														///"ipicturemultiplier"
 	int		_iPictureFraction;															///"ipicturefraction"
+
+  int  _seqParamSetLog2MaxFrameNumMinus4;               ///"seq param log2 max frame num minus 4"
 
 /// Attributes
 private:
@@ -245,9 +255,8 @@ private:
 	int					GetIntraHorizPred(MacroBlockH264* pMb, OverlayMem2Dv2* img, OverlayMem2Dv2* pred, int lumFlag);
 	void				GetIntra8x8ChrDCPred(MacroBlockH264* pMb, OverlayMem2Dv2* chr, OverlayMem2Dv2* pred);
 	int					GetIntra8x8ChrPlanePred(MacroBlockH264* pMb, OverlayMem2Dv2* chr, OverlayMem2Dv2* pred);
-	int					GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb,	OverlayMem2Dv2* cb,			OverlayMem2Dv2* cr,			 
-																																	OverlayMem2Dv2* refCb,	OverlayMem2Dv2* refCr, 
-																																	OverlayMem2Dv2* predCb, OverlayMem2Dv2* predCr);
+	int					GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* cb, OverlayMem2Dv2* cr, 
+                                        OverlayMem2Dv2* refCb,	OverlayMem2Dv2* refCr, OverlayMem2Dv2* predCb, OverlayMem2Dv2* predCr);
 
 	int					Median(int x, int y, int z);
   static void DumpBlock(OverlayMem2Dv2* pBlk, char* filename, const char* title);
@@ -292,18 +301,20 @@ private:
 	{
 		/// MinMax algorithm with rate constraint. 
 		public:
-			IntraImgPlaneEncoderImplMinMax(H264v2Codec* codec) { _codec = codec; _pQ = NULL; _pQl = NULL; }
+			IntraImgPlaneEncoderImplMinMax(H264v2Codec* codec) { _codec = codec; _pQ = NULL; _pQl = NULL; _pMbList = NULL; }
 			virtual ~IntraImgPlaneEncoderImplMinMax(void) { if(_pQ != NULL) delete[] _pQ; _pQ = NULL; }
 			int Encode(int allowedBits, int* bitsUsed, int writeRef);
+      int DamageControl(int allowedBits, int currBitCost);
 			int Create(int length)
 				{ if(_pQ != NULL) delete[] _pQ; _pQ = NULL;
-					_pQ = new int[2 * length]; if(_pQ == NULL) return(0);
-					_pQl = _pQ + length; return(1);
+					_pQ = new int[3 * length]; if(_pQ == NULL) return(0);
+					_pQl = _pQ + length; _pMbList = _pQl + length; return(1);
 				}
 		private:
 			H264v2Codec* _codec;
 			int*	_pQ;
 			int*	_pQl;
+      int*  _pMbList;
 	};//end class IntraImgPlaneEncoderImplMinMax.
 	friend class IntraImgPlaneEncoderImplMinMax;
 
@@ -322,18 +333,26 @@ private:
 	{
 		/// MinMax algorithm with rate constraint. Uses bisection method to find optimal selection.
 		public:
-			InterImgPlaneEncoderImplMinMax(H264v2Codec* codec) { _codec = codec; _pQ = NULL; _pQl = NULL; }
+			InterImgPlaneEncoderImplMinMax(H264v2Codec* codec) 
+        { _codec = codec; _pQ = NULL; _pQl = NULL; _pDistortionDiff = NULL; _pMbList = NULL; _pLastMbCoded = NULL; _pLastMbQP = NULL; }
 			virtual ~InterImgPlaneEncoderImplMinMax(void) { if(_pQ != NULL) delete[] _pQ; _pQ = NULL; }
 			int Encode(int allowedBits, int* bitsUsed, int writeRef);
+      int DamageControlMvOnly(int allowedBits, int* bitsUsed);
+      int DamageControl(int allowedBits, int currBitCost);
 			int Create(int length) 
 				{ if(_pQ != NULL) delete[] _pQ; _pQ = NULL;
-					_pQ = new int[2 * length]; if(_pQ == NULL) return(0);
-					_pQl = _pQ + length; return(1);
+					_pQ = new int[6 * length]; if(_pQ == NULL) return(0);
+					_pQl = _pQ + length; _pDistortionDiff = _pQl + length; _pMbList = _pDistortionDiff + length; 
+          _pLastMbCoded = _pMbList + length; _pLastMbQP = _pLastMbCoded + length; return(1);
 				}
 		private:
 			H264v2Codec* _codec;
 			int*	_pQ;
 			int*	_pQl;
+      int*  _pDistortionDiff;
+      int*  _pMbList;
+      int*  _pLastMbCoded;  ///< Audit trail.
+      int*  _pLastMbQP;
 	};//end class InterImgPlaneEncoderImplMinMax.
 	friend class InterImgPlaneEncoderImplMinMax;
 
@@ -365,14 +384,15 @@ private:
 	int FitDistPowerModel(int rl, int dl, int ru, int du, int r);
 	int FitDistLinearModel(int rl, int dl, int ru, int du, int r);
 
-//	int ForwardLoopIntraImplStd(MacroBlockH264 &mb, int withDR);																		
 	int ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR);																		
+	int ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR, int usePrevPred);																		
 	int ProcessIntraMbImplStdMin(MacroBlockH264* pMb);																		
 	int ProcessInterMbImplStd(MacroBlockH264* pMb, int addRef, int withDR);																		
 	int ProcessInterMbImplStdMin(MacroBlockH264* pMb);																		
 	int GetDeltaQP(MacroBlockH264* pMb);																	
 	int GetMbQPBelowDmax(MacroBlockH264 &mb, int atQP, int Dmax, int decQP, int* changeMb, int lowestQP, bool intra);
 	int GetMbQPBelowDmaxVer2(MacroBlockH264 &mb, int atQ, int Dmax, int* changeMb, int lowestQ, bool intra);
+	int GetMbQPBelowDmaxVer3(MacroBlockH264 &mb, int atQ, int Dmax, int* changeMb, int lowestQ, bool intra);
 	int GetMbQPBelowDmaxApprox(MacroBlockH264 &mb, int atQP, int Dmax, int epsilon, int decQP, int* changeMb, int lowestQP, bool intra);
 
   /// In-line methods. 
@@ -393,9 +413,35 @@ private:
   */
   inline int GetNextMbQP(MacroBlockH264* pMb);
 
+  /** Run a high performance timer
+  @return : A timer exists.
+  */
+  static double _cpuFreq;
+  int _startTime;
+  inline static int SetCounter(void) 
+  {
+    _cpuFreq = 0.0;
+    LARGE_INTEGER li;
+    if(!QueryPerformanceFrequency(&li))
+	    return(0);
+    _cpuFreq = double(li.QuadPart)/1000.0;  ///< In ms
+    return(1);
+  }//end SetCounter.
+
+  inline static double GetCounter(void)
+  {
+    LARGE_INTEGER li;
+    QueryPerformanceCounter(&li);
+    if(_cpuFreq != 0)
+      return( double(li.QuadPart)/_cpuFreq );
+    else
+      return(0.0);
+  }//end GetCounter.
+
 /// Codec Status.
 private:
 	char*		_errorStr;
+  char    _errorInfo[256];
 	int			_codecIsOpen;
 	int			_bitStreamSize;
 
@@ -420,6 +466,12 @@ private:
 	static const int test16X[];
 	static const int test16Y[];
 	static const int test16Limit[];
+	static const int testZoom16X[];
+	static const int testZoom16Y[];
+	static const int testZoom16Len;
+  static const int delta16[][2];
+	static const int testZoom8[][2];
+  static const int testZoom8Len;
 	static const int test8X[];
 	static const int test8Y[];
 	static const int test8Limit[];
@@ -432,6 +484,7 @@ private:
 	/// Fast search on the macroblock distortion vs. QP curve 
 	/// changes the step size.
 	static const int MbStepSize[];
+  static const int NextQPDec[];
 
 /// Operational members.
 private:
@@ -464,10 +517,11 @@ private:
 	/// from the decision during the motion estimation process.
 	bool*									_autoIFrameIncluded;
 
-	IMotionEstimator*			_pMotionEstimator;				///< Selected estimator dependent on mode.
-	VectorStructList*			_pMotionEstimationResult;	///< Motion vector list generated by estimator.
-	IMotionCompensator*		_pMotionCompensator;			///< Selected compensator dependent on mode.
-	VectorStructList*			_pMotionVectors;					///< Motion vector list input to compensators.
+	IMotionEstimator*			  _pMotionEstimator;				///< Selected estimator dependent on mode.
+	VectorStructList*			  _pMotionEstimationResult;	///< Motion vector list generated by estimator.
+	IMotionCompensator*		  _pMotionCompensator;			///< Selected compensator dependent on mode.
+	VectorStructList*			  _pMotionVectors;					///< Motion vector list input to compensators.
+  IMotionVectorPredictor* _pMotionPredictor;        ///< Predictor for motion vector from neighbouring mbs.
 
 	/// Vlc encoders and decoders for use with CAVLC.
 	IVlcEncoder*	_pPrefixVlcEnc;
@@ -501,9 +555,9 @@ private:
 	IVlcDecoder*	_pHeaderSignedVlcDec;
 
 	/// Macroblocks for the image.
-	int										_mbLength;	///< No. of 16 x 16 macroblocks for this image size.
-	MacroBlockH264*				_pMb;				///< Base macroblock linear reference.
-	MacroBlockH264**			_Mb;				///< Macroblock 2-D reference.
+	int								_mbLength;	///< No. of 16 x 16 macroblocks for this image size.
+	MacroBlockH264*		_pMb;				///< Base macroblock linear reference.
+	MacroBlockH264**	_Mb;				///< Macroblock 2-D reference.
 
 	/// Internal picture properties. (For now)
 
@@ -536,6 +590,12 @@ private:
 	IImagePlaneEncoder*		_pInterImgPlaneEncoder;
 	IImagePlaneDecoder*		_pIntraImgPlaneDecoder;
 	IImagePlaneDecoder*		_pInterImgPlaneDecoder;
+
+#ifdef H264V2_DUMP_HEADERS
+  MeasurementTable _headerTable;
+  int _headerTableLen;
+  int _headerTablePos;
+#endif
 
 };//H264v2Codec class.
 

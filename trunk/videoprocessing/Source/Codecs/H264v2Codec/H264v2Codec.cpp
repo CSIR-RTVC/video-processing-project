@@ -12,7 +12,7 @@ DESCRIPTIONS  : A 2nd generation of video codecs based on the H264 standard
                   
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -69,7 +69,10 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "MotionEstimatorH264ImplMultires.h"
 #include "MotionEstimatorH264ImplMultiresCross.h"
+#include "MotionEstimatorH264ImplMultiresCrossVer2.h"
 #include "MotionCompensatorH264ImplStd.h"
+#include "H264MotionVectorPredictorImpl1.h"
+
 
 #include "PrefixH264VlcEncoderImpl1.h"
 #include "PrefixH264VlcDecoderImpl1.h"
@@ -92,9 +95,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include "CodedBlkPatternH264VlcEncoder.h"
 #include "CodedBlkPatternH264VlcDecoder.h"
 
-/// For storing measurements during testing.
-#include "MeasurementTable.h"
-
 /*
 ---------------------------------------------------------------------------
   Codec parameter constants. 
@@ -113,7 +113,13 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define H264V2_EI_PIC				4
 #define H264V2_EP_PIC				5
 
-#define H264V2_MAX_QP							51	///< Maximum QP value
+#define H264V2_MAX_QP							  51	///< Maximum QP value
+#define H264V2_MAX_EXT_QP	          71	///< Maximum extended QP value for Inter
+#define H264V2_I_MAX_EXT_QP	        85	///< Maximum extended QP value for Intra
+
+#define H264V2_MAX_INTRA_ITERATIONS	5 	///< Default settings for a limit on optimisation iterations for slow convergence.
+#define H264V2_MAX_INTER_ITERATIONS	10 
+
 /*
 ---------------------------------------------------------------------------
   Colour space constants. 
@@ -135,7 +141,6 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define H264V2_CLIP51(x)	( (((x) <= 31)&&((x) >= 0))? (x) : ( ((x) < 0)? 0:51 ) )
 #define H264V2_CLIP255(x)	( (((x) <= 255)&&((x) >= 0))? (x) : ( ((x) < 0)? 0:255 ) )
 
-#define	H264V2_FAST_MINMAX
 #undef	H264V2_EXACT_DMAX
 
 #define H264V2_FAST_ABS32(x) ( ((x)^((x)>>31))-((x)>>31) )
@@ -146,27 +151,34 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
   Local constants. 
 --------------------------------------------------------------------------
 */
-const int		H264v2Codec::PARAMETER_LEN = 18;
+const int		H264v2Codec::PARAMETER_LEN = 25;
 const char*	H264v2Codec::PARAMETER_LIST[] = 
 {
-	"parameters",								        // 0
-	"codecid",									        // 1
-	"width",										        // 2
-	"height",										        // 3
-	"incolour",									        // 4
-	"outcolour",								        // 5
-	"picture coding type",			        // 6
-	"last pic coding type",			        // 7
-	"quality",									        // 8
-	"autoipicture",							        // 9 
-	"ipicturemultiplier",				        // 10
-	"ipicturefraction",					        // 11
-	"mode of operation",				        // 12
-	"seq param set",						        // 13
-	"pic param set",						        // 14
-	"gen param set on open",		        // 15
-  "prepend param sets to i-pictures", // 16
-	"start code emulation prevention"	  // 17
+	"parameters",								            // 0
+	"codecid",									            // 1
+	"width",										            // 2
+	"height",										            // 3
+	"incolour",									            // 4
+	"outcolour",								            // 5
+  "flip",                                 // 6
+	"picture coding type",			            // 7
+	"last pic coding type",			            // 8
+	"quality",									            // 9
+	"autoipicture",							            // 10 
+	"ipicturemultiplier",				            // 11
+	"ipicturefraction",					            // 12
+	"mode of operation",				            // 13
+	"intra iteration limit",				        // 14
+	"inter iteration limit",				        // 15
+	"time limit msec",				              // 16
+	"seq param set",						            // 17
+	"pic param set",						            // 18
+	"gen param set on open",		            // 19
+  "prepend param sets to i-pictures",     // 20
+	"start code emulation prevention",      // 21
+  "idr frame number",                     // 22
+  "p frame number",                       // 23
+  "seq param log2 max frame num minus 4"  // 24
 };
 
 const int		H264v2Codec::MEMBER_LEN = 4;
@@ -192,7 +204,7 @@ const int H264v2Codec::dc2x2Scale[4] =
 		16, 16 
 	};
 
-/// Test sampling point coordinates for Intra_16x16 prediction mode selection.
+/// Test sampling point coordinates for Intra_16x16 prediction mode selection on a spread out grid.
 const int H264v2Codec::test16X[256] = { 3, 11,  3, 11, 
 									1,  5,  9, 13,  1,  5,  9, 13,  1,  5,  9, 13,  1,  5,  9, 13, 
 									3,  7, 11, 15,  0,  7, 15,  0,  3,  7, 11, 15,  0,  7, 15,  0,  3,  7, 11, 15,
@@ -211,7 +223,35 @@ const int H264v2Codec::test16Y[256] = { 3,  3, 11, 11,
 									2,  2,  2,  2,  2,  4,  4,  4,  4,  4,  6,  6,  6,  6,  6,  8,  8,  8,  8,  8, 10, 10, 10, 10, 10, 10, 12, 12, 12, 12, 12, 12, 14, 14, 14, 14, 14 }; 
 const int H264v2Codec::test16Limit[8] = { 4, 20, 40, 69, 123, 174, 219, 256 };
 
-/// Test sampling point coordinates for Intra_8x8 prediction mode selection.			/// New H.264
+/// Test sampling point coordinates for Intra_16x16 prediction mode selection on a zooming square grid to be 
+/// used 4 at a time where {(0,0), (0,8), (8,0), (8,8)} is added to each address in the table.
+const int H264v2Codec::testZoom16X[21] =
+  { 3,
+    1, 5, 1, 5,
+    0, 4, 0, 4,
+    2, 6, 2, 6,
+    0, 4, 0, 4,
+    2, 6, 2, 6
+  };
+const int H264v2Codec::testZoom16Y[21] =
+  { 3,
+    1, 1, 5, 5,
+    0, 0, 4, 4,
+    0, 0, 4, 4,
+    2, 2, 6, 6,
+    2, 2, 6, 6
+  };
+const int H264v2Codec::testZoom16Len = 21;
+const int H264v2Codec::delta16[4][2] = { {0,0}, {8,0}, {0,8}, {8,8} };
+///< Thresholds for predicted final distortion = 20480/(256/4) = 320 (4 samples/mode completed)
+#define H264V2_LUM_DISTORTION_THRESHOLD 320
+
+const int H264v2Codec::testZoom8[5][2] = { {3,3}, {1,1}, {5,1}, {1,5}, {5,5} };
+const int H264v2Codec::testZoom8Len = 5;
+///< Thresholds for predicted final distortion = 10240/(128/2) = 160 (2 samples/mode completed)
+#define H264V2_CHR_DISTORTION_THRESHOLD 160
+
+/// Test sampling point coordinates for Intra_8x8 prediction mode selection.
 const int H264v2Codec::test8X[64] = { 2, 5, 2, 5,
 																			0, 4, 7, 0, 7, 0, 4, 7,
 																			2, 5, 6, 1, 6, 0, 7, 3, 4, 3, 4, 0, 7, 1, 6, 2, 5,
@@ -236,17 +276,34 @@ const int H264v2Codec::indexAbS[3][52]	= { { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
 	const int H264v2Codec::MbStepSize[H264V2_MAX_QP+1] = 
 		{ 1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
 #else
-		const int H264v2Codec::MbStepSize[H264V2_MAX_QP+1] = 
+		const int H264v2Codec::MbStepSize[H264V2_MAX_EXT_QP+1] = 
 			{//	0		1		2		3		4		5		6		7		8		9		10	11	12	13	14	15
 					1,	1,	1,	1,	1,	1,	1,	1,	1,	1,	 1,	 1,	 1,	 2,	 2,	 2,
 			//	16	17	18	19	20	21	22	23	24	25	26	27	28	29	30	31
 					2,	 2,	 2,	 2,	 2,	 2,	 2,	 2,	 2,	 3,	 3,	 3,	 3,	 3,	 3,	 3,
 			//	32	33	34	35	36	37	38	39	40	41	42	43	44	45	46	47
 					3,	 3,	 3,	 3,	 3,	 4,	 4,	 4,	 4,	 4,	 4,	 4,	 4,	 4,	 4,	 4,
-			//	48	49	50	51  	
-					4,	 4,	 4,	 4
+			//	48	49	50	51  52  53  54  55  56  57  58  59  60  61  62  63  	
+					4,	 4,	 4,	 4,  1,  2,  3,  4,  1,  2,  3,  4,  1,  2,  3,  4,  
+      //  64  65  66  67  68  69  70  71
+          1,   1,  1,  1,  1,  1,  1,  1
 			};
 #endif
+  const int H264v2Codec::NextQPDec[H264V2_MAX_EXT_QP+1] = 
+	  {//	0		1		2		3		4		5		6		7		8		9		10	11	12	13	14	15
+			  1,	1,	1,	2,	3,	4,	5,	6,	7,	8,	 9,	10,	11,	11,	13,	13,
+	  //	16	17	18	19	20	21	22	23	24	25	26	27	28	29	30	31
+			  15,	15,	17,	17,	19,	19,	21,	21,	23,	23,	25,	25,	27,	27,	29,	29,
+	  //	32	33	34	35	36	37	38	39	40	41	42	43	44	45	46	47
+			  31,	31,	31,	31,	35,	35,	35,	35,	39,	39,	39,	39,	43,	43,	43,	43,
+	  //	48	49	50	51  52  53  54  55  56  57  58  59  60  61  62  63  	
+			  47,	47,	47,	47, 51, 51, 51, 51, 55, 55, 55, 55, 59, 59, 59, 59,  
+    //  64  65  66  67  68  69  70  71
+        63, 63, 63, 63, 67, 68, 69, 70 
+	  };
+
+  /// CPU speed dependent high resolution timer.
+  double H264v2Codec::_cpuFreq = 0.0;
 
 /*
 --------------------------------------------------------------------------
@@ -261,6 +318,23 @@ H264v2Codec::H264v2Codec()
 
 void H264v2Codec::ResetMembers(void)
 {
+#ifdef H264V2_DUMP_HEADERS
+  _headerTableLen = 300;
+	_headerTable.Create(6, _headerTableLen);
+
+  _headerTable.SetHeading(0, "NALType");
+  _headerTable.SetHeading(1, "NALRefIdc");
+  _headerTable.SetHeading(2, "IdrPicId");
+  _headerTable.SetHeading(3, "FrmNum");
+  _headerTable.SetHeading(4, "SliceType");
+  _headerTable.SetHeading(5, "Qp");
+
+  for(int j = 0; j < 6; j++)
+    _headerTable.SetDataType(j, MeasurementTable::INT);
+
+  _headerTablePos = 0;
+#endif // H264V2_DUMP_HEADERS
+
 	_errorStr			 = "[H264v2Codec::ResetMembers] No error";
 	_codecIsOpen	 = 0;
 	_bitStreamSize = 0;
@@ -280,6 +354,9 @@ void H264v2Codec::ResetMembers(void)
 	_iPictureFraction									= 0;
 
 	_modeOfOperation									= H264V2_OPEN;
+  _intraIterations                  = H264V2_MAX_INTRA_ITERATIONS;  ///< Intra optimisation iteration limit.
+  _interIterations                  = H264V2_MAX_INTER_ITERATIONS;  ///< Inter optimisation iteration limit.
+  _timeLimitMs                      = 0;  ///< Intra/inter optimisation time limit.
 
 	_currSeqParam											= 0;	///< Index reference into _seqParam[32] array.
 	_currPicParam											= 0;	///< Index reference into _picParam[2] array.
@@ -339,37 +416,38 @@ void H264v2Codec::ResetMembers(void)
 	_pMotionEstimationResult	= NULL;
 	_pMotionCompensator				= NULL;
 	_pMotionVectors						= NULL;
+  _pMotionPredictor         = NULL;
 
 	/// Vlc encoders and decoders for use with CAVLC.
 	_pPrefixVlcEnc						= NULL;
 	_pPrefixVlcDec						= NULL;
-	_pCoeffTokenVlcEnc				= NULL;		///< New H.264
-	_pCoeffTokenVlcDec				= NULL;		///< New H.264
-	_pTotalZeros4x4VlcEnc			= NULL;		///< New H.264
-	_pTotalZeros4x4VlcDec			= NULL;		///< New H.264
-	_pTotalZeros2x2VlcEnc			= NULL;		///< New H.264
-	_pTotalZeros2x2VlcDec			= NULL;		///< New H.264
-	_pRunBeforeVlcEnc					= NULL;		///< New H.264
-	_pRunBeforeVlcDec					= NULL;		///< New H.264
+	_pCoeffTokenVlcEnc				= NULL;
+	_pCoeffTokenVlcDec				= NULL;
+	_pTotalZeros4x4VlcEnc			= NULL;
+	_pTotalZeros4x4VlcDec			= NULL;
+	_pTotalZeros2x2VlcEnc			= NULL;
+	_pTotalZeros2x2VlcDec			= NULL;
+	_pRunBeforeVlcEnc					= NULL;
+	_pRunBeforeVlcDec					= NULL;
 	/// ... and the remaining vlc encoders and decoders.
-	_pBlkPattVlcEnc						= NULL;		///< New H.264
-	_pBlkPattVlcDec						= NULL;		///< New H.264
-	_pDeltaQPVlcEnc						= NULL;		///< New H.264
-	_pDeltaQPVlcDec						= NULL;		///< New H.264
-	_pMbTypeVlcEnc						= NULL;		///< New H.264
-	_pMbTypeVlcDec						= NULL;		///< New H.264
-	_pMbIChrPredModeVlcEnc		= NULL;		///< New H.264
-	_pMbIChrPredModeVlcDec		= NULL;		///< New H.264
-	_pMbMotionVecDiffVlcEnc		= NULL;		///< New H.264
-	_pMbMotionVecDiffVlcDec		= NULL;		///< New H.264
+	_pBlkPattVlcEnc						= NULL;
+	_pBlkPattVlcDec						= NULL;
+	_pDeltaQPVlcEnc						= NULL;
+	_pDeltaQPVlcDec						= NULL;
+	_pMbTypeVlcEnc						= NULL;
+	_pMbTypeVlcDec						= NULL;
+	_pMbIChrPredModeVlcEnc		= NULL;
+	_pMbIChrPredModeVlcDec		= NULL;
+	_pMbMotionVecDiffVlcEnc		= NULL;
+	_pMbMotionVecDiffVlcDec		= NULL;
 	/// The CAVLC codecs.
-	_pCAVLC4x4								= NULL;		///< New H.264
-	_pCAVLC2x2								= NULL;		///< New H.264
+	_pCAVLC4x4								= NULL;
+	_pCAVLC2x2								= NULL;
 	/// General header vlc encoders and decoders.
-	_pHeaderUnsignedVlcEnc		= NULL;		///< New H.264
-	_pHeaderUnsignedVlcDec		= NULL;		///< New H.264
-	_pHeaderSignedVlcEnc			= NULL;		///< New H.264
-	_pHeaderSignedVlcDec			= NULL;		///< New H.264
+	_pHeaderUnsignedVlcEnc		= NULL;
+	_pHeaderUnsignedVlcDec		= NULL;
+	_pHeaderSignedVlcEnc			= NULL;
+	_pHeaderSignedVlcDec			= NULL;
 
 	/// Macroblock data objects.
 	_pMb				= NULL;
@@ -382,9 +460,10 @@ void H264v2Codec::ResetMembers(void)
 	/// the GOP are IPPPPPP..... and all P-frames use only the previous frame for reference. No
 	/// reference lists (List0) are maintained and frame number counting is consecutively incremented
 	/// from the previous IDR-frame.
-	_frameNum					= 0;				///< Used for SliceHeader._frame_num
-	_maxFrameNum			= 1 << 16;	///< Used for and derived from SeqParamSet._log2_max_frame_num_minus4
-	_idrFrameNum			= 0;				///< Used for SliceHeader._idr_pic_id
+  _seqParamSetLog2MaxFrameNumMinus4 = 12;         ///< Range [0..12] made available as a codec parameter.
+	_frameNum					                = 0;				  ///< Used for SliceHeader._frame_num
+	_maxFrameNum			                = 1 << (_seqParamSetLog2MaxFrameNumMinus4 + 4);	///< Used for and derived from SeqParamSet._log2_max_frame_num_minus4
+	_idrFrameNum			                = 0;				  ///< Used for SliceHeader._idr_pic_id
 
 	/// Slice without partitioning and therefore the slice parameters are simple. (Only one slice/frame.)
 	_slice._type			= SliceHeaderH264::I_Slice_All;	///< I-Slice/P-Slice.
@@ -398,6 +477,9 @@ void H264v2Codec::ResetMembers(void)
 	_pInterImgPlaneEncoder	= NULL;
 	_pIntraImgPlaneDecoder	= NULL;
 	_pInterImgPlaneDecoder	= NULL;
+
+  /// Timer
+  _startTime = 0;
 
 }//end ResetMembers.
 
@@ -419,7 +501,16 @@ int	H264v2Codec::GetParameter(const char* type, int*	length, void*	value)
 	char *p = (char *)type;
 	int len	= (int)strlen(p);
 
-	if( _strnicmp(p,"width",len) == 0 )
+  /// Most frequently called params at the top of the comparison list.
+	if( _strnicmp(p,"picture coding type",len) == 0 )
+		_itoa(_pictureCodingType,(char *)value,10);
+	else if( _strnicmp(p,"last pic coding type",len) == 0 )
+		_itoa(_lastPicCodingType,(char *)value,10);
+	else if( _strnicmp(p,"idr frame number",len) == 0 )
+		_itoa(_idrFrameNum,(char *)value,10);
+	else if( _strnicmp(p,"p frame number",len) == 0 )
+		_itoa(_frameNum,(char *)value,10);
+	else if( _strnicmp(p,"width",len) == 0 )
 		_itoa(_width,(char *)value,10);
 	else if( _strnicmp(p,"height",len) == 0 )
 		_itoa(_height,(char *)value,10);
@@ -432,10 +523,6 @@ int	H264v2Codec::GetParameter(const char* type, int*	length, void*	value)
     int i = _flip ? 1 : 0;
     sprintf((char *)value, "%d", i);
   }
-	else if( _strnicmp(p,"picture coding type",len) == 0 )
-		_itoa(_pictureCodingType,(char *)value,10);
-	else if( _strnicmp(p,"last pic coding type",len) == 0 )
-		_itoa(_lastPicCodingType,(char *)value,10);
 	else if( _strnicmp(p,"quality",len) == 0 )
 		_itoa(_pQuant,(char *)value,10);
 	else if( _strnicmp(p,"autoipicture",len) == 0 )
@@ -448,6 +535,12 @@ int	H264v2Codec::GetParameter(const char* type, int*	length, void*	value)
 		_itoa(_idCode,(char *)value,10);
 	else if( _strnicmp(p,"mode of operation",len) == 0 )
 		_itoa(_modeOfOperation,(char *)value,10);
+	else if( _strnicmp(p,"intra iteration limit",len) == 0 )
+		_itoa(_intraIterations,(char *)value,10);
+	else if( _strnicmp(p,"inter iteration limit",len) == 0 )
+		_itoa(_interIterations,(char *)value,10);
+	else if( _strnicmp(p,"time limit msec",len) == 0 )
+		_itoa(_timeLimitMs,(char *)value,10);
 	else if( _strnicmp(p,"seq param set",len) == 0 )
 		_itoa(_currSeqParam,(char *)value,10);
 	else if( _strnicmp(p,"pic param set",len) == 0 )
@@ -458,6 +551,8 @@ int	H264v2Codec::GetParameter(const char* type, int*	length, void*	value)
 		_itoa(_prependParamSetsToIPic,(char *)value,10);
 	else if( _strnicmp(p,"start code emulation prevention",len) == 0 )
 		_itoa(_startCodeEmulationPrevention,(char *)value,10);
+	else if( _strnicmp(p,"seq param log2 max frame num minus 4",len) == 0 )
+		_itoa(_seqParamSetLog2MaxFrameNumMinus4,(char *)value,10);
 	else if( _strnicmp(p,"parameters",len) == 0 )
 		_itoa(PARAMETER_LEN,(char *)value,10);
 	else
@@ -489,7 +584,14 @@ int H264v2Codec::SetParameter(const char* type, const char* value)
 	char *v = (char *)value;
 	int  len	= (int)strlen(p);
 
-	if( _strnicmp(p,"width",len) == 0 )
+  /// Most frequently called params at the top of the comparison list.
+	if( _strnicmp(p,"picture coding type",len) == 0 )
+		_pictureCodingType = (int)(atoi(v));
+	else if( _strnicmp(p,"idr frame number",len) == 0 )
+		_idrFrameNum = (int)(atoi(v));
+	else if( _strnicmp(p,"p frame number",len) == 0 )
+		_frameNum = (int)(atoi(v));
+	else if( _strnicmp(p,"width",len) == 0 )
 		_width = (int)(atoi(v));
 	else if( _strnicmp(p,"height",len) == 0 )
 		_height = (int)(atoi(v));
@@ -502,8 +604,6 @@ int H264v2Codec::SetParameter(const char* type, const char* value)
 		int i = (atoi)(v);
 		_flip = (i != 0);
 	}
-	else if( _strnicmp(p,"picture coding type",len) == 0 )
-		_pictureCodingType = (int)(atoi(v));
 	else if( _strnicmp(p,"quality",len) == 0 )
 		_pQuant = (int)(atoi(v));
 	else if( _strnicmp(p,"autoipicture",len) == 0 )
@@ -514,6 +614,12 @@ int H264v2Codec::SetParameter(const char* type, const char* value)
 		_iPictureFraction = (int)(atoi(v));
 	else if( _strnicmp(p,"mode of operation",len) == 0 )
 		_modeOfOperation = (int)(atoi(v));
+	else if( _strnicmp(p,"intra iteration limit",len) == 0 )
+		_intraIterations = (int)(atoi(v));
+	else if( _strnicmp(p,"inter iteration limit",len) == 0 )
+		_interIterations = (int)(atoi(v));
+	else if( _strnicmp(p,"time limit msec",len) == 0 )
+		_timeLimitMs = (int)(atoi(v));
 	else if( _strnicmp(p,"seq param set",len) == 0 )
 		_currSeqParam = (int)(atoi(v));
 	else if( _strnicmp(p,"pic param set",len) == 0 )
@@ -524,6 +630,8 @@ int H264v2Codec::SetParameter(const char* type, const char* value)
 		_prependParamSetsToIPic = (int)(atoi(v));
 	else if( _strnicmp(p,"start code emulation prevention",len) == 0 )
 		_startCodeEmulationPrevention = (int)(atoi(v));
+	else if( _strnicmp(p,"seq param log2 max frame num minus 4",len) == 0 )
+		_seqParamSetLog2MaxFrameNumMinus4 = (int)(atoi(v));
 	else
 	{
 		_errorStr = "[H264v2Codec::SetParameter] Write parameter not supported";
@@ -953,25 +1061,38 @@ int H264v2Codec::Open(void)
 
 	/// --------------- Configure motion estimators -----------------------------------
 	
+  /// Create a motion vector predictor for the motion estimator to use in biasing towards
+  /// the predicted vector when distortion choise is ambiguous.
+  _pMotionPredictor = new H264MotionVectorPredictorImpl1(_pMb);
+	if(!_pMotionPredictor)
+  {
+    _errorStr = "[H264Codec::Open] Cannot create motion vector predictor object";
+    Close();
+    return(0);
+  }//end if !_pMotionPredictor...
+
 	/// Select an appropriate motion estimator.
 	int motionVectorRange;	///< In 1/4 pel units but also required for motion compensator in full pel units.
-	if( (_width <= 352)&&(_height <= 288) )
-		motionVectorRange = 256;	///< [-64.00 ... 63.75]
-//		motionVectorRange = 128;	///< [-32.00 ... 31.75]
-	else if( (_width <= 704)&&(_height <= 576) )
-		motionVectorRange = 256;	///< [-64.00 ... 63.75]
-	else if( (_width <= 1408)&&(_height <= 1152) )	///< These next 2 are ridiculous!
+	if( (_width <= 1408)&&(_height <= 1152) )
 		motionVectorRange = 512;	///< [-128.00 ... 127.75]
 	else
 		motionVectorRange = 1024;	///< [-256.00 ... 255.75]
 
 	/// Fast less accurate estimator.
-	_pMotionEstimator = new MotionEstimatorH264ImplMultiresCross(	(const void *)_pLum,	///< Multi res estimation.
-																																(const void *)_pRLum,
-																																_lumWidth,
-																																_lumHeight,
-																																motionVectorRange, ///< In 1/4 pel units.
-																																_autoIFrameIncluded);
+	_pMotionEstimator = new MotionEstimatorH264ImplMultiresCrossVer2(	(const void *)_pLum,	///< Multi res estimation.
+																																    (const void *)_pRLum,
+																																    _lumWidth,
+																																    _lumHeight,
+																																    motionVectorRange, ///< In 1/4 pel units.
+                                                                    _pMotionPredictor,
+																																    _autoIFrameIncluded);
+
+//	_pMotionEstimator = new MotionEstimatorH264ImplMultiresCross(	(const void *)_pLum,	///< Multi res estimation.
+//																																(const void *)_pRLum,
+//																																_lumWidth,
+//																																_lumHeight,
+//																																motionVectorRange, ///< In 1/4 pel units.
+//																																_autoIFrameIncluded);
 
 	/// Slow more accurate multiresolution estimator.
 //	_pMotionEstimator = new MotionEstimatorH264ImplMultires((const void *)_pLum,	///< Multi res estimation.
@@ -1076,8 +1197,12 @@ int H264v2Codec::Open(void)
 	_lastPicCodingType		= H264V2_INTRA;
 	_prevMotionDistortion = -1;
 	_maxFrameNum					= 1 << (_seqParam[_currSeqParam]._log2_max_frame_num_minus4 + 4);	///< Max limit (modulus) for _frameNum.
-	_idrFrameNum					= 0;	///< The starting I-frame counter incremented with every consecutive I-frame.
+	_idrFrameNum					= 0;	///< The starting I-frame counter that must then be different for every contiguous I-frame.
 	Restart();
+
+  /// Set up the optimisation time limit timer. If it does not exist then force the parameter to zero.
+  if(!SetCounter())
+    _timeLimitMs = 0;
 
   _errorStr						= "[H264Codec::Open] No Erorr";
   _codecIsOpen				= 1;
@@ -1107,6 +1232,10 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
 		_errorStr = "[H264V2::Code] Codec is not open";
     return(0);
   }//end if !_codecIsOpen...
+
+  /// Mark the start time of the encoding process.
+  if(_timeLimitMs)
+    _startTime = (int)GetCounter();
 
   /// Interpret the code parameter as a frame bit limit.
   int frameBitLimit	= codeParameter;
@@ -1158,6 +1287,10 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
 		}///end if _prevMotionDistortion...
 
 		_prevMotionDistortion = motionDistortion;
+
+    /// Force an I-picture if frame counter has wraped around in the modulus calculation.
+    if(_frameNum == 0)
+      _pictureCodingType = H264V2_INTRA;
 
 	}//end if H264V2_INTER...
 
@@ -1238,8 +1371,8 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
 	/// Write (concatinate) the slice header layer with its header flags to
 	/// the stream. There is only one slice so the header, macroblocks (slice
 	/// data) and tail may be coded in a linear order.
-	_slice._frame_num		= _frameNum;
-	_slice._idr_pic_id	= _idrFrameNum;
+	_slice._frame_num		      = _frameNum;
+	_slice._idr_pic_id	      = _idrFrameNum;
 	/// Force the image plane encoders to use _pQuant as the slice qp and therefore the
 	/// slice header is determined before encoding and may be added to the bit stream here.
 	_slice._qp										= _pQuant;
@@ -1283,6 +1416,7 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
 	/// Write (concatinate) the macroblock layer (slice data) with its header 
 	/// flags to the stream.
 	runOutOfBits	= WriteSliceDataLayer(_pBitStreamWriter, allowedBits, &bitsUsed);
+
 	_bitStreamSize += bitsUsed;
   if(runOutOfBits) ///< or if(== 2) An error has occured.
     return(0);
@@ -1311,15 +1445,24 @@ int	H264v2Codec::Code(void* pSrc, void* pCmp, int codeParameter)
   }//end if _startCodeEmulationPrevention...
 
 	/// Any param changes required for the next picture encoding are done here.
-  /// INTER pictures always follow INTRA pictures.
-	_lastPicCodingType = _pictureCodingType;
+  /// INTER pictures by default follow INTRA pictures.
+  int tmpLastPicCodingType  = _lastPicCodingType;
+	_lastPicCodingType        = _pictureCodingType;
   if(_pictureCodingType == H264V2_INTRA)
 	{
     _pictureCodingType	= H264V2_INTER;
-		_idrFrameNum++;	///< The entire I-frame is encoded in one I-slice therefore this can be incremented.
+    /// The IDR-frame num is by default 0 unless the previous frame was also an IDR-frame.
+    /// In this case, it toggles between 1 and 0. The H.264 standard only requires
+    /// consecutive IDR-frames to be different ITU-T Recommendation H.264 (03/2005) page 77.
+    if( (tmpLastPicCodingType == H264V2_INTRA)&&(_idrFrameNum == 0) )
+      _idrFrameNum = 1;
+    else
+      _idrFrameNum = 0;
 	}//end if H264V2_INTRA...
+  else
+    _idrFrameNum = 0;
 
-	///< Increment the frame number relative to the last I-frame.
+	///< Increment the frame number relative to the last I-frame for the next frame.
 	_frameNum = (_frameNum + 1) % _maxFrameNum;
 
 	return(1);
@@ -1432,25 +1575,48 @@ int	H264v2Codec::Decode(void* pCmp, int bitLength, void* pDst)
 				  }//end if runOutOfBits...
 
           /// If the codec is in the open state then any change in sequence or picture param set requires the
-          /// codec to be restarted with these new sets.
+          /// codec to be restarted with these new sets. But the bit stream must be preserved and restored 
+          /// after the call to Open().
           if(_codecIsOpen)
           {
             if(changed)
             {
+              /// Preserve the bitstream
+	            IBitStreamReader* pTmpBitStreamReader = new BitStreamReaderMSB();
+              pTmpBitStreamReader->Copy(_pBitStreamReader );
+
               int tmpPicCodingType = _pictureCodingType; ///< Store the coding type.
 
               _genParamSetOnOpen = 0; ///< Must be off if the new param sets are to be used.
               if(!Open())
               {
+                delete pTmpBitStreamReader;
  					      ret	= 0;
 					      goto H264V2_D_CLEAN_MEM;
               }//end if !Open...
 
               /// Restore the picture coding type.
               _pictureCodingType = tmpPicCodingType;
-              }//end if changed...
+              /// Restore the bitstream.
+              _pBitStreamReader->Copy(pTmpBitStreamReader );
+              delete pTmpBitStreamReader;
+            }//end if changed...
 
           }//end if _codecIsOpen...
+
+#ifdef H264V2_DUMP_HEADERS
+          if(_headerTablePos < _headerTableLen)
+          {
+            _headerTable.WriteItem(0, _headerTablePos, _nal._unit_type);     /// "NALType"
+            _headerTable.WriteItem(1, _headerTablePos, _nal._ref_idc);       /// "NALRefIdc"
+            _headerTable.WriteItem(2, _headerTablePos, _slice._idr_pic_id);  ///  "IdrPicId"
+            _headerTable.WriteItem(3, _headerTablePos, _slice._frame_num);   ///  "FrmNum"
+            _headerTable.WriteItem(4, _headerTablePos, _slice._type);        ///  "SliceType"
+            _headerTable.WriteItem(5, _headerTablePos, _slice._qp);          ///  "Qp"
+
+            _headerTablePos++;
+          }//end if _headerTablePos...
+#endif // H264V2_DUMP_HEADERS
 
           if(frameBitSize < 32) ///< No more units.
           {
@@ -1503,6 +1669,20 @@ int	H264v2Codec::Decode(void* pCmp, int bitLength, void* pDst)
 	/// There is only one slice so the quant parameter is picture quant + the delta slice quant.
 	_slice._qp		= _picParam[_currPicParam]._pic_init_qp_minus26 + 26 + _slice._qp_delta;
 	_pQuant				= _slice._qp;
+
+#ifdef H264V2_DUMP_HEADERS
+  if(_headerTablePos < _headerTableLen)
+  {
+    _headerTable.WriteItem(0, _headerTablePos, _nal._unit_type);     /// "NALType"
+    _headerTable.WriteItem(1, _headerTablePos, _nal._ref_idc);       /// "NALRefIdc"
+    _headerTable.WriteItem(2, _headerTablePos, _slice._idr_pic_id);  ///  "IdrPicId"
+    _headerTable.WriteItem(3, _headerTablePos, _slice._frame_num);   ///  "FrmNum"
+    _headerTable.WriteItem(4, _headerTablePos, _slice._type);        ///  "SliceType"
+    _headerTable.WriteItem(5, _headerTablePos, _slice._qp);          ///  "Qp"
+
+    _headerTablePos++;
+  }//end if _headerTablePos...
+#endif // H264V2_DUMP_HEADERS
 
 	/// Get the macroblock (slice data) encodings off the bit stream.
 	runOutOfBits = ReadSliceDataLayer(_pBitStreamReader, frameBitSize, &bitsUsed);
@@ -1577,6 +1757,13 @@ int	H264v2Codec::Decode(void* pCmp, int bitLength, void* pDst)
 
 int H264v2Codec::Close(void)
 {
+#ifdef H264V2_DUMP_HEADERS
+  if(_headerTablePos > 0)
+    _headerTable.Save("c:/keithf/CppProjects/RTVC/Projects/Win32/VC10/CodecAnalyser/LoyisoGola_my_enc_qp48_16P.csv", ",", 1);
+
+  _headerTablePos = 0;
+#endif // H264V2_DUMP_HEADERS
+
 	/// Free the image memory and associated overlays.
 	if(_Lum != NULL)
 		delete _Lum;
@@ -1622,9 +1809,9 @@ int H264v2Codec::Close(void)
 	if(_8x8_1 != NULL)
 		delete _8x8_1;
 	_8x8_1	= NULL;
-	if(_8x8_1 != NULL)
-		delete[] _8x8_1;
-	_8x8_1	= NULL;
+	if(_p8x8_1 != NULL)
+		delete[] _p8x8_1;
+	_p8x8_1	= NULL;
 
 	/// Colour converters.
 	if(_pInColourConverter != NULL)
@@ -1771,6 +1958,10 @@ int H264v2Codec::Close(void)
 		delete _pMotionCompensator;
 	_pMotionCompensator = NULL;
 
+	if(_pMotionPredictor != NULL)
+		delete _pMotionPredictor;
+	_pMotionPredictor = NULL;
+
 	/// Image plane encoders/decoders.
 	if(_pIntraImgPlaneEncoder != NULL)
 		delete _pIntraImgPlaneEncoder;
@@ -1796,6 +1987,7 @@ void H264v2Codec::Restart(void)
 {
   _pictureCodingType	= H264V2_INTRA;
 	_frameNum						= 0;				///< Reset the frame counter.
+//  _idrFrameNum        = 0;
 
   /// Zero the reference image. Note that the colour components are 
 	/// held in contiguous mem.
@@ -1987,9 +2179,9 @@ int H264v2Codec::SetSeqParamSet(int index)
 	_seqParam[index]._qpprime_y_zero_transform_bypass_flag	= 0;							///< If QP = 0, this flag indicates bypassing the transform process. When not present = 0.
 	_seqParam[index]._seq_scaling_matrix_present_flag				= 0;							///< = 0. No scaling matrices for baseline profile. Indicates existence of _seq_scaling_list_present_flag flags.
 	/// Not initialised _seq_scaling_list_present_flag[8]			///< if _seq_scaling_matrix_present_flag, these indicate lists not present/present (0/1).
-	_seqParam[index]._log2_max_frame_num_minus4							= 12;							///< Range = [0..12]. MaxFrameNum = 2^(_log2_max_frame_num_minus4 + 4) for slice _frame_num derivations.
+	_seqParam[index]._log2_max_frame_num_minus4							= _seqParamSetLog2MaxFrameNumMinus4;	///< Range = [0..12]. MaxFrameNum = 2^(_log2_max_frame_num_minus4 + 4) for slice _frame_num derivations.
 	_seqParam[index]._pic_order_cnt_type										= 2;							///< Range = [0..2]. 2 = 1-to-1 mapping. (Picture order count = frame num).
-	_seqParam[index]._log2_max_pic_order_cnt_lsb_minus4			= 0;							///< For B-Slice decoding.  There are no B-Slices in the baseline profile.
+	_seqParam[index]._log2_max_pic_order_cnt_lsb_minus4			= 0;							///< For B-Slice decoding.  There are no B-Slices in the baseline profile. 
 	_seqParam[index]._delta_pic_order_always_zero_flag			= 0;							///< For B-Slice decoding.
 	_seqParam[index]._offset_for_non_ref_pic								= 0;							///< For B-Slice decoding.
 	_seqParam[index]._offset_for_top_to_bottom_field				= 0;							///< For B-Slice decoding.
@@ -3045,6 +3237,7 @@ int H264v2Codec::GetCodecParams(int picParamSet)
 	/// Get width and height in pels.
 	_width	= (_seqParam[seqParamSet]._pic_width_in_mbs_minus1	+ 1) * 16;
 	_height = (_seqParam[seqParamSet]._pic_height_in_map_units_minus1	+ 1) * 16;
+  _seqParamSetLog2MaxFrameNumMinus4 = _seqParam[seqParamSet]._log2_max_frame_num_minus4; 
 
 	///----------- Check params for this implementation -----------------------
 
@@ -3171,8 +3364,10 @@ to count the bits only.
 */
 int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, int* bitsUsed)
 {
-	int	bitCount;
-	int bitsUsedSoFar = 0;
+	int	  bitCount;
+	int   bitsUsedSoFar = 0;
+  char  errInfo[64];
+  char  buff[16];
 
 	/// Limited implementation of modes and types for Baseline profile.
 	if((_slice._type != SliceHeaderH264::I_Slice) && (_slice._type != SliceHeaderH264::I_Slice_All) && 
@@ -3192,7 +3387,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 			goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 	}//end if bitCount...
 	else
+  {
+    strcpy(errInfo, "_first_mb_in_slice=");
+    strcat(errInfo, itoa(_slice._first_mb_in_slice, buff, 10));
 		goto H264V2_WSLH_VLCERROR_WRITE;
+  }//end else...
 	bitsUsedSoFar += bitCount;
 
 	///-------------------------- Slice Type -------------------------------------------------
@@ -3208,7 +3407,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 			goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 	}//end if bitCount...
 	else
+  {
+    strcpy(errInfo, "_type=");
+    strcat(errInfo, itoa(_slice._type, buff, 10));
 		goto H264V2_WSLH_VLCERROR_WRITE;
+  }//end else...
 	bitsUsedSoFar += bitCount;
 
 	///-------------------------- Pic Param Set Id --------------------------------------------
@@ -3224,10 +3427,14 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 			goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 	}//end if bitCount...
 	else
+  {
+    strcpy(errInfo, "_pic_parameter_set_id=");
+    strcat(errInfo, itoa(_slice._pic_parameter_set_id, buff, 10));
 		goto H264V2_WSLH_VLCERROR_WRITE;
+  }//end else...
 	bitsUsedSoFar += bitCount;
 
-	///-------------------------- Frame Number ----------------------------------------------
+	///-------------------------- Frame Number -----------------------------------------------
 	bitCount = _seqParam[_picParam[_slice._pic_parameter_set_id]._seq_parameter_set_id]._log2_max_frame_num_minus4 + 4;
 	if( (bitsUsedSoFar + bitCount) <= allowedBits )
 	{
@@ -3266,13 +3473,22 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 			if( (bitsUsedSoFar + bitCount) <= allowedBits )
 			{
 				if(bsw)
-					bsw->Write(bitCount, _pHeaderUnsignedVlcEnc->GetCode());
+        {
+          if(bitCount <= 32)
+					  bsw->Write(bitCount, _pHeaderUnsignedVlcEnc->GetCode());
+          else
+					  bsw->Write(bitCount, _pHeaderUnsignedVlcEnc->GetExtCode(), _pHeaderUnsignedVlcEnc->GetCode());
+        }//end if bsw...
 			}//end if bitsUsedSoFar...
 			else
 				goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 		}//end if bitCount...
 		else
+    {
+      strcpy(errInfo, "_idr_pic_id=");
+      strcat(errInfo, itoa(_slice._idr_pic_id, buff, 10));
 			goto H264V2_WSLH_VLCERROR_WRITE;
+    }//end else...
 		bitsUsedSoFar += bitCount;
 	}//end if _unit_type...
 
@@ -3303,7 +3519,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 					goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 			}//end if bitCount...
 			else
+      {
+        strcpy(errInfo, "_delta_pic_order_cnt_bottom=");
+        strcat(errInfo, itoa(_slice._delta_pic_order_cnt_bottom, buff, 10));
 				goto H264V2_WSLH_VLCERROR_WRITE;
+      }//end else...
 			bitsUsedSoFar += bitCount;
 		}//end if _pic_order_present_flag...
 	}//end if _pic_order_cnt_type...
@@ -3322,7 +3542,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 				goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 		}//end if bitCount...
 		else
+    {
+      strcpy(errInfo, "_delta_pic_order_cnt[0]=");
+      strcat(errInfo, itoa(_slice._delta_pic_order_cnt[0], buff, 10));
 			goto H264V2_WSLH_VLCERROR_WRITE;
+    }//end else...
 		bitsUsedSoFar += bitCount;
 
 		if(_picParam[_slice._pic_parameter_set_id]._pic_order_present_flag && !_slice._field_pic_flag)
@@ -3339,7 +3563,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 						goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 				}//end if bitCount...
 				else
+        {
+          strcpy(errInfo, "_delta_pic_order_cnt[1]=");
+          strcat(errInfo, itoa(_slice._delta_pic_order_cnt[1], buff, 10));
 					goto H264V2_WSLH_VLCERROR_WRITE;
+        }//end else...
 				bitsUsedSoFar += bitCount;
 		}//end if _pic_order_present_flag...
 	}//end else if _pic_order_cnt_type...
@@ -3358,7 +3586,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 				goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 		}//end if bitCount...
 		else
+    {
+      strcpy(errInfo, "_redundant_pic_cnt=");
+      strcat(errInfo, itoa(_slice._redundant_pic_cnt, buff, 10));
 			goto H264V2_WSLH_VLCERROR_WRITE;
+    }//end else...
 		bitsUsedSoFar += bitCount;
 	}//end if _redundant_pic_cnt_present_flag...
 
@@ -3402,7 +3634,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 					goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 			}//end if bitCount...
 			else
+      {
+        strcpy(errInfo, "_num_ref_idx_l0_active_minus1=");
+        strcat(errInfo, itoa(_slice._num_ref_idx_l0_active_minus1, buff, 10));
 				goto H264V2_WSLH_VLCERROR_WRITE;
+      }//end else...
 			bitsUsedSoFar += bitCount;
 
 			if((_slice._type == SliceHeaderH264::B_Slice)||(_slice._type == SliceHeaderH264::B_Slice))
@@ -3419,7 +3655,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 						goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 				}//end if bitCount...
 				else
+        {
+          strcpy(errInfo, "_num_ref_idx_l1_active_minus1=");
+          strcat(errInfo, itoa(_slice._num_ref_idx_l1_active_minus1, buff, 10));
 					goto H264V2_WSLH_VLCERROR_WRITE;
+        }//end else...
 				bitsUsedSoFar += bitCount;
 			}//end if B_Slice...
 		}//end if _num_ref_idx_active_override_flag...
@@ -3454,7 +3694,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 						goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 				}//end if bitCount...
 				else
+        {
+          strcpy(errInfo, "_reordering_of_pic_nums_idc=");
+          strcat(errInfo, itoa(_slice._reordering_of_pic_nums_idc, buff, 10));
 					goto H264V2_WSLH_VLCERROR_WRITE;
+        }//end else...
 				bitsUsedSoFar += bitCount;
 
 				if((_slice._reordering_of_pic_nums_idc == 0)||(_slice._reordering_of_pic_nums_idc == 1))
@@ -3474,7 +3718,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 							goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 					}//end if bitCount...
 					else
+          {
+            strcpy(errInfo, "_abs_diff_pic_num_minus1=");
+            strcat(errInfo, itoa(_slice._abs_diff_pic_num_minus1, buff, 10));
 						goto H264V2_WSLH_VLCERROR_WRITE;
+          }//end else...
 					bitsUsedSoFar += bitCount;
 				}//end if _reordering_of_pic_nums_idc...
 				else if(_slice._reordering_of_pic_nums_idc == 2)
@@ -3494,7 +3742,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 							goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 					}//end if bitCount...
 					else
+          {
+            strcpy(errInfo, "_long_term_pic_num=");
+            strcat(errInfo, itoa(_slice._long_term_pic_num, buff, 10));
 						goto H264V2_WSLH_VLCERROR_WRITE;
+          }//end else...
 					bitsUsedSoFar += bitCount;
 				}//end else if _reordering_of_pic_nums_idc...
 
@@ -3572,7 +3824,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 				goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 		}//end if bitCount...
 		else
+    {
+      strcpy(errInfo, "_cabac_init_idc=");
+      strcat(errInfo, itoa(_slice._cabac_init_idc, buff, 10));
 			goto H264V2_WSLH_VLCERROR_WRITE;
+    }//end else...
 		bitsUsedSoFar += bitCount;
 	}//end if _entropy_coding_mode_flag...
 
@@ -3589,7 +3845,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 			goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 	}//end if bitCount...
 	else
+  {
+    strcpy(errInfo, "_qp_delta=");
+    strcat(errInfo, itoa(_slice._qp_delta, buff, 10));
 		goto H264V2_WSLH_VLCERROR_WRITE;
+  }//end else...
 	bitsUsedSoFar += bitCount;
 
 	///-------------------------- Switching slices ---------------------------------------
@@ -3620,7 +3880,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 				goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 		}//end if bitCount...
 		else
+    {
+      strcpy(errInfo, "_qs_delta=");
+      strcat(errInfo, itoa(_slice._qs_delta, buff, 10));
 			goto H264V2_WSLH_VLCERROR_WRITE;
+    }//end else...
 		bitsUsedSoFar += bitCount;
 	}//end if SP_Slice...
 
@@ -3639,7 +3903,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 				goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 		}//end if bitCount...
 		else
+    {
+      strcpy(errInfo, "_disable_deblocking_filter_idc=");
+      strcat(errInfo, itoa(_slice._disable_deblocking_filter_idc, buff, 10));
 			goto H264V2_WSLH_VLCERROR_WRITE;
+    }//end else...
 		bitsUsedSoFar += bitCount;
 
 		if(_slice._disable_deblocking_filter_idc != 1)
@@ -3656,7 +3924,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 					goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 			}//end if bitCount...
 			else
+      {
+        strcpy(errInfo, "_alpha_c0_offset_div2=");
+        strcat(errInfo, itoa(_slice._alpha_c0_offset_div2, buff, 10));
 				goto H264V2_WSLH_VLCERROR_WRITE;
+      }//end else...
 			bitsUsedSoFar += bitCount;
 
 			bitCount = _pHeaderSignedVlcEnc->Encode(_slice._beta_offset_div2);
@@ -3671,7 +3943,11 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 					goto H264V2_WSLH_RUNOUTOFBITS_WRITE;
 			}//end if bitCount...
 			else
+      {
+        strcpy(errInfo, "_beta_offset_div2=");
+        strcat(errInfo, itoa(_slice._beta_offset_div2, buff, 10));
 				goto H264V2_WSLH_VLCERROR_WRITE;
+      }//end else...
 			bitsUsedSoFar += bitCount;
 		}//end if _disable_deblocking_filter_idc...
 
@@ -3696,7 +3972,9 @@ int H264v2Codec::WriteSliceLayerHeader(IBitStreamWriter* bsw, int allowedBits, i
 		return(1);
 
 	H264V2_WSLH_VLCERROR_WRITE:
-		_errorStr = "[H264v2Codec::WriteSliceLayerHeader] Vlc encoder error";
+    strcpy(_errorInfo, "[H264v2Codec::WriteSliceLayerHeader] Vlc encoder error: ");
+    strcat(_errorInfo, errInfo);
+    _errorStr = _errorInfo;
 		*bitsUsed = bitsUsedSoFar;
 		return(2);
 
@@ -4211,7 +4489,7 @@ int H264v2Codec::InsertEmulationPrevention(IBitStreamWriter* bsw, int startOffse
   /// It is assumed that the stream is fully encoded and the trailing bits have been added
   /// to ensure byte alignement of the stream. Therefore the current stream byte pos is the 
   /// number of encoded bytes in the stream.
-  int  endPos  = bsw->GetStreamBytePos() - 1;
+  int  endPos  = bsw->GetStreamBytePos() - 1 - startOffset;
   if(endPos < 2) return(0);
 
   /// Find the occurrance of the start code emulation then shift down by copying backwards from the end. Note
@@ -4266,6 +4544,7 @@ int H264v2Codec::RemoveEmulationPrevention(IBitStreamReader* bsr)
         /// Shift remaining bytes up by 1 byte.
         for(int i = pos; i < endPos; i++)
           stream[i] = stream[i+1];
+        pos++;    ///< Skip one to prevent trapping a 0x00 followed by a 0x03 in the actual stream.
         endPos--; ///< Last byte was shifted by 1.
         count++;
       }//end if stream...
@@ -4661,8 +4940,8 @@ input stream param is NULL then this method is used to count the bits only.
 */
 int H264v2Codec::WriteMacroBlockLayer(IBitStreamWriter* bsw, MacroBlockH264* pMb, int allowedBits, int* bitsUsed)
 {
-	int	bitCount, i;
-	int bitsUsedSoFar = 0;
+	int	  bitCount, i;
+	int   bitsUsedSoFar = 0;
 
 	/// Encode the vlc blocks with the context of the neighborhood number of coeffs. Map
 	/// to the required H.264 coding order of each block when writing to the stream.
@@ -4814,7 +5093,10 @@ int H264v2Codec::WriteMacroBlockLayer(IBitStreamWriter* bsw, MacroBlockH264* pMb
 	return(0);
 
 	H264V2_RUNOUTOFBITS_WRITE_MB:
-		_errorStr = "H264V2:[WriteMacroBlockLayer] Bits required exceeds max available for picture";
+    /// Error info has contents loaded from outside of this method therefore concat is required.
+    //strcat(_errorInfo, " H264V2:[WriteMacroBlockLayer] Bits required exceeds max available for picture");
+    //_errorStr = _errorInfo;
+    _errorStr = "H264V2:[WriteMacroBlockLayer] Bits required exceeds max available for picture";
 		*bitsUsed = bitsUsedSoFar;
 		return(1);
 
@@ -5860,13 +6142,55 @@ int H264v2Codec::GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2
 
 		///------------------- Test for min ------------------------------------------------
 		/// Calculate the distortion at each test point and accumulate for each mode.
-		for(iter = 0; (iter < 8) && (!noChange); iter++)
-		{
-			for(; pos < test16Limit[iter]; pos++)
-			{
-				int y = test16Y[pos];
-				int x = test16X[pos];
+		//for(iter = 0; (iter < 8) && (!noChange); iter++)
+		//{
+		//	for(; pos < test16Limit[iter]; pos++)
+		//	{
+		//		int y = test16Y[pos];
+		//		int x = test16X[pos];
 
+		//		/// Vertical mode.
+		//		int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY - 1][rOffX + x];
+		//		modeDist[MacroBlockH264::Intra_16x16_Vert] += (diff0*diff0);
+		//		/// Horiz mode.
+		//		int diff1 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY + y][rOffX - 1];
+		//		modeDist[MacroBlockH264::Intra_16x16_Horiz] += (diff1*diff1);
+		//		/// DC mode.
+		//		diff0 = (int)in2D[iOffY + y][iOffX + x] - predDC;
+		//		modeDist[MacroBlockH264::Intra_16x16_DC] += (diff0*diff0);
+		//		/// Plane mode.
+		//		diff1 = (int)in2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (a + b*(x-7) + c*(y-7) + 16) >> 5 );
+		//		modeDist[MacroBlockH264::Intra_16x16_Plane] += (diff1*diff1);
+		//	}//end for pos...
+
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
+		//	for(i = MacroBlockH264::Intra_16x16_Horiz; i < 4 ; i++)	///< Total of 4 modes.
+		//	{
+		//		if(modeDist[i] < modeDist[mode])
+		//			mode = i;
+		//	}//end for i...
+
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
+
+		//}//end for iter...
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < 5; pos++)
+    {
+			int tly = testZoom16Y[pos];
+			int tlx = testZoom16X[pos];
+
+      for(iter = 0; iter < 4; iter++)
+      {
+        int y = tly + delta16[iter][1];
+        int x = tlx + delta16[iter][0];
+
+        /// Accumulate mode distortions here for these 4 points.
 				/// Vertical mode.
 				int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY - 1][rOffX + x];
 				modeDist[MacroBlockH264::Intra_16x16_Vert] += (diff0*diff0);
@@ -5874,30 +6198,28 @@ int H264v2Codec::GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2
 				int diff1 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY + y][rOffX - 1];
 				modeDist[MacroBlockH264::Intra_16x16_Horiz] += (diff1*diff1);
 				/// DC mode.
-				diff0 = (int)in2D[iOffY + y][iOffX + x] - predDC;
-				modeDist[MacroBlockH264::Intra_16x16_DC] += (diff0*diff0);
+				int diff2 = (int)in2D[iOffY + y][iOffX + x] - predDC;
+				modeDist[MacroBlockH264::Intra_16x16_DC] += (diff2*diff2);
 				/// Plane mode.
-				diff1 = (int)in2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (a + b*(x-7) + c*(y-7) + 16) >> 5 );
-				modeDist[MacroBlockH264::Intra_16x16_Plane] += (diff1*diff1);
-			}//end for pos...
+				int diff3 = (int)in2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (a + b*(x-7) + c*(y-7) + 16) >> 5 );
+				modeDist[MacroBlockH264::Intra_16x16_Plane] += (diff3*diff3);
+      }//end for iter...
 
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
-			for(i = MacroBlockH264::Intra_16x16_Horiz; i < 4 ; i++)	///< Total of 4 modes.
-			{
-				if(modeDist[i] < modeDist[mode])
-					mode = i;
-			}//end for i...
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_16x16_DC] < H264V2_LUM_DISTORTION_THRESHOLD) ///< Predicted final distortion = 20480/(256/4) = 320 (4 samples so far)
+          break;
+      }//end if pos...
 
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
-
-		}//end for iter...
-
+    }//end for pos...
+		mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
+		for(i = MacroBlockH264::Intra_16x16_Horiz; i < 4 ; i++)	///< Total of 4 modes.
+		{
+			if(modeDist[i] < modeDist[mode])
+				mode = i;
+		}//end for i...
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end if all...
 	else if(aboveAndLeft)
 	{
@@ -5908,13 +6230,53 @@ int H264v2Codec::GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2
 		predDC = (predDC + 16) >> 5;
 
 		///------------------- Test for min ------------------------------------------------
-		for(iter = 0; (iter < 8) && (!noChange); iter++)
-		{
-			for(; pos < test16Limit[iter]; pos++)
-			{
-				int y = test16Y[pos];
-				int x = test16X[pos];
+		//for(iter = 0; (iter < 8) && (!noChange); iter++)
+		//{
+		//	for(; pos < test16Limit[iter]; pos++)
+		//	{
+		//		int y = test16Y[pos];
+		//		int x = test16X[pos];
 
+		//		/// Vertical mode.
+		//		int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY - 1][rOffX + x];
+		//		modeDist[MacroBlockH264::Intra_16x16_Vert] += (diff0*diff0);
+		//		/// Horiz mode.
+		//		int diff1 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY + y][rOffX - 1];
+		//		modeDist[MacroBlockH264::Intra_16x16_Horiz] += (diff1*diff1);
+		//		/// DC mode.
+		//		int diff2 = (int)in2D[iOffY + y][iOffX + x] - predDC;
+		//		modeDist[MacroBlockH264::Intra_16x16_DC] += (diff2*diff2);
+		//	}//end for pos...
+
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
+		//	for(i = MacroBlockH264::Intra_16x16_Horiz; i < 3 ; i++)	///< Total of 3 modes. Plane mode excluded.
+		//	{
+		//		if(modeDist[i] < modeDist[mode])
+		//			mode = i;
+		//	}//end for i...
+
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
+
+		//}//end for iter...
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < 5; pos++)
+    {
+			int tly = testZoom16Y[pos];
+			int tlx = testZoom16X[pos];
+
+      for(iter = 0; iter < 4; iter++)
+      {
+        int y = tly + delta16[iter][1];
+        int x = tlx + delta16[iter][0];
+
+        /// Accumulate mode distortions here for these 4 points.
 				/// Vertical mode.
 				int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY - 1][rOffX + x];
 				modeDist[MacroBlockH264::Intra_16x16_Vert] += (diff0*diff0);
@@ -5924,25 +6286,23 @@ int H264v2Codec::GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2
 				/// DC mode.
 				int diff2 = (int)in2D[iOffY + y][iOffX + x] - predDC;
 				modeDist[MacroBlockH264::Intra_16x16_DC] += (diff2*diff2);
-			}//end for pos...
+      }//end for iter...
 
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
-			for(i = MacroBlockH264::Intra_16x16_Horiz; i < 3 ; i++)	///< Total of 3 modes. Plane mode excluded.
-			{
-				if(modeDist[i] < modeDist[mode])
-					mode = i;
-			}//end for i...
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_16x16_DC] < H264V2_LUM_DISTORTION_THRESHOLD) ///< Predicted final distortion = 20480/(256/4) = 320 (4 samples so far)
+          break;
+      }//end if pos...
 
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
-
-		}//end for iter...
-
+    }//end for pos...
+		mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
+		for(i = MacroBlockH264::Intra_16x16_Horiz; i < 3 ; i++)	///< Total of 3 modes. Plane mode excluded.
+		{
+			if(modeDist[i] < modeDist[mode])
+				mode = i;
+		}//end for i...
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end else if aboveAndLeft...
 	else if(leftOnly)
 	{
@@ -5953,35 +6313,67 @@ int H264v2Codec::GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2
 		predDC = (predDC + 8) >> 4;
 
 		///------------------- Test for min ------------------------------------------------
-		for(iter = 0; (iter < 8) && (!noChange); iter++)
-		{
-			for(; pos < test16Limit[iter]; pos++)
-			{
-				int y = test16Y[pos];
-				int x = test16X[pos];
+		//for(iter = 0; (iter < 8) && (!noChange); iter++)
+		//{
+		//	for(; pos < test16Limit[iter]; pos++)
+		//	{
+		//		int y = test16Y[pos];
+		//		int x = test16X[pos];
 
+		//		/// Horiz mode.
+		//		int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY + y][rOffX - 1];
+		//		modeDist[MacroBlockH264::Intra_16x16_Horiz] += (diff0*diff0);
+		//		/// DC mode.
+		//		int diff1 = (int)in2D[iOffY + y][iOffX + x] - predDC;
+		//		modeDist[MacroBlockH264::Intra_16x16_DC] += (diff1*diff1);
+		//	}//end for pos...
+
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_16x16_Horiz;	///< MacroBlockH264::Intra_16x16_Horiz = 0.
+		//	if(modeDist[MacroBlockH264::Intra_16x16_DC] < modeDist[MacroBlockH264::Intra_16x16_Horiz])
+		//		mode = MacroBlockH264::Intra_16x16_DC;
+
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
+
+		//}//end for iter...
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < 5; pos++)
+    {
+			int tly = testZoom16Y[pos];
+			int tlx = testZoom16X[pos];
+
+      for(iter = 0; iter < 4; iter++)
+      {
+        int y = tly + delta16[iter][1];
+        int x = tlx + delta16[iter][0];
+
+        /// Accumulate mode distortions here for these 4 points.
 				/// Horiz mode.
-				int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY + y][rOffX - 1];
-				modeDist[MacroBlockH264::Intra_16x16_Horiz] += (diff0*diff0);
+				int diff1 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY + y][rOffX - 1];
+				modeDist[MacroBlockH264::Intra_16x16_Horiz] += (diff1*diff1);
 				/// DC mode.
-				int diff1 = (int)in2D[iOffY + y][iOffX + x] - predDC;
-				modeDist[MacroBlockH264::Intra_16x16_DC] += (diff1*diff1);
-			}//end for pos...
+				int diff0 = (int)in2D[iOffY + y][iOffX + x] - predDC;
+				modeDist[MacroBlockH264::Intra_16x16_DC] += (diff0*diff0);
+      }//end for iter...
 
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_16x16_Horiz;	///< MacroBlockH264::Intra_16x16_Horiz = 0.
-			if(modeDist[MacroBlockH264::Intra_16x16_DC] < modeDist[MacroBlockH264::Intra_16x16_Horiz])
-				mode = MacroBlockH264::Intra_16x16_DC;
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_16x16_DC] < H264V2_LUM_DISTORTION_THRESHOLD) ///< Predicted final distortion = 20480/(256/4) = 320 (4 samples so far)
+          break;
+      }//end if pos...
 
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
-
-		}//end for iter...
-
+    }//end for pos...
+		mode = MacroBlockH264::Intra_16x16_Horiz;	///< MacroBlockH264::Intra_16x16_Horiz = 0.
+		if(modeDist[MacroBlockH264::Intra_16x16_DC] < modeDist[MacroBlockH264::Intra_16x16_Horiz])
+			mode = MacroBlockH264::Intra_16x16_DC;
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end else if leftOnly...
 	else if(aboveOnly)
 	{
@@ -5992,35 +6384,67 @@ int H264v2Codec::GetIntra16x16LumPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2
 		predDC = (predDC + 8) >> 4;
 
 		///------------------- Test for min ------------------------------------------------
-		for(iter = 0; (iter < 8) && (!noChange); iter++)
-		{
-			for(; pos < test16Limit[iter]; pos++)
-			{
-				int y = test16Y[pos];
-				int x = test16X[pos];
+		//for(iter = 0; (iter < 8) && (!noChange); iter++)
+		//{
+		//	for(; pos < test16Limit[iter]; pos++)
+		//	{
+		//		int y = test16Y[pos];
+		//		int x = test16X[pos];
 
+		//		/// Vertical mode.
+		//		int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY - 1][rOffX + x];
+		//		modeDist[MacroBlockH264::Intra_16x16_Vert] += (diff0*diff0);
+		//		/// DC mode.
+		//		int diff1 = (int)in2D[iOffY + y][iOffX + x] - predDC;
+		//		modeDist[MacroBlockH264::Intra_16x16_DC] += (diff1*diff1);
+		//	}//end for pos...
+
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
+		//	if(modeDist[MacroBlockH264::Intra_16x16_DC] < modeDist[MacroBlockH264::Intra_16x16_Vert])
+		//		mode = MacroBlockH264::Intra_16x16_DC;
+
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
+
+		//}//end for iter...
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < 5; pos++)
+    {
+			int tly = testZoom16Y[pos];
+			int tlx = testZoom16X[pos];
+
+      for(iter = 0; iter < 4; iter++)
+      {
+        int y = tly + delta16[iter][1];
+        int x = tlx + delta16[iter][0];
+
+        /// Accumulate mode distortions here for these 4 points.
 				/// Vertical mode.
 				int diff0 = (int)in2D[iOffY + y][iOffX + x] - (int)ref2D[rOffY - 1][rOffX + x];
 				modeDist[MacroBlockH264::Intra_16x16_Vert] += (diff0*diff0);
 				/// DC mode.
 				int diff1 = (int)in2D[iOffY + y][iOffX + x] - predDC;
 				modeDist[MacroBlockH264::Intra_16x16_DC] += (diff1*diff1);
-			}//end for pos...
+      }//end for iter...
 
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
-			if(modeDist[MacroBlockH264::Intra_16x16_DC] < modeDist[MacroBlockH264::Intra_16x16_Vert])
-				mode = MacroBlockH264::Intra_16x16_DC;
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_16x16_DC] < H264V2_LUM_DISTORTION_THRESHOLD) ///< Predicted final distortion = 20480/(256/4) = 320 (4 samples so far)
+          break;
+      }//end if pos...
 
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
-
-		}//end for iter...
-
+    }//end for pos...
+		mode = MacroBlockH264::Intra_16x16_Vert;	///< MacroBlockH264::Intra_16x16_Vert = 0.
+		if(modeDist[MacroBlockH264::Intra_16x16_DC] < modeDist[MacroBlockH264::Intra_16x16_Vert])
+			mode = MacroBlockH264::Intra_16x16_DC;
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end else if aboveOnly...
 	else
 	{
@@ -6488,57 +6912,106 @@ int H264v2Codec::GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* 
 
 		///------------------- Test for min ------------------------------------------------
 		/// Calculate the distortion at each test point and accumulate for each mode.
-		for(iter = 0; (iter < 4) && (!noChange); iter++)
+		//for(iter = 0; (iter < 4) && (!noChange); iter++)
+		//{
+		//	for(; pos < test8Limit[iter]; pos++)
+		//	{
+		//		int y = test8Y[pos];
+		//		int x = test8X[pos];
+		//		/// DC mode.
+		//		int quadrant = 0;
+		//		if( (y < 4)&&(x > 3) )
+		//			quadrant = 1;
+		//		else if(y > 3)
+		//		{
+		//			if(x < 4)
+		//				quadrant = 2;
+		//			else
+		//				quadrant = 3;
+		//		}//end else if y...
+		//		int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[quadrant];
+		//		int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[quadrant];
+		//		modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+		//		/// Horiz mode.
+		//		int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
+		//		int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
+		//		modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
+		//		/// Vertical mode.
+		//		diff0 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
+		//		diff1 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
+		//		modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff0*diff0) + (diff1*diff1));
+		//		/// Plane mode.
+		//		diff2 = (int)inCb2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (aCb + bCb*(x-3) + cCb*(y-3) + 16) >> 5 );
+		//		diff3 = (int)inCr2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (aCr + bCr*(x-3) + cCr*(y-3) + 16) >> 5 );
+		//		modeDist[MacroBlockH264::Intra_Chr_Plane] += ((diff2*diff2) + (diff3*diff3));
+		//	}//end for pos...
+
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		//	for(i = MacroBlockH264::Intra_Chr_Horiz; i < 4 ; i++)	///< Total of 4 modes.
+		//	{
+		//		if(modeDist[i] < modeDist[mode])
+		//			mode = i;
+		//	}//end for i...
+
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
+
+		//}//end for iter...
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < testZoom8Len; pos++)
+    {
+			int x = testZoom8[pos][0];
+			int y = testZoom8[pos][1];
+
+      /// Accumulate mode distortions here for these 4 points.
+			/// DC mode.
+			int quadrant = 0;
+			if( (y < 4)&&(x > 3) )
+				quadrant = 1;
+			else if(y > 3)
+			{
+				if(x < 4)
+					quadrant = 2;
+				else
+					quadrant = 3;
+			}//end else if y...
+			int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[quadrant];
+			int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[quadrant];
+			modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+			/// Horiz mode.
+			int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
+			int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
+			modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
+			/// Vertical mode.
+			diff0 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
+			diff1 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
+			modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff0*diff0) + (diff1*diff1));
+			/// Plane mode.
+			diff2 = (int)inCb2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (aCb + bCb*(x-3) + cCb*(y-3) + 16) >> 5 );
+			diff3 = (int)inCr2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (aCr + bCr*(x-3) + cCr*(y-3) + 16) >> 5 );
+			modeDist[MacroBlockH264::Intra_Chr_Plane] += ((diff2*diff2) + (diff3*diff3));
+
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_Chr_DC] < H264V2_CHR_DISTORTION_THRESHOLD) ///< Predicted final distortion = 10240/(128/2) = 160 (2 samples/mode so far)
+          break;
+      }//end if pos...
+
+    }//end for pos...
+		mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		for(i = MacroBlockH264::Intra_Chr_Horiz; i < 4 ; i++)	///< Total of 4 modes.
 		{
-			for(; pos < test8Limit[iter]; pos++)
-			{
-				int y = test8Y[pos];
-				int x = test8X[pos];
-				/// DC mode.
-				int quadrant = 0;
-				if( (y < 4)&&(x > 3) )
-					quadrant = 1;
-				else if(y > 3)
-				{
-					if(x < 4)
-						quadrant = 2;
-					else
-						quadrant = 3;
-				}//end else if y...
-				int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[quadrant];
-				int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[quadrant];
-				modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
-				/// Horiz mode.
-				int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
-				int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
-				modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
-				/// Vertical mode.
-				diff0 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
-				diff1 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
-				modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff0*diff0) + (diff1*diff1));
-				/// Plane mode.
-				diff2 = (int)inCb2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (aCb + bCb*(x-3) + cCb*(y-3) + 16) >> 5 );
-				diff3 = (int)inCr2D[iOffY + y][iOffX + x] - H264V2_CLIP255( (aCr + bCr*(x-3) + cCr*(y-3) + 16) >> 5 );
-				modeDist[MacroBlockH264::Intra_Chr_Plane] += ((diff2*diff2) + (diff3*diff3));
-			}//end for pos...
-
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
-			for(i = MacroBlockH264::Intra_Chr_Horiz; i < 4 ; i++)	///< Total of 4 modes.
-			{
-				if(modeDist[i] < modeDist[mode])
-					mode = i;
-			}//end for i...
-
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
-
-		}//end for iter...
-
+			if(modeDist[i] < modeDist[mode])
+				mode = i;
+		}//end for i...
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end if all...
 	else if(aboveAndLeft)
 	{
@@ -6569,53 +7042,98 @@ int H264v2Codec::GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* 
 
 		///------------------- Test for min ------------------------------------------------
 		/// Calculate the distortion at each test point and accumulate for each mode.
-		for(iter = 0; (iter < 4) && (!noChange); iter++)
+		//for(iter = 0; (iter < 4) && (!noChange); iter++)
+		//{
+		//	for(; pos < test8Limit[iter]; pos++)
+		//	{
+		//		int y = test8Y[pos];
+		//		int x = test8X[pos];
+		//		/// DC mode.
+		//		int quadrant = 0;
+		//		if( (y < 4)&&(x > 3) )
+		//			quadrant = 1;
+		//		else if(y > 3)
+		//		{
+		//			if(x < 4)
+		//				quadrant = 2;
+		//			else
+		//				quadrant = 3;
+		//		}//end else if y...
+		//		int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[quadrant];
+		//		int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[quadrant];
+		//		modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+		//		/// Horiz mode.
+		//		int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
+		//		int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
+		//		modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
+		//		/// Vertical mode.
+		//		diff0 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
+		//		diff1 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
+		//		modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff0*diff0) + (diff1*diff1));
+		//	}//end for pos...
+
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		//	for(i = MacroBlockH264::Intra_Chr_Horiz; i < 3 ; i++)	///< Plane mode excluded.
+		//	{
+		//		if(modeDist[i] < modeDist[mode])
+		//			mode = i;
+		//	}//end for i...
+
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
+
+		//}//end for iter...
+
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < testZoom8Len; pos++)
+    {
+			int x = testZoom8[pos][0];
+			int y = testZoom8[pos][1];
+
+      /// Accumulate mode distortions here for these 4 points.
+			/// DC mode.
+			int quadrant = 0;
+			if( (y < 4)&&(x > 3) )
+				quadrant = 1;
+			else if(y > 3)
+			{
+				if(x < 4)
+					quadrant = 2;
+				else
+					quadrant = 3;
+			}//end else if y...
+			int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[quadrant];
+			int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[quadrant];
+			modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+			/// Horiz mode.
+			int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
+			int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
+			modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
+			/// Vertical mode.
+			diff0 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
+			diff1 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
+			modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff0*diff0) + (diff1*diff1));
+
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_Chr_DC] < H264V2_CHR_DISTORTION_THRESHOLD) ///< Predicted final distortion = 10240/(128/2) = 160 (2 samples/mode so far)
+          break;
+      }//end if pos...
+
+    }//end for pos...
+		mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		for(i = MacroBlockH264::Intra_Chr_Horiz; i < 3 ; i++)	///< Total of 4 modes.
 		{
-			for(; pos < test8Limit[iter]; pos++)
-			{
-				int y = test8Y[pos];
-				int x = test8X[pos];
-				/// DC mode.
-				int quadrant = 0;
-				if( (y < 4)&&(x > 3) )
-					quadrant = 1;
-				else if(y > 3)
-				{
-					if(x < 4)
-						quadrant = 2;
-					else
-						quadrant = 3;
-				}//end else if y...
-				int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[quadrant];
-				int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[quadrant];
-				modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
-				/// Horiz mode.
-				int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
-				int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
-				modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
-				/// Vertical mode.
-				diff0 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
-				diff1 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
-				modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff0*diff0) + (diff1*diff1));
-			}//end for pos...
-
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
-			for(i = MacroBlockH264::Intra_Chr_Horiz; i < 3 ; i++)	///< Plane mode excluded.
-			{
-				if(modeDist[i] < modeDist[mode])
-					mode = i;
-			}//end for i...
-
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
-
-		}//end for iter...
-
+			if(modeDist[i] < modeDist[mode])
+				mode = i;
+		}//end for i...
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end else if aboveAndLeft...
 	else if(leftOnly)
 	{
@@ -6640,39 +7158,70 @@ int H264v2Codec::GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* 
 		predCrDC[3] = predCrDC[2];
 
 		///------------------- Test for min ------------------------------------------------
-		for(iter = 0; (iter < 4) && (!noChange); iter++)
-		{
-			for(; pos < test8Limit[iter]; pos++)
-			{
-				int y = test8Y[pos];
-				int x = test8X[pos];
-				/// DC mode.
-				int partition = 0;
-				if(y > 3)
-					partition = 2;
-				int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[partition];
-				int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[partition];
-				modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
-				/// Horiz mode.
-				int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
-				int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
-				modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
-			}//end for pos...
+		//for(iter = 0; (iter < 4) && (!noChange); iter++)
+		//{
+		//	for(; pos < test8Limit[iter]; pos++)
+		//	{
+		//		int y = test8Y[pos];
+		//		int x = test8X[pos];
+		//		/// DC mode.
+		//		int partition = 0;
+		//		if(y > 3)
+		//			partition = 2;
+		//		int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[partition];
+		//		int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[partition];
+		//		modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+		//		/// Horiz mode.
+		//		int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
+		//		int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
+		//		modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
+		//	}//end for pos...
 
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
-			if(modeDist[MacroBlockH264::Intra_Chr_Horiz] < modeDist[MacroBlockH264::Intra_Chr_DC])
-				mode = MacroBlockH264::Intra_Chr_Horiz;
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		//	if(modeDist[MacroBlockH264::Intra_Chr_Horiz] < modeDist[MacroBlockH264::Intra_Chr_DC])
+		//		mode = MacroBlockH264::Intra_Chr_Horiz;
 
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
 
-		}//end for iter...
+		//}//end for iter...
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < testZoom8Len; pos++)
+    {
+			int x = testZoom8[pos][0];
+			int y = testZoom8[pos][1];
+
+      /// Accumulate mode distortions here for these 4 points.
+			/// DC mode.
+			int partition = 0;
+			if(y > 3)
+				partition = 2;
+			int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[partition];
+			int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[partition];
+			modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+			/// Horiz mode.
+			int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY + y][rOffX - 1];
+			int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY + y][rOffX - 1];
+			modeDist[MacroBlockH264::Intra_Chr_Horiz] += ((diff2*diff2) + (diff3*diff3));
+
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_Chr_DC] < H264V2_CHR_DISTORTION_THRESHOLD) ///< Predicted final distortion = 10240/(128/2) = 160 (2 samples/mode so far)
+          break;
+      }//end if pos...
+
+    }//end for pos...
+		mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		if(modeDist[MacroBlockH264::Intra_Chr_Horiz] < modeDist[MacroBlockH264::Intra_Chr_DC])
+			mode = MacroBlockH264::Intra_Chr_Horiz;
+///////////////////////////////////////////////////////////////////////////////////////////////////
 	}//end else if leftOnly...
 	else if(aboveOnly)
 	{
@@ -6697,39 +7246,69 @@ int H264v2Codec::GetIntra8x8ChrPredAndMode(MacroBlockH264* pMb, OverlayMem2Dv2* 
 		predCrDC[3] = predCrDC[1];
 
 		///------------------- Test for min ------------------------------------------------
-		for(iter = 0; (iter < 4) && (!noChange); iter++)
-		{
-			for(; pos < test8Limit[iter]; pos++)
-			{
-				int y = test8Y[pos];
-				int x = test8X[pos];
-				/// DC mode.
-				int partition = 0;
-				if(x > 3)
-					partition = 1;
-				int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[partition];
-				int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[partition];
-				modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
-				/// Vertical mode.
-				int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
-				int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
-				modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff2*diff2) + (diff3*diff3));
-			}//end for pos...
+		//for(iter = 0; (iter < 4) && (!noChange); iter++)
+		//{
+		//	for(; pos < test8Limit[iter]; pos++)
+		//	{
+		//		int y = test8Y[pos];
+		//		int x = test8X[pos];
+		//		/// DC mode.
+		//		int partition = 0;
+		//		if(x > 3)
+		//			partition = 1;
+		//		int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[partition];
+		//		int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[partition];
+		//		modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+		//		/// Vertical mode.
+		//		int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
+		//		int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
+		//		modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff2*diff2) + (diff3*diff3));
+		//	}//end for pos...
 
-			/// The index of the lowest distortion value is the selected mode.
-			int prevMode = mode;
-			mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
-			if(modeDist[MacroBlockH264::Intra_Chr_Vert] < modeDist[MacroBlockH264::Intra_Chr_DC])
-				mode = MacroBlockH264::Intra_Chr_Vert;
+		//	/// The index of the lowest distortion value is the selected mode.
+		//	int prevMode = mode;
+		//	mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		//	if(modeDist[MacroBlockH264::Intra_Chr_Vert] < modeDist[MacroBlockH264::Intra_Chr_DC])
+		//		mode = MacroBlockH264::Intra_Chr_Vert;
 
-			if(iter > 0)	///< Do not test the 1st iteration.
-			{
-				if(mode == prevMode)
-					noChange = 1;
-			}//end if iter...
+		//	if(iter > 0)	///< Do not test the 1st iteration.
+		//	{
+		//		if(mode == prevMode)
+		//			noChange = 1;
+		//	}//end if iter...
 
-		}//end for iter...
+		//}//end for iter...
 
+///////////////////////////////////////////////////////////////////////////////////////////////////
+    for(pos = 0; pos < testZoom8Len; pos++)
+    {
+			int x = testZoom8[pos][0];
+			int y = testZoom8[pos][1];
+
+      /// Accumulate mode distortions here for these 4 points.
+			/// DC mode.
+			int partition = 0;
+			if(x > 3)
+				partition = 1;
+			int diff0 = (int)inCb2D[iOffY + y][iOffX + x] - predCbDC[partition];
+			int diff1 = (int)inCr2D[iOffY + y][iOffX + x] - predCrDC[partition];
+			modeDist[MacroBlockH264::Intra_Chr_DC] += ((diff0*diff0) + (diff1*diff1));
+			/// Vertical mode.
+			int diff2 = (int)inCb2D[iOffY + y][iOffX + x] - (int)refCb2D[rOffY - 1][rOffX + x];
+			int diff3 = (int)inCr2D[iOffY + y][iOffX + x] - (int)refCr2D[rOffY - 1][rOffX + x];
+			modeDist[MacroBlockH264::Intra_Chr_Vert] += ((diff2*diff2) + (diff3*diff3));
+
+      /// Leave early if the projected DC distortion is below the threshold indicating very small final distortions.
+      if(pos == 0)
+      {
+        if(modeDist[MacroBlockH264::Intra_Chr_DC] < H264V2_CHR_DISTORTION_THRESHOLD) ///< Predicted final distortion = 10240/(128/2) = 160 (2 samples/mode so far)
+          break;
+      }//end if pos...
+
+    }//end for pos...
+		mode = MacroBlockH264::Intra_Chr_DC;	///< MacroBlockH264::Intra_Chr_DC = 0.
+		if(modeDist[MacroBlockH264::Intra_Chr_Vert] < modeDist[MacroBlockH264::Intra_Chr_DC])
+			mode = MacroBlockH264::Intra_Chr_Vert;
 	}//end else if aboveOnly...
 	else
 	{
@@ -7150,16 +7729,16 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 	///		upper(D,R) : QP = 1.
 	/// Note that the D values represent the worst (max) distortion of only one macroblock in the entire
 	/// frame but the R values represent the accumulated (total) rate of all macroblocks.
-	int	Dl					= 0;
-	int	Du					= 0;
-	int	Rl					= 0;
-	int	Ru					= 0;
-	int	R						= 0;
-	int	D						= 0;
-	int	Dmax				= 0;
-	int mbDmax			= 0;
-	int	invalidated = 0;
-	int	iterations	= 0;
+	int	Dl					  = 0;
+	int	Du					  = 0;
+	int	Rl					  = 0;
+	int	Ru					  = 0;
+	int	R						  = 0;
+	int	D						  = 0;
+	int	Dmax				  = 0;
+	int mbDmax			  = 0;
+	int	invalidated   = 0;
+	int	iterations	  = 0;
 
 	/// Test QP = H264V2_MAX_QP for all macroblocks and determine if this min possible rate is, at the very 
 	/// least, less than the target rate. Damage control is required if not, where minimal encodings
@@ -7185,7 +7764,20 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 
 	}//end for mb...
 
+  /// Set the limits on the number of optimisation iterations by a timer or iteration number. Take into
+  /// account the time taken to get to this point from _startTimer and assume half required after exiting.
+  int start         = 0;
+  int timeOffset    = 0;
+  int lclIterations = _codec->_intraIterations;
+  int lclTimeLimit  = _codec->_timeLimitMs;  ///< In ms. A zero indicates either no counter available or not set.
+  if(lclTimeLimit)
+  {
+    start = (int)_codec->GetCounter();
+    timeOffset = 2*(start - _codec->_startTime);
+  }//end if lclTimeLimit...
+
 	/// Test that there is room to adapt else do damage control.
+  int bitCost = Rl;
 	int oldBitCount = Rl;
 	if(Rl <= allowedBits)
 	{
@@ -7196,7 +7788,6 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 			closeEnough = 16;
 		int closeEnoughDist = 8;	///< Sqr error per macroblock.
 
-#ifdef H264V2_FAST_MINMAX
     /// Model based faster algorithm to improve on the bi-section method.
 
 		/// Modify the target rate to a close offset on the low rate side.
@@ -7260,12 +7851,22 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 			}//end for mb...
 
 			/// Test the stopping criteria.
+      int timeExceeded = 0;
+      if(lclTimeLimit)
+      {
+        int timeSoFar = (int)(_codec->GetCounter()) - start;
+        int avgTimePerIteration = timeSoFar/(1 + iterations);
+        int timeLimit = lclTimeLimit - timeOffset - avgTimePerIteration;
+        if(timeSoFar > timeLimit)
+          timeExceeded = 1;
+      }//end if lclTimeLimit...
+
 			int rBndDiff = abs(Ru - Rl);			///< Optimal solution is rate bounded in a small enough range.
 			int dDiff = abs(prevDmax - Dmax);	///< Has not changed by much from the previous iteration (converged).
 			int rDiff = abs(bitTarget - R);		///< Close enough to the allowed bits.
 			if( (rBndDiff < (4*closeEnough)) ||
 					( (rDiff < closeEnough)||(/*(R <= allowedBits)&&*/(dDiff < closeEnoughDist))) ||
-          (iterations > 20) )
+          (iterations > lclIterations) || timeExceeded)
 		  {
 				/// The new point is the preferable point to choose but if the rate is not below allowedBits
 				/// then the (Rl,Dl) point is selected. Use the invalidated signal to indicate if the mbs 
@@ -7307,155 +7908,37 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 			iterations++;
 		}//end while !done...
 
-#else	///< !H264V2_FAST_MINMAX
-
-		/// The worst case at QP = H264V2_MAX_QP uses less bits than allowed so there is some
-		/// room to manouver and we can proceed. The upper point is initially not calculated
-		/// directly but after the 1st iteration it will hold a valid value.
-		Du = 0;	///< Min (im)possible.
-
-		/// Initialisation is complete and the bi-section algorithm starts here. The 
-		/// stopping criteria are 1) a rate less than, but close to, the allowed bits
-		/// or 2) small change in distortion when halving.
-		int goingDown	= 1;
-		int done			= 0;
-		while(!done)
-		{
-			int prevDmax = Dmax;
-			Dmax = ((Du + Dl) + 1) >> 1;	///< Set the midpoint max distortion.
-
-			/// At each macroblock reduce the QP value until the distortion is lower
-			/// than Dmax. Set mb QP to first macroblock quant. pQ[] must always hold
-			/// the lower quant vector as the previous best choice.
-			R = 0;
-			D = 0;
-			int firstMbChange = len;
-			if(invalidated)	///< Frame encoded coeffs must be invalidated if _pQ[] does not represent the actual QPs used.
-				firstMbChange = 0;
-			for(mb = 0; mb < len; mb++)
-			{
-				MacroBlockH264* pMb = &(_codec->_pMb[mb]);
-
-				/// Record the found QP where the macroblock dist is just below Dmax and accumulate the rate for this macroblock.
-				_pQ[mb] = _codec->GetMbQPBelowDmax(*pMb, _pQ[mb], Dmax, goingDown, &firstMbChange, qEnd, TRUE);
-				R += pMb->_rate[_pQ[mb]];
-				if(pMb->_distortion[_pQ[mb]] > D)
-					D = pMb->_distortion[_pQ[mb]];
-
-				/// Early exit test. The pQ[] is incomplete and must not be used.
-				if(R > allowedBits)
-				{
-					/// Rate must be effectively infinite to ensure it does not meet the close enough
-					/// stopping criterion below. We multiply by 2 to make it arbitrarily large enough.
-					R = allowedBits << 1;	
-					break;
-				}//end if R...
-
-			}//end for mb...
-
-			/// Test the stopping criteria.
-			invalidated = 0;	///< Default case.
-			int dDiff = abs(prevDmax - Dmax);
-			int rDiff = allowedBits - R;
-			if( ((rDiff >= 0)&&(rDiff < closeEnough))||((rDiff >= 0)&&((dDiff < closeEnoughDist))) )
-			{
-        invalidated = 1;
-				/// Optimal solution is found.
-				done = 1;
-			}//end if rDiff...
-			else
-			{
-				if(allowedBits > R)	///< Midpoint is now lower point.
-				{
-					Dl = Dmax;
-					/// pQ[] is already lower vector.
-					memcpy((void *)_pQl, (const void *)_pQ, len * sizeof(int));
-				}//end if allowedBits...
-				else								///< Midpoint is now upper point.
-				{
-					Du = Dmax;
-					/// pQ[] must be reset to lower vector. If an early exit occurred then
-					/// it is loaded with a valid vector.
-					memcpy((void *)_pQ, (const void *)_pQl, len * sizeof(int));
-					invalidated = 1;	///< pQ[] now does not represented the state of the last encoded frame.
-				}//end else...
-			}//end else...
-
-			//////////////////////////////////////////////////////////
-			iterations++;
-			H264V2_IT++;
-		}//end while !done...
-
-#endif	///< End H264V2_FAST_MINMAX.
-
 		/// Set the macroblock QP values to their found states.
     if(invalidated)
     {
 		  for(mb = 0; mb < len; mb++)
-		  {
 			  _codec->_pMb[mb]._mbQP = _pQ[mb];
-		  }//end for mb...
     }//end if invalidated...
 
+    /// All good.
+    //sprintf(_codec->_errorInfo, "I-frame: Normal minmax path Allowed=%d Cost=%d Invalid=%d", allowedBits, R, invalidated);
+    //sprintf(_codec->_errorInfo, "I-frame: Normal minmax");
+    bitCost = R;
+
 	}//end if Rl...
-	else /// If max QP was used and still exceeds allowed bits then truncate with QP = H264V2_MAX_QP as damage control.
+	else ///< For QP = H264V2_MAX_QP the max allowed bits was exceeded and damage control is required.
 	{
-    /// The absolute min bits is deterministic because all mbs after the 1st one (delta QP from slice 
-    /// QP is different for 1st mb) use the same number of bits for every mb. If this is not
-		/// achievable then we cannot proceed anyway, so exit with a truncated bits error message.
-		int bitsFor1stMinMacroblock = _codec->ProcessIntraMbImplStdMin(&(_codec->_pMb[0]));
-    int bitsPerMinMacroblock    = _codec->ProcessIntraMbImplStdMin(&(_codec->_pMb[1]));
+    ///======================================================================================
 
-		int minRequiredBits = bitsFor1stMinMacroblock + (bitsPerMinMacroblock * (len-1));
-		if(minRequiredBits <= allowedBits)
-		{
-      /// Rl is valid for QP = 51.
-      int avgBitsPerQP51Macroblocks = (Rl + (len/2))/len;
+    /// Sub-optimal Steepest Ascent Algorithm
+    bitCost = DamageControl(allowedBits, bitCost);
 
-			R = 0;
-      int selectedQP = H264V2_MAX_QP; ///< Start with max QP.
-			for(mb = 0; mb < len; mb++)
-			{
-				MacroBlockH264* pMb = &(_codec->_pMb[mb]);
-
-				///< Select QP based on avg remaining bits per mb with preference to max QP.
-				selectedQP = H264V2_MAX_QP;
-        if(mb != 0) ///< Always use max QP for the 1st mb.
-        {
-          int avgBitsPerMacroblockRemaining = ((allowedBits - R) + ((len - mb)/2))/(len - mb);
-          if(avgBitsPerMacroblockRemaining < avgBitsPerQP51Macroblocks)
-            selectedQP = 52;
-        }//end if mb...
-
-				pMb->_mbQP = selectedQP;
-				int mbBits = _codec->ProcessIntraMbImplStd(pMb, 1);
-
-				/// There has to be enough bits left over to encode the remaining macroblocks
-				/// as min null Intra macroblocks.
-				int lclAllowedBits = (allowedBits - R) - ((len - 1 - mb) * bitsPerMinMacroblock);
-				if(mbBits > lclAllowedBits)
-				{
-					/// Mark the macroblock whereafter only min null intra macroblocks will fit.
-					minMBIndex = mb;
-          R += (len - mb) * bitsPerMinMacroblock;
-					break;
-				}//end if mbBits...
-
-				R += mbBits;
-			}//end for mb...
-
-      /// Re-instate the encoded value of the mbs that were processed.
-      invalidated = 1;
-      for(mb = 0; mb < minMBIndex; mb++)
-        _codec->_pMb[mb]._mbQP = _codec->_pMb[mb]._mbEncQP;
-		}//end if minRequiredBits...
-    else
+    if(bitCost >= allowedBits) ///< All failed.
     {
-      /// Even with forced DC prediction and zero'ed coeffs, the pic cannot be encoded.
-			_codec->_errorStr = "[H264Codec::IntraImgPlaneEncoderImplMinMax::Encode] Bits exceeded in trucation";
-	    *bitsUsed = 0;
-	    return(0);
-    }//end else...
+      minMBIndex = _codec->_lumWidth/16; ///< Hope for the best.
+      invalidated = 1;
+	    for(int mb = 0; mb < len; mb++)
+        _codec->_pMb[mb]._mbQP = _codec->_pMb[mb]._mbEncQP;
+    }//end if bitCost...
+
+    /// Damage control path.
+    //sprintf(_codec->_errorInfo, "I-frame: Damage control path Allowed=%d Cost=%d Iter=%d ListLen=%d ReorderCnt=%d", allowedBits, bitCost, iterations, listLen, cnt);
+    //sprintf(_codec->_errorInfo, "I-frame: Damage control");
 
 	}//end else...
 
@@ -7477,11 +7960,137 @@ int H264v2Codec::IntraImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 
 	  }//end for mb...
 
+//    bitCost = bitCount;
+
   }//end if invalidated...
 
   *bitsUsed = 0;
+//  *bitsUsed = bitCost;
 	return(1);
 }//end IntraImgPlaneEncoderImplMinMax::Encode.
+
+/** Damage control algorithm
+At max QP for all Mbs the rate limit is exceeded and an alternative quantisation
+approach is taken to use the available bits as best as possible. This implementation
+zeros more and more of the DCT coeffs until it fits using a sub-optimal Steepest 
+Ascent Algorithm.
+@param  allowedBits : Bits to use.
+@param  currBitCost : Bits used up to this point.
+@return             : The actual bits consumed.
+*/
+int H264v2Codec::IntraImgPlaneEncoderImplMinMax::DamageControl(int allowedBits, int currBitCost)
+{
+  int i, mb;
+  int bitCost = currBitCost;
+  int iterations  = 0;
+  int cnt;
+
+  /// Initialise the ordered mb list.
+  int len     = _codec->_mbLength;
+  int listLen = len;
+  for(mb = 0; mb < len; mb++)
+    _pMbList[mb] = mb;
+
+  while( (bitCost >= allowedBits) && (listLen > 1) )
+  {
+    int predR = bitCost;
+
+    while( (listLen > 1)&&(predR >= allowedBits) )
+    {
+      /// Step 1: Order the mbs in increasing distortion.
+
+      /// Exclude completed mbs from the old list.
+      int currListLen = listLen;
+      listLen = 0;
+      for(i = 0; i < currListLen; i++)
+      {
+        mb = _pMbList[i];
+        if(_codec->_pMb[mb]._mbEncQP < H264V2_I_MAX_EXT_QP) 
+          _pMbList[listLen++] = mb;
+      }//end for mb...
+
+      /// Bubble sort list in ascending order of distortion.
+      cnt = len;
+      while(cnt)
+      {
+        cnt = 0; ///< Count how many re-orderings occur.
+        for(i = 1; i < listLen; i++)
+        {
+          MacroBlockH264* pMb1 = &(_codec->_pMb[_pMbList[i-1]]);
+          MacroBlockH264* pMb2 = &(_codec->_pMb[_pMbList[i]]);
+          if( pMb2->_distortion[pMb2->_mbEncQP] < pMb1->_distortion[pMb1->_mbEncQP] )
+          {
+            /// Swap places.
+            int tmp       = _pMbList[i-1];
+            _pMbList[i-1] = _pMbList[i];
+            _pMbList[i]   = tmp;
+            cnt++;
+          }//end if _distortion...
+        }//end for i...
+      }//end while cnt...
+
+      /// Step 2: Increase the distortion of mb at the head of the ordered list to just more than the
+      /// next one in the list.
+      int mb1 = _pMbList[0]; /// Head of ordered list.
+      int mb2 = _pMbList[1]; /// Next in ordered list.
+      int d1 = _codec->_pMb[mb1]._distortion[_codec->_pMb[mb1]._mbEncQP];
+      int d2 = _codec->_pMb[mb2]._distortion[_codec->_pMb[mb2]._mbEncQP];
+
+      /// For the unusual case where the listLen == 1, set them to the same.
+      if(listLen == 1)
+        d2 = d1;
+
+      if( (d1 <= d2) && (_codec->_pMb[mb1]._mbEncQP < H264V2_I_MAX_EXT_QP) )
+      {
+        MacroBlockH264* pMb = &(_codec->_pMb[mb1]);  ///< Simplify mb addressing.
+
+        predR -= pMb->_rate[pMb->_mbEncQP]; ///< Remove old bits before processing.
+        while( (pMb->_distortion[pMb->_mbEncQP] <= d2) && (pMb->_mbEncQP < H264V2_I_MAX_EXT_QP) )
+        {
+          /// Select new QP.
+          switch(pMb->_mbEncQP)
+          {
+            case 51: pMb->_mbQP = 59; break;
+            case 59: pMb->_mbQP = 63; break;
+            case 63: pMb->_mbQP = 66; break;
+            case 66: pMb->_mbQP = 67; break;
+            case 67: pMb->_mbQP = 68; break;
+            case 68: pMb->_mbQP = 69; break;
+            case 69: pMb->_mbQP = 77; break;
+            case 77: pMb->_mbQP = 81; break;
+            case 81: pMb->_mbQP = 84; break;
+            case 84: pMb->_mbQP = 85; break;
+            case 85: pMb->_mbQP = 86; break;
+            default: pMb->_mbQP = 86; break;
+          }///end switch _mbEncQP...
+
+         	_codec->ProcessIntraMbImplStd(pMb, 2, 1); ///< Distortion only and without pred mode selection.
+
+        }//end while _distortion[]...
+
+        /// Add back new bits.
+		    pMb->_rate[pMb->_mbEncQP]	= _codec->MacroBlockLayerBitCounter(pMb);
+        predR += pMb->_rate[pMb->_mbEncQP];
+
+      }//end if d1...
+
+    }//end while listLen...
+
+    /// Step 3: Test the new solution.
+	  bitCost = 0;
+	  for(int mb = 0; mb < len; mb++)
+	  {
+      MacroBlockH264* pMb = &(_codec->_pMb[mb]);
+
+      pMb->_mbQP = pMb->_mbEncQP; ///< Restore the QP that the mb was coded with.
+      bitCost += _codec->ProcessIntraMbImplStd(pMb, 1, 1);
+	  }//end for mb...
+
+    iterations++;
+  }//end while bitCost...
+
+  return(bitCost);
+}//end IntraImgPlaneEncoderImplMinMax::DamageControl.
 
 /** Get distortion from an r vs d power model.
 @return	:	Distortion predicted
@@ -7654,6 +8263,97 @@ int H264v2Codec::GetMbQPBelowDmaxVer2(MacroBlockH264 &mb, int atQ, int Dmax, int
 	int mbIndex			= mb._mbIndex;
 	int lclChangeMb = *changeMb;
 
+  /// The delta QP for a mb is constrained to {-26...25}. Therefore if
+  /// the current QP value results in a dQP > 25 or < -26 then it must 
+  /// be reprocessed before continuing regardless of the Dmax value. The
+  /// i not equal to atQ signals that delta QP was out of range.
+  int prevQP = GetPrevMbQP(&mb);
+  int minQP = prevQP - 26;
+  if(minQP < lowestQ) minQP = lowestQ;
+  int maxQP = prevQP + 25;
+  if(maxQP > H264V2_MAX_QP) maxQP = H264V2_MAX_QP;
+  if(i < minQP) i = minQP;
+  else if(i > maxQP) i = maxQP;
+
+	/// Macroblocks are dependent on (predicted from) previous macroblocks in the slice. If
+	/// this mb is located after the previously changed mb or delta QP was out of range then
+  /// its dependencies have been altered and it must be re-encoded.
+	if( (mbIndex >= lclChangeMb)||(i != atQ) )
+	{
+		mb._mbQP = i;
+		if(!intra)
+    {
+      /// For P mbs, if the previous encoding QP was the same then only the rate of the mb
+      /// will change. This rate change is due to a change in the number of coeffs of neighbouring
+      /// mbs and their changed QP values.
+      if(mb._mbEncQP == i)
+        mb._mb_qp_delta = GetDeltaQP(&mb);        ///< Process new delta QP.
+      else
+			  ProcessInterMbImplStd(&mb, 0, 2);         ///< Distortion only.
+    }//end if !intra...
+		else
+			ProcessIntraMbImplStd(&mb, 2, 0); ///< Distortion only.
+
+		di = mb._distortion[i];
+	}//end if mbIndex...
+
+	/// Check if it is necessary to look further.
+	if( (i > minQP)&&(di > Dmax) )
+	{
+		if(mbIndex < lclChangeMb)
+			lclChangeMb = mbIndex;
+
+		/// Iterate QP down from i. If i drops to minQP without di <= Dmax
+		/// then leave, as it is the best that can be done.
+		while( (i > minQP)&&(di > Dmax) )
+		{
+		  i -= MbStepSize[i];
+			if(i < minQP) i = minQP;
+
+			mb._mbQP = i;
+      if(!intra)
+			  ProcessInterMbImplStd(&mb, 0, 2);
+      else
+			  ProcessIntraMbImplStd(&mb, 2, 1); ///< Distortion only without pred mode selection.
+
+			di = mb._distortion[i];
+
+		}//end while i...
+	}//end if i...
+
+  /// Set the new mb rate at this QP value.
+  if(!intra)
+  {
+    int rate = 0;
+    if(!mb._skip)        
+      rate = MacroBlockLayerBitCounter(&mb);  ///< Process mb for new neighbour coeffs values.
+    mb._rate[mb._mbEncQP] = rate;             ///< Update this new rate.
+  }//end if !intra...
+  else
+    mb._rate[mb._mbEncQP] = MacroBlockLayerBitCounter(&mb);
+
+	/// Return QP value where dist just less than Dmax for this macroblock.
+	*changeMb = lclChangeMb;
+	return(i);
+}//end GetMacroblkQuantBelowDmaxVer2.
+
+/** Get the next quant value that has a distortion less than Dmax with decrement only.
+This method includes extended QP values = {52..71}.
+@param mb						: Macroblock to operate on.
+@param atQ					: Current q for this macroblk.
+@param Dmax					: Max value to get below.
+@param changeMb			: Macroblock index from where the last change was made.
+@param lowestQ			: Lowest allowed quant.
+@param intra				: Is macroblock Intra.
+@return							: QP value that has dist < Dmax for this macroblock.
+*/
+int H264v2Codec::GetMbQPBelowDmaxVer3(MacroBlockH264 &mb, int atQ, int Dmax, int* changeMb, int lowestQ, bool intra)
+{
+	int i						= atQ;
+	int	di					= mb._distortion[i];
+	int mbIndex			= mb._mbIndex;
+	int lclChangeMb = *changeMb;
+
 	/// Macroblocks are dependent on (predicted from) previous macroblocks in the slice. If
 	/// this mb is located after the previously changed mb then its dependencies have been
 	/// altered and it must be re-encoded.
@@ -7665,13 +8365,18 @@ int H264v2Codec::GetMbQPBelowDmaxVer2(MacroBlockH264 &mb, int atQ, int Dmax, int
       /// For P mbs, if the previous encoding QP was the same then only the rate of the mb
       /// will change. This rate change is due to a change in the number of coeffs of neighbouring
       /// mbs and their changed QP values.
-       if(mb._mbEncQP == i)
+      if(mb._mbEncQP == i)
       {
+        if(mb._mbQP > H264V2_MAX_QP)              ///< For extended QP range, temporarily reset for processes below.
+          mb._mbQP = H264V2_MAX_QP;
+
         int rate = 0;
         mb._mb_qp_delta = GetDeltaQP(&mb);        ///< Process new delta QP.
         if(!mb._skip)        
           rate = MacroBlockLayerBitCounter(&mb);  ///< Process mb for new neighbour coeffs values.
         mb._rate[mb._mbEncQP] = rate;             ///< Update this new rate.
+
+        mb._mbQP = i;                             ///< Put it back.
       }//end if _mbEncQP...
       else
       {
@@ -7690,22 +8395,26 @@ int H264v2Codec::GetMbQPBelowDmaxVer2(MacroBlockH264 &mb, int atQ, int Dmax, int
   /// The delta QP for a mb is constrained to {-26...25}. Therefore if
   /// the current QP value results in a dQP > 25 or < -26 then it must 
   /// be reprocessed before continuing regardless of the Dmax value.
-  int prevQP = GetPrevMbQP(&mb);
-  int minQP = prevQP - 26;
-  if(minQP < lowestQ) minQP = lowestQ;
-  int maxQP = prevQP + 25;
-  if(maxQP > H264V2_MAX_QP) maxQP = H264V2_MAX_QP;
-  if( (i < minQP)||(i > maxQP) )
+  int minQP = lowestQ;
+  if(i <= H264V2_MAX_QP) ///< Only for the non-extended QP range.
   {
-    if(i < minQP) i = minQP;
-    else i = maxQP;
-		mb._mbQP = i;
-    if(!intra)
-			ProcessInterMbImplStd(&mb, 0, 1);
-    else
-			ProcessIntraMbImplStd(&mb, 1);
+    int prevQP = GetPrevMbQP(&mb);
+    minQP = prevQP - 26;
+    if(minQP < lowestQ) minQP = lowestQ;
+    int maxQP = prevQP + 25;
+    if(maxQP > H264V2_MAX_QP) maxQP = H264V2_MAX_QP;
+    if( (i < minQP)||(i > maxQP) )
+    {
+      if(i < minQP) i = minQP;
+      else i = maxQP;
+		  mb._mbQP = i;
+      if(!intra)
+			  ProcessInterMbImplStd(&mb, 0, 1);
+      else
+			  ProcessIntraMbImplStd(&mb, 1);
 
-		di = mb._distortion[i];
+		  di = mb._distortion[i];
+    }//end if i...
   }//end if i...
 
 	/// Check if it is necessary to look further.
@@ -7735,7 +8444,7 @@ int H264v2Codec::GetMbQPBelowDmaxVer2(MacroBlockH264 &mb, int atQ, int Dmax, int
 	/// Return QP value where dist just less than Dmax for this macroblock.
 	*changeMb = lclChangeMb;
 	return(i);
-}//end GetMacroblkQuantBelowDmaxVer2.
+}//end GetMacroblkQuantBelowDmaxVer3.
 
 /** Get the next quant QP value that has a distortion less than Dmax with approximations.
 @param mb						: Macroblock to operate on.
@@ -7748,7 +8457,6 @@ int H264v2Codec::GetMbQPBelowDmaxVer2(MacroBlockH264 &mb, int atQ, int Dmax, int
 @param intra				: Is macroblock Intra.
 @return							: QP value that has dist < Dmax for this macroblock.
 */
-static int H264V2_IT_NOCHANGE = 0;
 int H264v2Codec::GetMbQPBelowDmaxApprox(MacroBlockH264 &mb, int atQP, int Dmax, int epsilon, int decQP, int* changeMb, int lowestQP, bool intra)
 {
 	int i						= atQP;
@@ -7870,7 +8578,7 @@ Code factoring usage. Includes reading the input image, IT, quantisation,
 vlc encoding and determining coding patterns, type, etc. Return the 
 bit cost.
 @param pMb		: Macroblock to operate on.
-@param withDR	: With distortion-rate calculations.
+@param withDR	: With distortion-rate calculations. If = 2 then distortion only (no rate calc.)
 @return				: Bit cost.
 */
 int H264v2Codec::ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR)
@@ -7878,16 +8586,8 @@ int H264v2Codec::ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR)
 	/// NB: _mbQP must be correctly defined before this method is called.
   pMb->_mbEncQP = pMb->_mbQP; ///< This method may alter the mb QP therefore keep an orignal copy.
 
-  /// The mb QP is only defined for {0..51} but an extra value of QP = 52 is used here for min bit encodings.
-  /// QP = 52: Full pred, DC coeffs coded, AC coeffs zero'ed, _mbQP set to 51.
-  int acCoeffsCoded = 1;
-  if(pMb->_mbEncQP > 51)
-  {
-    acCoeffsCoded = 0;
-    pMb->_mbQP = H264V2_MAX_QP;  ///< Reset to max QP for all cases.
-  }//end if _mbEncQP...
-
-	int distortion = 0;
+  if( pMb->_mbQP > H264V2_MAX_QP) ///< Special conditions apply for out of range QP values.
+    pMb->_mbQP = H264V2_MAX_QP;
 
 	int lOffX = pMb->_offLumX;
 	int lOffY = pMb->_offLumY;
@@ -7939,16 +8639,92 @@ int H264v2Codec::ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR)
 	/// ------------------ Transform & Quantisation --------------------------------------------
 	if(pMb->_mbPartPredMode == MacroBlockH264::Intra_16x16)
 		TransAndQuantIntra16x16MBlk(pMb);
-  if(!acCoeffsCoded)
+
+  /// ------------------- Zero Coeffs for QP > H264V2_MAX_QP -------------------------------------
+  if( pMb->_mbEncQP > H264V2_MAX_QP)
   {
-    /// Zero AC coeff 4x4 blks in the mb and clear the num of coeffs member.
-	  for(int blk = MBH264_LUM_0_0; blk <= MBH264_LUM_3_3; blk++)
+    int blk, i;
+    const int *pZZ4x4 = CAVLCH264Impl::zigZag4x4Pos;
+    const int *pZZ2x2 = CAVLCH264Impl::zigZag2x2Pos;
+
+    /// There are 16 (4x4) AC coeffs per blk and the _mbEncQP value indicates how many of
+    /// these are to be zeroed in reverse zig-zag order. _mbEncQP = {52..66} implies that 
+    /// {1..15} AC coeffs of lum and chr are zeroed. {67..69} The AC coeffs of the Chr DC 
+    /// 2x2 coeffs additionally zeroed. {70..84} AC coeffs of the Lum DC coeffs additionally 
+    /// zeroed. {85} DC coeff of the Chr DC 2x2 coeffs zeroed. {86} DC coeff of the Lum DC 
+    /// coeffs zeroed.
+    int acCoeffZeroed     = 15; ///< By default.
+    int chrDcCoeffZeroed  = 0;
+    int lumDcCoeffZeroed  = 0;
+    if( pMb->_mbEncQP <= (H264V2_MAX_QP + 15) )
+      acCoeffZeroed = pMb->_mbEncQP - H264V2_MAX_QP;
+    else if( pMb->_mbEncQP <= 69 )  ///< Include AC coeff of Chr DC for QP = {67..69}.
+    {
+      chrDcCoeffZeroed = pMb->_mbEncQP - 66;
+    }//end else if _mbEncQP...
+    else if( pMb->_mbEncQP <= 84 )  ///< Include AC coeffs of Lum DC and all AC coeffs of Chr DC for QP = {70..84}.
+    {
+      acCoeffZeroed    = 16;
+      chrDcCoeffZeroed = 3; ///< Not the Chr DC term.
+      lumDcCoeffZeroed = pMb->_mbEncQP - 69;
+    }//end else if _mbEncQP...
+    else if( pMb->_mbEncQP <= 85 )  ///< Include all Chr DC coeffs but only AC coeffs of Lum DC for QP = {85}.
+    {
+      acCoeffZeroed    = 16;
+      chrDcCoeffZeroed = 4; ///< ...and Chr DC term.
+      lumDcCoeffZeroed = 15;
+    }//end else if _mbEncQP...
+    else  ///< All zeroed for QP = {86} and above.
+    {
+      acCoeffZeroed    = 16;
+      chrDcCoeffZeroed = 4;
+      lumDcCoeffZeroed = 16;
+    }//end else...
+
+    int startPos4x4       = 16 - acCoeffZeroed;
+    int startChrDcPos2x2  = 4 - chrDcCoeffZeroed;
+    int startLumDcPos4x4  = 16 - lumDcCoeffZeroed;
+
+    /// Zero coeff in the mb according to the QP rules above.
+	  for(blk = MBH264_LUM_DC; blk < MBH264_NUM_BLKS; blk++)
 	  {
 		  BlockH264* pBlk = pMb->_blkParam[blk].pBlk;
-      (pBlk->GetBlkOverlay())->Clear();
-      pBlk->SetNumCoeffs(0);
+      short* pB = pBlk->GetBlk();
+
+      if( (blk != MBH264_LUM_DC) && (blk != MBH264_CB_DC) && (blk != MBH264_CR_DC) )  ///< Exclude DC blks.
+      {
+        for(i = startPos4x4; i < 16; i++)
+        {
+          if( pB[pZZ4x4[i]] )  ///< Only need to change coeffs that are not already zero.
+            pB[pZZ4x4[i]] = 0;
+        }//end for i...
+      }//end if blk...
+      else if( (blk == MBH264_CB_DC) || (blk == MBH264_CR_DC) ) ///< Chr DC blks AND zero'ing required.
+      {
+        if(chrDcCoeffZeroed)
+        {
+          for(i = startChrDcPos2x2; i < 4; i++)
+          {
+            if( pB[pZZ2x2[i]] )  ///< Only need to change coeffs that are not already zero.
+              pB[pZZ2x2[i]] = 0;
+          }//end for i...
+        }//end if chrDcCoeffZeroed...
+      }//end else if blk...
+      else ///< if(blk == MBH264_LUM_DC) Lum DC AND zero'ing required.
+      {
+        if(lumDcCoeffZeroed)
+        {
+          for(i = startLumDcPos4x4; i < 16; i++)
+          {
+            if( pB[pZZ4x4[i]] )  ///< Only need to change coeffs that are not already zero.
+              pB[pZZ4x4[i]] = 0;
+          }//end for i...
+        }//end if lumDcCoeffZeroed...
+      }//end else...
+
 	  }//end for blk...
-  }//end if !acCoeffsCoded...
+
+  }//end if _mbEncQP...
 
 	/// ------------------ Calc distortion from the feedback loop --------------------------------
 	/// Implement the feedback loop into the ref image. The block coeffs are still required for 
@@ -7980,9 +8756,10 @@ int H264v2Codec::ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR)
 	if(withDR)
 	{
 		/// --------------------- Calc distortion with Input -------------------------------------
-		distortion += _RefLum->Tsd16x16(*_Lum);	///< Total square distortion between Ref and input Lum.
-		distortion += _RefCb->Tsd8x8(*_Cb);
-		distortion += _RefCr->Tsd8x8(*_Cr);
+		int distortion  = _RefLum->Tsd16x16(*_Lum);	///< Total square distortion between Ref and input Lum.
+		distortion      += _RefCb->Tsd8x8(*_Cb);
+		distortion      += _RefCr->Tsd8x8(*_Cr);
+		pMb->_distortion[pMb->_mbEncQP]	= distortion;
 	}//end if withDR...
 
 	/// ------------------ Set patterns and type -----------------------------------------------
@@ -7998,12 +8775,261 @@ int H264v2Codec::ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR)
 	MacroBlockH264::SetType(pMb, _slice._type);
 
 	/// ------------------ Calc the Rate and store results -----------------------------------------
-	/// Store distortion-rate pair for this quant value.
+	/// Store rate for this quant value.
+	if(withDR == 1) ///< For withDR = 2, no rate calculation is done.
+		pMb->_rate[pMb->_mbEncQP]	= MacroBlockLayerBitCounter(pMb);
+
+	return(pMb->_rate[pMb->_mbEncQP]);
+}//end ProcessIntraMbImplStd.
+
+/** The forward and inverse loop of a Std Intra macroblock.
+Code factoring usage. Includes reading the input image, IT, quantisation,
+vlc encoding and determining coding patterns, type, etc. Return the 
+bit cost.
+@param pMb		      : Macroblock to operate on.
+@param withDR	      : With distortion-rate calculations. If = 2 then distortion only (no rate calc.)
+@param usePrevPred  : Use previous prediction mode.
+@return				      : Bit cost.
+*/
+int H264v2Codec::ProcessIntraMbImplStd(MacroBlockH264* pMb, int withDR, int usePrevPred)
+{
+	/// NB: _mbQP must be correctly defined before this method is called.
+  pMb->_mbEncQP = pMb->_mbQP; ///< This method may alter the mb QP therefore keep an orignal copy.
+
+  if( pMb->_mbQP > H264V2_MAX_QP) ///< Special conditions apply for out of range QP values.
+    pMb->_mbQP = H264V2_MAX_QP;
+
+	int lOffX = pMb->_offLumX;
+	int lOffY = pMb->_offLumY;
+	int cOffX = pMb->_offChrX;
+	int cOffY = pMb->_offChrY;
+
+	/// Base settings for all intra macroblocks.
+	pMb->_skip			= 0;
+	pMb->_intraFlag = 1;
+
+	///------------------- Image prediction and loading ----------------------------------------
+	/// Currently only Intra 16x16 mode implemented. 
+	pMb->_mbPartPredMode= MacroBlockH264::Intra_16x16;
+
+	/// Predict the input from the previously decoded neighbour ref macroblocks then subtract the
+	/// prediction from the input.
+
+	/// Lum...
+	_RefLum->SetOverlayDim(16, 16);
+	_RefLum->SetOrigin(lOffX, lOffY); ///< Align the Ref Lum img block with this macroblock.
+	_Lum->SetOverlayDim(16, 16);
+	_Lum->SetOrigin(lOffX, lOffY);		///< Align the Lum img block with this macroblock.
+	/// Select the best mode or use the previous mode and get the prediction. Pred stored in _16x16.
+  if(usePrevPred)
+  {
+		switch(pMb->_intra16x16PredMode)
+		{
+			case MacroBlockH264::Intra_16x16_Vert:
+				GetIntraVertPred(pMb, _RefLum, _16x16, 1);
+				break;
+			case MacroBlockH264::Intra_16x16_Horiz:
+				GetIntraHorizPred(pMb, _RefLum, _16x16, 1);
+				break;
+			case MacroBlockH264::Intra_16x16_DC:
+				GetIntra16x16LumDCPred(pMb, _RefLum, _16x16);
+				break;
+			case MacroBlockH264::Intra_16x16_Plane:
+				GetIntra16x16LumPlanePred(pMb, _RefLum, _16x16);
+				break;
+		}//end switch _intra16x16PredMode...
+  }//end if usePrevPred...
+  else
+    pMb->_intra16x16PredMode = GetIntra16x16LumPredAndMode(pMb, _Lum, _RefLum, _16x16);
+
+  _Lum->Read(*(_RefLum));						///< Read from input Lum into ref Lum.
+  _RefLum->Sub16x16(*(_16x16));			///< Subtract pred from ref Lum and leave result in ref img.
+
+	/// ... and Chr components.
+	_RefCb->SetOverlayDim(8, 8);
+	_RefCr->SetOverlayDim(8, 8);
+	_RefCb->SetOrigin(cOffX, cOffY);
+	_RefCr->SetOrigin(cOffX, cOffY);
+	_Cb->SetOverlayDim(8, 8);
+	_Cb->SetOrigin(cOffX, cOffY);
+	_Cr->SetOverlayDim(8, 8);
+	_Cr->SetOrigin(cOffX, cOffY);
+  if(usePrevPred)
+  {
+		switch(pMb->_intraChrPredMode)
+		{
+			case MacroBlockH264::Intra_Chr_DC:
+				GetIntra8x8ChrDCPred(pMb, _RefCb, _8x8_0);
+				GetIntra8x8ChrDCPred(pMb, _RefCr, _8x8_1);
+				break;
+			case MacroBlockH264::Intra_Chr_Horiz:
+				GetIntraHorizPred(pMb, _RefCb, _8x8_0, 0);
+				GetIntraHorizPred(pMb, _RefCr, _8x8_1, 0);
+				break;
+			case MacroBlockH264::Intra_Chr_Vert:
+				GetIntraVertPred(pMb, _RefCb, _8x8_0, 0);
+				GetIntraVertPred(pMb, _RefCr, _8x8_1, 0);
+				break;
+			case MacroBlockH264::Intra_Chr_Plane:
+				GetIntra8x8ChrPlanePred(pMb, _RefCb, _8x8_0);
+				GetIntra8x8ChrPlanePred(pMb, _RefCr, _8x8_1);
+				break;
+		}//end switch _intraChrPredMode...
+  }//end if usePrevPred...
+  else
+    pMb->_intraChrPredMode = GetIntra8x8ChrPredAndMode(pMb,	_Cb, _Cr,	_RefCb,	_RefCr, _8x8_0, _8x8_1);
+
+	_Cb->Read(*(_RefCb));
+	_RefCb->Sub8x8(*(_8x8_0));
+	_Cr->Read(*(_RefCr));
+	_RefCr->Sub8x8(*(_8x8_1));
+
+	/// Fill all the non-DC 4x4 blks (Not blks = -1, 17, 18) of the macroblock blocks with 
+	/// the differnce Lum and Chr after prediction.
+	MacroBlockH264::LoadBlks(pMb, _RefLum, lOffX, lOffY, _RefCb, _RefCr, cOffX, cOffY);
+
+	/// ------------------ Transform & Quantisation --------------------------------------------
+	if(pMb->_mbPartPredMode == MacroBlockH264::Intra_16x16)
+		TransAndQuantIntra16x16MBlk(pMb);
+
+  /// ------------------- Zero Coeffs for QP > H264V2_MAX_QP -------------------------------------
+  if( pMb->_mbEncQP > H264V2_MAX_QP)
+  {
+    int blk, i;
+    const int *pZZ4x4 = CAVLCH264Impl::zigZag4x4Pos;
+    const int *pZZ2x2 = CAVLCH264Impl::zigZag2x2Pos;
+
+    /// There are 16 (4x4) AC coeffs per blk and the _mbEncQP value indicates how many of
+    /// these are to be zeroed in reverse zig-zag order. _mbEncQP = {52..66} implies that 
+    /// {1..15} AC coeffs of lum and chr are zeroed. {67..69} The AC coeffs of the Chr DC 
+    /// 2x2 coeffs additionally zeroed. {70..84} AC coeffs of the Lum DC coeffs additionally 
+    /// zeroed. {85} DC coeff of the Chr DC 2x2 coeffs zeroed. {86} DC coeff of the Lum DC 
+    /// coeffs zeroed.
+    int acCoeffZeroed     = 15; ///< By default.
+    int chrDcCoeffZeroed  = 0;
+    int lumDcCoeffZeroed  = 0;
+    if( pMb->_mbEncQP <= (H264V2_MAX_QP + 15) )
+      acCoeffZeroed = pMb->_mbEncQP - H264V2_MAX_QP;
+    else if( pMb->_mbEncQP <= 69 )  ///< Include AC coeff of Chr DC for QP = {67..69}.
+    {
+      chrDcCoeffZeroed = pMb->_mbEncQP - 66;
+    }//end else if _mbEncQP...
+    else if( pMb->_mbEncQP <= 84 )  ///< Include AC coeffs of Lum DC and all AC coeffs of Chr DC for QP = {70..84}.
+    {
+      acCoeffZeroed    = 16;
+      chrDcCoeffZeroed = 3; ///< Not the Chr DC term.
+      lumDcCoeffZeroed = pMb->_mbEncQP - 69;
+    }//end else if _mbEncQP...
+    else if( pMb->_mbEncQP <= 85 )  ///< Include all Chr DC coeffs but only AC coeffs of Lum DC for QP = {85}.
+    {
+      acCoeffZeroed    = 16;
+      chrDcCoeffZeroed = 4; ///< ...and Chr DC term.
+      lumDcCoeffZeroed = 15;
+    }//end else if _mbEncQP...
+    else  ///< All zeroed for QP = {86} and above.
+    {
+      acCoeffZeroed    = 16;
+      chrDcCoeffZeroed = 4;
+      lumDcCoeffZeroed = 16;
+    }//end else...
+
+    int startPos4x4       = 16 - acCoeffZeroed;
+    int startChrDcPos2x2  = 4 - chrDcCoeffZeroed;
+    int startLumDcPos4x4  = 16 - lumDcCoeffZeroed;
+
+    /// Zero coeff in the mb according to the QP rules above.
+	  for(blk = MBH264_LUM_DC; blk < MBH264_NUM_BLKS; blk++)
+	  {
+		  BlockH264* pBlk = pMb->_blkParam[blk].pBlk;
+      short* pB = pBlk->GetBlk();
+
+      if( (blk != MBH264_LUM_DC) && (blk != MBH264_CB_DC) && (blk != MBH264_CR_DC) )  ///< Exclude DC blks.
+      {
+        for(i = startPos4x4; i < 16; i++)
+        {
+          if( pB[pZZ4x4[i]] )  ///< Only need to change coeffs that are not already zero.
+            pB[pZZ4x4[i]] = 0;
+        }//end for i...
+      }//end if blk...
+      else if( (blk == MBH264_CB_DC) || (blk == MBH264_CR_DC) ) ///< Chr DC blks AND zero'ing required.
+      {
+        if(chrDcCoeffZeroed)
+        {
+          for(i = startChrDcPos2x2; i < 4; i++)
+          {
+            if( pB[pZZ2x2[i]] )  ///< Only need to change coeffs that are not already zero.
+              pB[pZZ2x2[i]] = 0;
+          }//end for i...
+        }//end if chrDcCoeffZeroed...
+      }//end else if blk...
+      else ///< if(blk == MBH264_LUM_DC) Lum DC AND zero'ing required.
+      {
+        if(lumDcCoeffZeroed)
+        {
+          for(i = startLumDcPos4x4; i < 16; i++)
+          {
+            if( pB[pZZ4x4[i]] )  ///< Only need to change coeffs that are not already zero.
+              pB[pZZ4x4[i]] = 0;
+          }//end for i...
+        }//end if lumDcCoeffZeroed...
+      }//end else...
+
+	  }//end for blk...
+
+  }//end if _mbEncQP...
+
+	/// ------------------ Calc distortion from the feedback loop --------------------------------
+	/// Implement the feedback loop into the ref image. The block coeffs are still required for 
+	/// the context-aware vlc coding and therefore the temporary working blocks are used for this
+	/// feedback loop.
+	/// --------------------- Inverse Transform & Quantisation -------------------------------
+	if(pMb->_mbPartPredMode == MacroBlockH264::Intra_16x16)
+		InverseTransAndQuantIntra16x16MBlk(pMb, 1);
+
+	/// --------------------- Image Storing into Ref -----------------------------------------
+	/// Fill the ref (difference) lum and chr from all the non-DC 4x4 
+	/// blks (i.e. Not blks = -1, 17, 18) of the macroblock temp blocks. 
+	MacroBlockH264::StoreBlks(pMb, _RefLum, lOffX, lOffY, _RefCb, _RefCr, cOffX, cOffY, 1);
+
+	/// --------------------- Add the prediction ---------------------------------------------
+	/// Lum.
+	_RefLum->SetOverlayDim(16, 16);
+	_RefLum->SetOrigin(lOffX, lOffY);			    ///< Align the Ref Lum img block with this macroblock.
+	_RefLum->Add16x16WithClip255(*(_16x16));	///< Add pred to ref Lum and leave result in ref img.
+	/// Cb.
+	_RefCb->SetOverlayDim(8, 8);
+	_RefCb->SetOrigin(cOffX, cOffY);
+	_RefCb->Add8x8WithClip255(*(_8x8_0));
+	/// Cr.
+	_RefCr->SetOverlayDim(8, 8);
+	_RefCr->SetOrigin(cOffX, cOffY);
+	_RefCr->Add8x8WithClip255(*(_8x8_1));
+
 	if(withDR)
 	{
-		pMb->_rate[pMb->_mbEncQP]				= MacroBlockLayerBitCounter(pMb);
+		/// --------------------- Calc distortion with Input -------------------------------------
+		int distortion  = _RefLum->Tsd16x16(*_Lum);	///< Total square distortion between Ref and input Lum.
+		distortion      += _RefCb->Tsd8x8(*_Cb);
+		distortion      += _RefCr->Tsd8x8(*_Cr);
 		pMb->_distortion[pMb->_mbEncQP]	= distortion;
 	}//end if withDR...
+
+	/// ------------------ Set patterns and type -----------------------------------------------
+	/// Determine the coded Lum and Chr patterns. The _codedBlkPatternLum, _codedBlkPatternChr 
+	/// and _coded_blk_pattern members are set.
+	MacroBlockH264::SetCodedBlockPattern(pMb);
+
+	/// Determine the delta quantisation parameter
+  pMb->_mb_qp_delta = GetDeltaQP(pMb);
+
+	/// Determine the macroblock type. From the prediction modes and patterns set the 
+	/// _mb_type member.
+	MacroBlockH264::SetType(pMb, _slice._type);
+
+	/// ------------------ Calc the Rate and store results -----------------------------------------
+	/// Store rate for this quant value.
+	if(withDR == 1) ///< For withDR = 2, no rate calculation is done.
+		pMb->_rate[pMb->_mbEncQP]	= MacroBlockLayerBitCounter(pMb);
 
 	return(pMb->_rate[pMb->_mbEncQP]);
 }//end ProcessIntraMbImplStd.
@@ -8153,6 +9179,58 @@ int H264v2Codec::InterImgPlaneEncoderImplStdVer1::Encode(int allowedBits, int* b
 		return(0);	///< Error: Motion vector list must match.
 	}//end if listLen...
 
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  /// Research Data Collection: Create an img to capture the difference between the input img 
+  /// and the motion comp pred img. The collection is done per mb and dumped to file after.
+  //int selectedFrameNum = 0;
+  ////int selectedFrameList[15] = {19, 78, 93, 148, 152, 154, 156, 173, 182, 194, 204, 207, 213, 216, 221}; ///< Foreman
+  ////int selectedFrameList[7] = {24, 62, 126, 184, 210, 258, 278}; ///< Mobile
+  //int selectedFrameList[9] = {15, 24, 52, 114, 124, 152, 226, 256, 288}; ///< Soccer
+  //for(int i = 0; i < 9; i++)
+  //{
+  //  if(_codec->_frameNum == selectedFrameList[i])
+  //    selectedFrameNum = _codec->_frameNum;
+  //}//end for i...
+
+  //short* pDiffLum = NULL;
+  //short* pDiffCb  = NULL;
+  //short* pDiffCr  = NULL;
+  //OverlayMem2Dv2* diffLum	= NULL;
+  //OverlayMem2Dv2* diffCb	= NULL;
+  //OverlayMem2Dv2* diffCr	= NULL;
+
+  //if(_codec->_frameNum == selectedFrameNum)
+  //{
+  //  pDiffLum = new short[(_codec->_lumWidth * _codec->_lumHeight) + 2*(_codec->_chrWidth * _codec->_chrHeight)];
+  //  pDiffCb = &(pDiffLum[_codec->_lumWidth * _codec->_lumHeight]);
+  //  pDiffCr = &(pDiffLum[(_codec->_lumWidth * _codec->_lumHeight) + (_codec->_chrWidth * _codec->_chrHeight)]);
+
+	 // diffLum	= new OverlayMem2Dv2(pDiffLum, _codec->_lumWidth, _codec->_lumHeight, _codec->_lumWidth, _codec->_lumHeight);
+	 // diffCb	= new OverlayMem2Dv2(pDiffCb, _codec->_chrWidth, _codec->_chrHeight, _codec->_chrWidth, _codec->_chrHeight);
+	 // diffCr	= new OverlayMem2Dv2(pDiffCr, _codec->_chrWidth, _codec->_chrHeight, _codec->_chrWidth, _codec->_chrHeight);
+
+  //  /// Copy the input img into the diff img from where the comp pred img will be subtracted.
+  //  _codec->_Lum->SetOverlayDim(_codec->_lumWidth, _codec->_lumHeight);
+  //  _codec->_Cb->SetOverlayDim(_codec->_chrWidth, _codec->_chrHeight);
+  //  _codec->_Cr->SetOverlayDim(_codec->_chrWidth, _codec->_chrHeight);
+  //  _codec->_Lum->SetOrigin(0, 0);
+  //  _codec->_Cb->SetOrigin(0, 0);
+  //  _codec->_Cr->SetOrigin(0, 0);
+
+  //  diffLum->Write(*_codec->_Lum);
+  //  diffCb->Write(*_codec->_Cb);
+  //  diffCr->Write(*_codec->_Cr);
+
+  //  /// Restore blk dimensions.
+  //  diffLum->SetOverlayDim(16, 16);
+  //  diffCb->SetOverlayDim(8, 8);
+  //  diffCr->SetOverlayDim(8, 8);
+  //  _codec->_Lum->SetOverlayDim(4, 4);
+  //  _codec->_Cb->SetOverlayDim(4, 4);
+  //  _codec->_Cr->SetOverlayDim(4, 4);
+  //}//end if _frameNum...
+  /////////////////////////////////////////////////////////////////////////////////////////////
+
 	/// Rip through each macroblock as a linear array and process the
 	/// motion vector and each block within the macroblock.
 	for(int mb = 0; mb < len; mb++)
@@ -8171,6 +9249,31 @@ int H264v2Codec::InterImgPlaneEncoderImplStdVer1::Encode(int allowedBits, int* b
 		if(compRef)
 			_codec->_pMotionCompensator->Compensate(pMb->_offLumX, pMb->_offLumY, mvx, mvy);
 
+    /////////////////////////////////////////////////////////////////////////////////////////////
+    /// Research Data Collection: Mb data capture.
+    //if(_codec->_frameNum == selectedFrameNum)
+    //{
+	   // diffLum->SetOrigin(pMb->_offLumX, pMb->_offLumY);
+	   // diffCb->SetOrigin(pMb->_offChrX, pMb->_offChrY);
+	   // diffCr->SetOrigin(pMb->_offChrX, pMb->_offChrY);
+
+    //  _codec->_RefLum->SetOverlayDim(16, 16);
+    //  _codec->_RefCb->SetOverlayDim(8, 8);
+    //  _codec->_RefCr->SetOverlayDim(8, 8);
+	   // _codec->_RefLum->SetOrigin(pMb->_offLumX, pMb->_offLumY);
+	   // _codec->_RefCb->SetOrigin(pMb->_offChrX, pMb->_offChrY);
+	   // _codec->_RefCr->SetOrigin(pMb->_offChrX, pMb->_offChrY);
+
+    //  diffLum->Sub(*_codec->_RefLum);
+    //  diffCb->Sub(*_codec->_RefCb);
+    //  diffCr->Sub(*_codec->_RefCr);
+
+    //  _codec->_RefLum->SetOverlayDim(4, 4);
+    //  _codec->_RefCb->SetOverlayDim(4, 4);
+    //  _codec->_RefCr->SetOverlayDim(4, 4);
+    //}//end if _frameNum...
+    /////////////////////////////////////////////////////////////////////////////////////////////
+
 		/// Store the vector for this macroblock.
 		pMb->_mvX[MacroBlockH264::_16x16]	= mvx;
 		pMb->_mvY[MacroBlockH264::_16x16]	= mvy;
@@ -8188,16 +9291,75 @@ int H264v2Codec::InterImgPlaneEncoderImplStdVer1::Encode(int allowedBits, int* b
 
 	}//end for mb...
 
+  /////////////////////////////////////////////////////////////////////////////////////////////
+  /// Research Data Collection: Dump to file and clean up in reverse order.
+
+  //if(_codec->_frameNum == selectedFrameNum)
+  //{
+  //  char* filenameBase = "c:/keithf/Videos/StdTestVideos/Soccer352x288_30fps";
+  //  char  sQP[8];
+  //  char  sFrmNum[16];
+  //  char sFilename[512];
+  //  char sFilenameFinal[512];
+
+  //  strcpy(sFilename, (const char*)filenameBase);
+  //  strcat(sFilename, (const char*)"_qp");
+  //  strcat(sFilename, (const char*)(_itoa(_codec->_slice._qp, sQP, 10)));
+  //  strcat(sFilename, (const char*)"_frm");
+  //  strcat(sFilename, (const char*)(_itoa(selectedFrameNum, sFrmNum, 10)));
+
+  //  diffLum->SetOverlayDim(_codec->_lumWidth, _codec->_lumHeight);
+  //  diffLum->SetOrigin(0, 0);
+  //  strcpy(sFilenameFinal, (const char*)sFilename);
+  //  strcat(sFilenameFinal, (const char*)"_lum.csv");
+  //  diffLum->Dump(diffLum, sFilenameFinal, "");
+
+  //  diffCb->SetOverlayDim(_codec->_chrWidth, _codec->_chrHeight);
+  //  diffCb->SetOrigin(0, 0);
+  //  strcpy(sFilenameFinal, (const char*)sFilename);
+  //  strcat(sFilenameFinal, (const char*)"_cb.csv");
+  //  diffLum->Dump(diffCb, sFilenameFinal, "");
+
+  //  diffCr->SetOverlayDim(_codec->_chrWidth, _codec->_chrHeight);
+  //  diffCr->SetOrigin(0, 0);
+  //  strcpy(sFilenameFinal, (const char*)sFilename);
+  //  strcat(sFilenameFinal, (const char*)"_cr.csv");
+  //  diffLum->Dump(diffCr, sFilenameFinal, "");
+  //}//end if _frameNum...
+
+  //if(diffCr != NULL)
+  //  delete diffCr;
+  //if(diffCb != NULL)
+  //  delete diffCb;
+  //if(diffLum != NULL)
+  //  delete diffLum;
+
+  //if(pDiffLum != NULL)
+  //  delete[] pDiffLum;
+  /////////////////////////////////////////////////////////////////////////////////////////////
+
 	*bitsUsed = 0;
 	return(1);
 }//end InterImgPlaneEncoderImplStdVer1::Encode.
 
-/// Does NOT include motion prediction and compensation. Assumes these are already set before called.
-/// @return : Bits consumed or 0 for skipped mb.
+/** The forward and inverse loop of a Std Inter macroblock.
+Does NOT include motion prediction and compensation. Assumes these are 
+already set before called. Code factoring usage. Includes reading the 
+input image, IT, quantisation, vlc encoding and determining coding 
+patterns, type, etc. Return the bit cost.
+@param pMb		      : Macroblock to operate on.
+@param withDR	      : With distortion-rate calculations. If = 2 then distortion only (no rate calc.)
+@param usePrevPred  : Use previous prediction mode.
+@return				      : Bits consumed or 0 for skipped mb.
+*/
 int H264v2Codec::ProcessInterMbImplStd(MacroBlockH264* pMb, int addRef, int withDR)
 {
 	/// NB: _mbQP must be correctly defined before this method is called.
   pMb->_mbEncQP  = pMb->_mbQP;  ///< mbQP may be altered in this method therefore store the requested QP.
+
+  if( pMb->_mbQP > H264V2_MAX_QP) ///< Special conditions apply for out of range QP values.
+    pMb->_mbQP = H264V2_MAX_QP;
+
 	int distortion = 0;
   int rate       = 0;
 
@@ -8249,6 +9411,63 @@ int H264v2Codec::ProcessInterMbImplStd(MacroBlockH264* pMb, int addRef, int with
 	/// ------------------ Transform & Quantisation --------------------------------------------
 	if(pMb->_mbPartPredMode == MacroBlockH264::Inter_16x16)
 		TransAndQuantInter16x16MBlk(pMb);
+
+  /// ------------------- Zero Coeffs for QP > H264V2_MAX_QP -------------------------------------
+  if( pMb->_mbEncQP > H264V2_MAX_QP)
+  {
+    int blk, i;
+    const int *pZZ4x4 = CAVLCH264Impl::zigZag4x4Pos;
+    const int *pZZ2x2 = CAVLCH264Impl::zigZag2x2Pos;
+
+    /// There are 16 (4x4) AC coeffs per blk and the _mbEncQP value indicates how many of
+    /// these are to be zeroed in reverse zig-zag order. _mbEncQP = {52..66} implies that 
+    /// {1..15} AC coeffs are zeroed. {67..70} Chr DC 2x2 coeffs additionally zeroed. {71} 
+    /// Lum DC coeffs additionally zeroed.
+    int acCoeffZeroed     = 15; ///< By default.
+    int chrDcCoeffZeroed  = 0;
+    if( pMb->_mbEncQP <= (H264V2_MAX_QP + 15) )
+      acCoeffZeroed = pMb->_mbEncQP - H264V2_MAX_QP;
+    else if( pMb->_mbEncQP <= 70 )  ///< Include Chr DC coeffs for QP = {67..70}.
+    {
+      chrDcCoeffZeroed = pMb->_mbEncQP - 66;
+    }//end else if _mbEncQP...
+    else ///< if( pMb->_mbEncQP == 71 )  Include Lum and Chr DC coeffs.
+    {
+      acCoeffZeroed     = 16;
+      chrDcCoeffZeroed  = 4;
+    }//end else...
+    int startPos4x4 = 16 - acCoeffZeroed;
+    int startPos2x2 = 4 - chrDcCoeffZeroed;
+
+    /// Zero coeff in the mb according to the QP rules above.
+	  for(blk = MBH264_LUM_0_0; blk < MBH264_NUM_BLKS; blk++)
+	  {
+		  BlockH264* pBlk = pMb->_blkParam[blk].pBlk;
+      short* pB = pBlk->GetBlk();
+
+      if( (blk != MBH264_CB_DC) && (blk != MBH264_CR_DC) )  ///< Exclude Chr DC blks.
+      {
+        for(i = startPos4x4; i < 16; i++)
+        {
+          if( pB[pZZ4x4[i]] )  ///< Only need to change coeffs that are not already zero.
+            pB[pZZ4x4[i]] = 0;
+        }//end for i...
+      }//end if blk...
+      else  ///< Chr DC blks AND zero'ing required.
+      {
+        if(chrDcCoeffZeroed)
+        {
+          for(i = startPos2x2; i < 4; i++)
+          {
+            if( pB[pZZ2x2[i]] )  ///< Only need to change coeffs that are not already zero.
+              pB[pZZ2x2[i]] = 0;
+          }//end for i...
+        }//end if chrDcCoeffZeroed...
+      }//end else...
+
+	  }//end for blk...
+
+  }//end if _mbEncQP...
 
 	/// ------------------ Set patterns and type -----------------------------------------------
 	/// Determine the coded Lum and Chr patterns. The _codedBlkPatternLum, _codedBlkPatternChr 
@@ -8329,7 +9548,7 @@ int H264v2Codec::ProcessInterMbImplStd(MacroBlockH264* pMb, int addRef, int with
 	}//end if _coded_blk_pattern...
 
 	/// ------------------ Calc the Distortion & Rate and store results ----------------------------------
-	/// Store distortion-rate pair for this quant value.
+	/// Store distortion for this quant value.
 	if(withDR)
 	{
 		/// Calc distortion with Input. If there was a coded blk pattern then compare with temp img else
@@ -8349,17 +9568,25 @@ int H264v2Codec::ProcessInterMbImplStd(MacroBlockH264* pMb, int addRef, int with
 		distortion += pCrI->Tsd8x8(*_Cr);
 		pMb->_distortion[pMb->_mbEncQP]	= distortion;
 
-    if(!pMb->_skip)
-		  rate = MacroBlockLayerBitCounter(pMb);
-    else
+//    if(!pMb->_skip)
+//		  rate = MacroBlockLayerBitCounter(pMb);
+//    else
+    if(pMb->_skip)
     {
 			/// Ensure coeffs settings are synchronised for future use by neighbours.
 			for(int i = 1; i < MBH264_NUM_BLKS; i++)
 				pMb->_blkParam[i].pBlk->SetNumCoeffs(0);
-    }//end else...
+    }//end if _skip...
 
-    pMb->_rate[pMb->_mbEncQP] = rate;
+//    pMb->_rate[pMb->_mbEncQP] = rate;
 	}//end if withDR...
+
+	/// Store rate for this quant value if required.
+	if( (withDR == 1)&&(!pMb->_skip) ) ///< For withDR = 2, no rate calculation is done.
+  {
+    rate = MacroBlockLayerBitCounter(pMb);
+    pMb->_rate[pMb->_mbEncQP] = rate;
+  }//end if withDR...
 
 	return(rate);
 }//end ProcessInterMbImplStd.
@@ -8580,6 +9807,11 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 	_codec->_pF4x4TChr->SetParameter(IForwardTransform::INTRA_FLAG_ID, 0);
 	/// By default the DC transforms were set in the TransformOnly mode in the Open() method.
 
+  /// Mark this time point for later use.
+  int preMotionTime = 0;
+  if(_codec->_timeLimitMs)
+    preMotionTime = (int)_codec->GetCounter();
+
 	///	---------------------- Motion Vector encoding ---------------------------------------
 	
 	/// In this implementation QP adaptation is performed after full motion compensation.
@@ -8604,8 +9836,7 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
   int mbSkipRun           = 0;
   /// Start with all mbs skipped to the end by counting bits for mbSkipRun = len;
 	int minPictureBitsToEnd = _codec->_pHeaderUnsignedVlcEnc->Encode(len);
-	int runOutOfBits				= 0;
-	for(mb = 0; (mb < len)&&(!runOutOfBits); mb++)
+	for(mb = 0; mb < len; mb++)
 	{
     MacroBlockH264* pMb = &(_codec->_pMb[mb]);  ///< Simplify mb addressing.
 
@@ -8643,8 +9874,11 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 			  bitCost	+= lclBitCost;  ///< Update the accumulator.
 		  else	///< Truncation condition.
 		  {
-			  runOutOfBits = 1;
-			  break;
+	      /// Clean up all remaining macroblocks as skipped and exit. In this implementation
+	      /// when there are not enough bits to encode all the motion vectors the estimated list
+	      /// is truncated with [0,0] difference vectors or [0,0] motion with special conditions 
+        /// and re-compensated.
+        return(DamageControlMvOnly(allowedBits, bitsUsed));
 		  }//end else...
 
       mbSkipRun = 0; ///< Reset.
@@ -8661,89 +9895,17 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
       minPictureBitsToEnd = 0;
 	}//end for mb...
   /// Include the last run to the end.
-  if(!runOutOfBits)
-  {
-    bitCost += minPictureBitsToEnd;
-    if(bitCost >= allowedBits)  ///< ...and check.
-      runOutOfBits = 1;
-  }//end if !runOutOfBits...
+  bitCost += minPictureBitsToEnd;
+  if(bitCost >= allowedBits)  ///< ...and check.
+    return(DamageControlMvOnly(allowedBits, bitsUsed));
 	int minMvBitsToEnd = bitCost;	///< Hold the total motion vector with zero residual bit cost.
-
-	/// Clean up all remaining macroblocks as skipped and exit. In this implementation
-	/// when there are not enough bits to encode all the motion vectors the estimated list
-	/// is truncated with [0,0] difference vectors or [0,0] motion with special conditions 
-  /// and re-compensated.
-	if(runOutOfBits)
-	{
-    /// Back up to the last non-skipped mb that was the correct count for bitCost. This is the point
-    /// at which there were enough bits available to skip to the end.
-    mb -= mbSkipRun;
-    if(mb < 0) mb = 0;  ///< Not sure this will ever occurr.
-    mbSkipRun = 0;
-
-    /// Re-process all mbs as min encodings to the end (i.e. all skipped).
-    for( ; mb < len; mb++)
-    {
-      MacroBlockH264* pMb = &(_codec->_pMb[mb]);  ///< Simplify mb addressing.
-
-      /// Set the mb with the the motion vector, do the prediction to get the MVD and apply the motion compensation.
-      pMb->_mbPartPredMode = MacroBlockH264::Inter_16x16; ///< Currently only 16x16 mode supported.
-
-      /// Get the predicted motion vector for this mb as the median of the neighbourhood vectors and set 
-      /// the mb vector to this value or the special condition values to force a skipped mb.
-      int predX,predY;
-      MacroBlockH264::GetMbMotionMedianPred(pMb, &predX, &predY);
-      if( !MacroBlockH264::SkippedZeroMotionPredCondition(pMb) )
-      {
-        pMb->_mvX[MacroBlockH264::_16x16] = predX;
-        pMb->_mvY[MacroBlockH264::_16x16] = predY;
-      }//end if !SkippedZeroMotionPredCondition...
-      else
-      {
-        pMb->_mvX[MacroBlockH264::_16x16] = 0;
-        pMb->_mvY[MacroBlockH264::_16x16] = 0;
-      }//end else...
-			_codec->_pMotionEstimationResult->SetSimpleElement(mb, 0, pMb->_mvX[MacroBlockH264::_16x16]);
-			_codec->_pMotionEstimationResult->SetSimpleElement(mb, 1, pMb->_mvY[MacroBlockH264::_16x16]);
-      /// ...and therefore motion differnce is set.
-      pMb->_mvdX[MacroBlockH264::_16x16] = pMb->_mvX[MacroBlockH264::_16x16] - predX;
-      pMb->_mvdY[MacroBlockH264::_16x16] = pMb->_mvY[MacroBlockH264::_16x16] - predY;
-
-		  /// Re-compensate the last valid compensated macroblock and all the remaining macroblocks to ensure forward dependency.
-		  if(compRef)
-      {
-        _codec->_pMotionCompensator->Invalidate();
-			  _codec->_pMotionCompensator->Compensate(pMb->_offLumX, pMb->_offLumY, pMb->_mvX[MacroBlockH264::_16x16], pMb->_mvY[MacroBlockH264::_16x16]);
-      }//end if compRef...
-
-      /// Process the compensated mb as skipped to measure its rate cost.
-		  _codec->ProcessInterMbImplStdMin(pMb);
-      mbSkipRun++;
-
-    }//end for mb...
-
-    /// Add last skip run.
-    if(mbSkipRun)
-      bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
-
-		/// ...and then exit.
-    int ret = 1;
-    if(bitCost > allowedBits)
-    {
-			_codec->_errorStr = "[H264Codec::InterImgPlaneEncoderImplMinMax::Encode] Bits exceeded in trucation";
-      ret = 0;
-    }//end if bitCost...
-
-		*bitsUsed = 0;
-		return(ret); ///< Something is coded so it is considered successful.
-	}//end if runOutOfBits...
 
 	/*
 	-------------------------------------------------------------------------------------------
 	Residual macroblock Q search.
 	-------------------------------------------------------------------------------------------
 	*/
- /// Initialisation step: 
+  /// Initialisation step: 
 	///		lower(D,R) : QP = H264V2_MAX_QP.
 	/// Note that the D values represent the worst distortion of only one macroblock in the entire
 	/// frame but the R values represent the accumulated rate of all macroblocks.
@@ -8758,7 +9920,7 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 	int	invalidated = 0;
 	int mbDmax			= 0;
 
-	/// Test QP = H264V2_MAX_QP for all macroblocks and determine if this min possible rate is, at the very 
+  /// Test QP = H264V2_MAX_QP for all macroblocks and determine if this min possible rate is, at the very 
 	/// least, less than the target rate. Damage control is required if not, where minimal encodings
 	/// are attempted for the macroblocks. Otherwise, proceed with the initialisation.
   mbSkipRun = 0;
@@ -8791,17 +9953,30 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 			mbDmax = mb;	///< Mark the mb index with the peak distortion.
 		}//end if _distortion...
 
-		/// Early exit to speed up search if damage control is required.
-		if(Rl > allowedBits)
-			break;
+		/// No early exit because damage control uses this result = Rl.
+
 	}//end for mb...
   /// Add last skip run.
   if(mbSkipRun)
     Rl += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
 
+	/// Set the limits on the number of optimisation iterations by a timer or iteration number. Take into
+  /// account the time taken to get to this point from _startTimer but exclude the motion estimation time
+  /// as an offset.
+  int start         = 0;
+  int timeOffset    = 0;
+  int lclIterations = _codec->_interIterations;
+  int lclTimeLimit  = _codec->_timeLimitMs;  ///< In ms. A zero indicates either no counter available or not set.
+  if(lclTimeLimit)
+  {
+    start = (int)_codec->GetCounter();
+    timeOffset = 2*(preMotionTime - _codec->_startTime);
+  }//end if lclTimeLimit...
+
 	/// Test that there is room to adapt from quant param = H264V2_MAX_QP, else do damage control.
 	if(Rl <= allowedBits)
 	{
+
 		/// Create an epsilon at 0.4% of the available bits with a min limit of 16 bits.
 		/// Adjust the available bits to be epsilon below allowedBits.
 		int closeEnough = allowedBits/250;	///< 0.4%
@@ -8834,18 +10009,14 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 			Dmax = _codec->FitDistPowerModel(Rl, Dl, Ru, Du, bitTarget);
 			/// Only use this prediction if it is bounded by (Rl,Dl) and (Ru,Du).
 			if( (Dmax < Du)||(Dmax > Dl) )	///< Out of bound.
-			{
 				Dmax = _codec->FitDistLinearModel(Rl, Dl, Ru, Du, bitTarget);
-			}//end if linear...
 
 			/// Encourage the descent direction by adding a decreasing factor to the
 			/// predicted Dmax such that convergence to Dmax is from the (Rl,Dl) side.
 		  Dmax += abs(Dl - Dmax)/4;
 
 			if( (Dmax < Du)||(Dmax > Dl)||(Dmax == prevDmax) )	///< Still out of bound.
-			{
 				Dmax = ((Du + Dl) + 1) >> 1;	///< Set the midpoint max distortion.
-			}//end if bisection...
 
 			/// At each macroblock reduce the quant value until the distortion is lower
 			/// than Dmax. pQ[] must always hold the lower rate (smaller valued) quant vector 
@@ -8880,12 +10051,22 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
         R += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
 
 			/// Test the stopping criteria.
+      int timeExceeded = 0;
+      if(lclTimeLimit)
+      {
+        int timeSoFar = (int)(_codec->GetCounter()) - start;
+        int avgTimePerIteration = timeSoFar/(1 + iterations);
+        int timeLimit = lclTimeLimit - timeOffset - avgTimePerIteration;
+        if(timeSoFar > timeLimit)
+          timeExceeded = 1;
+      }//end if lclTimeLimit...
+
 			int rBndDiff = abs(Ru - Rl);			///< Optimal solution is rate bounded in a small enough range.
 			int dDiff = abs(prevDmax - Dmax);	///< Has not changed by much from the previous iteration (converged).
 			int rDiff = abs(bitTarget - R);		///< Close enough to the allowed bits.
 			if( (rBndDiff < (4*closeEnough)) ||
 					( (rDiff < closeEnough)||(/*(R <= allowedBits)&&*/(dDiff < closeEnoughDist))) ||
-          (iterations > 18) )
+          (iterations > lclIterations) || timeExceeded)
 		  {
 				/// The new point is the preferable point to choose but if the rate is not below allowedBits
 				/// then the (Rl,Dl) point is selected. Use the invalidated signal to indicate if the mbs 
@@ -8937,9 +10118,768 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
 		  }//end for mb...
     }//end if invalidated...
 
+    /// All good.
+    //sprintf(_codec->_errorInfo, "P-frame: all good Allowed=%d Cost=%d", allowedBits, R);
+
 	}//end if Rl...
 	else	///< Damage control.
 	{
+    bitCost = DamageControl(allowedBits, Rl);
+
+    if(bitCost >= allowedBits) ///< All failed.
+		  minMBIndex = 0;
+
+    /// Damage control path.
+    //sprintf(_codec->_errorInfo, "P-frame: damage control Allowed=%d Cost=%d", allowedBits, bitCost);
+
+	}//end else Damage control...
+
+	/*
+	-------------------------------------------------------------------------------------------
+	Residual macroblock final encoding.
+	-------------------------------------------------------------------------------------------
+	*/
+	/// Rip through each macroblock as a linear array and process each block within the macroblock.
+	/// The _mbEncPQ values have been set in the above encoding.
+  mbSkipRun = 0;
+	bitCount = 0;
+	for(int mb = 0; mb < len; mb++)
+	{
+    MacroBlockH264* pMb = &(_codec->_pMb[mb]);
+
+    /// Encode the mbs and add to Ref img until min null mb position.
+    if(mb < minMBIndex)
+    {
+      pMb->_mbQP = pMb->_mbEncQP; ///< Restore the QP that the mb was coded with.
+//      bitCount += _codec->ProcessInterMbImplStd(pMb, 1, 0);
+      bitCount += _codec->ProcessInterMbImplStd(pMb, 1, 1);
+    }//end if mb...
+    else
+      bitCount += _codec->ProcessInterMbImplStdMin(pMb);
+    if(!pMb->_skip)
+    {
+      bitCount += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+      mbSkipRun = 0;
+    }//end if !_skip...
+    else
+      mbSkipRun++;
+
+	}//end for mb...
+  /// Add last skip run.
+  if(mbSkipRun)
+    bitCount += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+	*bitsUsed = 0;
+  int ret = 1;
+  if(bitCount > allowedBits)  ///< Failed to meet bit target.
+  {
+		_codec->_errorStr = "[H264Codec::InterImgPlaneEncoderImplMinMax::Encode] Bit target unattainable";
+    ret = 0;
+  }//end if bitCount...
+
+	return(ret);
+}//end InterImgPlaneEncoderImplMinMax::Encode.
+
+/** Damage control algorithm for motion vectors only condition.
+Clean up all remaining macroblocks as skipped and exit. In this implementation
+when there are not enough bits to encode all the motion vectors the estimated list
+is truncated with [0,0] difference vectors or [0,0] motion with special conditions 
+and re-compensated.
+@param allowedBits  : Bits to use.
+@param bitsUsed     : Bits consumed on the stream.
+@return             : 1 = success, 0 = failed.
+*/
+int H264v2Codec::InterImgPlaneEncoderImplMinMax::DamageControlMvOnly(int allowedBits, int* bitsUsed)
+{
+  int mb;
+  /// Stage 1: Start by taking a snapshot of improvement (mostly negative) in distortion between
+  /// the current estimated mv and the predicted mv per mb. Count the total bit rate to determine
+  /// how far off from the allwedBits these mvs are.
+  int len       = _codec->_mbLength;
+	int bitCost		= 0;
+  int mbSkipRun = 0;
+	for(mb = 0; mb < len; mb++)
+	{
+    MacroBlockH264* pMb = &(_codec->_pMb[mb]);  ///< Simplify mb addressing.
+    pMb->_include = 1;  ///< Default.
+
+    /// Set the mb with the the mv, do the prediction to get the MVD and apply the motion compensation.
+    pMb->_mbPartPredMode = MacroBlockH264::Inter_16x16; ///< Currently only 16x16 mode supported.
+    /// Extract the 16x16 vector from the motion estimation result list.
+		int mvx = _codec->_pMotionEstimationResult->GetSimpleElement(mb, 0);
+		int mvy = _codec->_pMotionEstimationResult->GetSimpleElement(mb, 1);
+		int topLeftX = pMb->_offLumX;
+		int topLeftY = pMb->_offLumY;
+    /// Get the predicted motion vector for this mb as the median of the neighbourhood vectors.
+    int predX, predY;
+    MacroBlockH264::GetMbMotionMedianPred(pMb, &predX, &predY);
+
+    /// Compensate with the pred mv and measure the mb distortion.
+    _codec->_pMotionCompensator->Invalidate();
+		_codec->_pMotionCompensator->Compensate(topLeftX, topLeftY, predX, predY);
+    int distortion = pMb->Distortion(_codec->_RefLum, _codec->_RefCb, _codec->_RefCr, _codec->_Lum, _codec->_Cb, _codec->_Cr);
+
+    if( (mvx != predX)||(mvy != predY) )  ///< Only if the estimated mv and the pred mv are not already equal.
+    {
+      _codec->_pMotionCompensator->Invalidate();
+		  _codec->_pMotionCompensator->Compensate(topLeftX, topLeftY, mvx, mvy);
+      pMb->_distortion[0] = pMb->Distortion(_codec->_RefLum, _codec->_RefCb, _codec->_RefCr, _codec->_Lum, _codec->_Cb, _codec->_Cr);
+    }//end if mvx...
+    else
+    {
+      /// Estimated mv is equal to pred mv.
+      pMb->_distortion[0] = distortion;
+      pMb->_include = 0;
+    }//end else...
+
+    /// Expected increase in distortion by choosing the pred mv.
+    _pDistortionDiff[mb] = distortion - pMb->_distortion[0];
+
+      /// Store the motion vector in the mb.
+    pMb->_mvX[MacroBlockH264::_16x16] = mvx;
+    pMb->_mvY[MacroBlockH264::_16x16] = mvy;
+    /// Set the mv difference before processing the mb.
+    pMb->_mvdX[MacroBlockH264::_16x16] = mvx - predX;
+    pMb->_mvdY[MacroBlockH264::_16x16] = mvy - predY;
+    /// Process the compensated mb as motion vector only with zero'ed residual to measure its rate cost.
+		int lclBitCost = _codec->ProcessInterMbImplStdMin(pMb);
+    /// For non-skipped mbs, the previous skipped bit count must be included in the bit count.
+    if(!pMb->_skip)
+    {
+      /// Sum the run and coding bit contributions.
+      bitCost += (lclBitCost + _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun));
+      mbSkipRun = 0; ///< Reset.
+    }//end if !_skip...
+    else  ///< Skipped.
+      mbSkipRun++;
+	}//end for mb...
+  /// Add last skip run.
+  if(mbSkipRun)
+    bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+  /// Stage 2: Sub optimal solution proceeds by scanning the next mb with the initial least distortion 
+  /// impact after replacing the estimated mv with the pred mv. Continue to replace the mv with the 
+  /// pred mv until the accumulated bits are approximately below the allowed bits ignoring the skip run
+  /// bit run contribution. Rely on the initial _rate[0] calculation above to guess the rate savings. 
+  /// Then re-calculate actual bits at the end to determine whether or not the loop must continue.
+  int forceStop = 0;
+  while((bitCost > allowedBits) && !forceStop)
+  {
+    ///--------------------------------------------------------------------------------------
+    int bitSavingRequired = bitCost - allowedBits;
+    int savedBits = 0;
+    while( (savedBits < bitSavingRequired) && !forceStop )
+    {
+      int currentLowestDistDiff = 0x7FFFFFFF; ///< Very large starting point.
+      /// Find the next lowest distortion difference.
+      int nextMb = -1;
+      for(mb = 0; mb < len; mb++)
+      {
+        MacroBlockH264* pMb = &(_codec->_pMb[mb]);  ///< Simplify mb addressing.
+        if( pMb->_include && (_pDistortionDiff[mb] < currentLowestDistDiff) )
+        {
+          currentLowestDistDiff = _pDistortionDiff[mb];
+          nextMb = mb;
+        }//end if _include...
+      }//end for mb...
+
+      if(nextMb >= 0) ///< A candidate mb was found.
+      {
+        /// Approximate the saving by the existing rate[0] value by assuming that
+        /// this mb will be skipped. Ignore the savings on the improved skip run.
+        savedBits += _codec->_pMb[nextMb]._rate[0];
+        /// Exclude from further checks.
+        _codec->_pMb[nextMb]._include = 0;
+      }//end if nextMb...
+      else
+        forceStop = 1;
+
+    }//end while savedBits...
+
+    ///--------------------------------------------------------------------------------------
+    /// Re-process each mb and accumulate the bit cost. All mbs that are not included must
+    /// be set to the pred mv. Only those mbs where the mv has changed are re-compensated.
+	  bitCost		= 0;
+    mbSkipRun = 0;
+    for(mb = 0; mb < len; mb++)
+    {
+      MacroBlockH264* pMb = &(_codec->_pMb[mb]);
+
+      /// The pred mv may now be different.
+      int predX, predY;
+		  MacroBlockH264::GetMbMotionMedianPred(pMb, &predX, &predY);
+
+      if(!pMb->_include)  ///< Marked as a previously predicted mv and mv was set to pred mv.
+      {
+        /// Set the result mv list to the pred mv.
+				_codec->_pMotionEstimationResult->SetSimpleElement(mb, 0, predX);
+				_codec->_pMotionEstimationResult->SetSimpleElement(mb, 1, predY);
+
+        /// Check that this mv is the pred mv.
+        if( (pMb->_mvX[MacroBlockH264::_16x16] != predX)||(pMb->_mvY[MacroBlockH264::_16x16] != predY) )
+        {
+          /// Re-compensate if it has changed.
+          _codec->_pMotionCompensator->Invalidate();
+		      _codec->_pMotionCompensator->Compensate(pMb->_offLumX, pMb->_offLumY, predX, predY);
+        }//end if _mvX...
+
+      }//end if !include...
+
+      /// Store the motion vector and pred mv in the mb.
+      int mvx = _codec->_pMotionEstimationResult->GetSimpleElement(mb, 0);
+      int mvy = _codec->_pMotionEstimationResult->GetSimpleElement(mb, 1);
+      pMb->_mvX[MacroBlockH264::_16x16]   = mvx;
+      pMb->_mvY[MacroBlockH264::_16x16]   = mvy;
+      pMb->_mvdX[MacroBlockH264::_16x16]  = mvx - predX;
+      pMb->_mvdY[MacroBlockH264::_16x16]  = mvy - predY;
+		  int r = _codec->ProcessInterMbImplStdMin(pMb);
+      /// For non-skipped mbs, the previous skipped bit count must be included in the bit count.
+      if(!pMb->_skip)
+      {
+        /// Sum the run and coding bit contributions.
+        bitCost += (r + _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun));
+        mbSkipRun = 0; ///< Restart
+      }//end if !_skip...
+      else  ///< Skipped.
+        mbSkipRun++;
+
+    }//end for mb...
+
+    /// Add last skip run.
+    if(mbSkipRun)
+      bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+  }//end while bitCost...
+
+  /// Check that a solution is possible.
+  if(forceStop)
+  {
+		*bitsUsed = 0;
+ 		_codec->_errorStr = "[H264Codec::InterImgPlaneEncoderImplMinMax::Encode] Forced stop - no solution possible";
+ 		return(0); ///< Failed.
+  }//end if allowedBits...
+
+	/// ...and then exit.
+  int ret = 1;
+  if(bitCost > allowedBits)
+  {
+		_codec->_errorStr = "[H264Codec::InterImgPlaneEncoderImplMinMax::Encode] Bits exceeded in trucation";
+    ret = 0;
+  }//end if bitCost...
+
+	*bitsUsed = 0;
+	return(ret); ///< Something is coded so it is considered successful.
+}//end InterImgPlaneEncoderImplMinMax::DamageControlMvOnly.
+
+/** Damage control algorithm
+Their are insufficient bits at the max QP and alternative quantisation approaches are required.
+@param  allowedBits : Bits to use.
+@param  currBitCost : Bits used so far for the last encoding of mv and max QP
+@return             : Bit cost of this implementation.
+*/
+int H264v2Codec::InterImgPlaneEncoderImplMinMax::DamageControl(int allowedBits, int currBitCost)
+{
+    ///======================================================================================
+
+    /// Sub-optimal Steepest Ascent Algorithm
+
+    int i, mb;
+    int len         = _codec->_mbLength;
+    int bitCost     = currBitCost;
+    int iterations  = 0;
+
+    /// Initialise the ordered mb list where skipped mbs will never become unskipped and can therefore be excluded.
+    int listLen = 0;
+    for(mb = 0; mb < len; mb++)
+    {
+      if(!_codec->_pMb[mb]._skip) 
+        _pMbList[listLen++] = mb;
+    }//end for mb...
+
+    while( (bitCost >= allowedBits) && (listLen > 1) )
+    {
+      int predR = bitCost;
+
+      while( (listLen > 1)&&(predR >= allowedBits) )
+      {
+        /// Step 1: Order the non-skipped mbs in increasing distortion.
+
+        /// Only included newly skipped and completed mbs from the old list.
+        int currListLen = listLen;
+        listLen = 0;
+        for(i = 0; i < currListLen; i++)
+        {
+          mb = _pMbList[i];
+          if(!_codec->_pMb[mb]._skip && (_codec->_pMb[mb]._mbEncQP < H264V2_MAX_EXT_QP) ) 
+            _pMbList[listLen++] = mb;
+        }//end for mb...
+
+        /// Bubble sort list in ascending order of distortion.
+        int cnt = len;
+        while(cnt)
+        {
+          cnt = 0; ///< Count how many re-orderings occur.
+          for(i = 1; i < listLen; i++)
+          {
+            MacroBlockH264* pMb1 = &(_codec->_pMb[_pMbList[i-1]]);
+            MacroBlockH264* pMb2 = &(_codec->_pMb[_pMbList[i]]);
+            if( pMb2->_distortion[pMb2->_mbEncQP] < pMb1->_distortion[pMb1->_mbEncQP] )
+            {
+              /// Swap places.
+              int tmp       = _pMbList[i-1];
+              _pMbList[i-1] = _pMbList[i];
+              _pMbList[i]   = tmp;
+              cnt++;
+            }//end if _distortion...
+          }//end for i...
+        }//end while cnt...
+
+        /// Step 2: Increase the distortion of mb at the head of the ordered list to just more than the
+        /// next one in the list.
+        int mb1 = _pMbList[0]; /// Head of ordered list.
+        int mb2 = _pMbList[1]; /// Next in ordered list.
+        int d1 = _codec->_pMb[mb1]._distortion[_codec->_pMb[mb1]._mbEncQP];
+        int d2 = _codec->_pMb[mb2]._distortion[_codec->_pMb[mb2]._mbEncQP];
+
+        /// For the unusual case where the listLen == 1, set them to the same.
+        if(listLen == 1)
+          d2 = d1;
+
+        if( (d1 <= d2) && (_codec->_pMb[mb1]._mbEncQP < H264V2_MAX_EXT_QP) )
+        {
+          MacroBlockH264* pMb = &(_codec->_pMb[mb1]);  ///< Simplify mb addressing.
+
+          predR -= pMb->_rate[pMb->_mbEncQP]; ///< Remove old bits before processing.
+          while( (pMb->_distortion[pMb->_mbEncQP] <= d2) && (pMb->_mbEncQP < H264V2_MAX_EXT_QP) )
+          {
+            /// Select new QP.
+            switch(pMb->_mbEncQP)
+            {
+              case 51: pMb->_mbQP = 55; break;
+              case 55: pMb->_mbQP = 59; break;
+              case 59: pMb->_mbQP = 63; break;
+              case 63: pMb->_mbQP = 67; break;
+              case 67: pMb->_mbQP = 68; break;
+              case 68: pMb->_mbQP = 69; break;
+              case 69: pMb->_mbQP = 70; break;
+              case 70: pMb->_mbQP = 71; break;
+              default: pMb->_mbQP = 71; break;
+            }///end switch _mbEncQP...
+
+         		_codec->ProcessInterMbImplStd(pMb, 0, 2);
+
+          }//end while _distortion[]...
+
+          /// Add back new bits.
+          if(!pMb->_skip)
+          {
+		        pMb->_rate[pMb->_mbEncQP]	= _codec->MacroBlockLayerBitCounter(pMb);
+            predR += pMb->_rate[pMb->_mbEncQP];
+          }//end if !_skip ...
+
+        }//end if d1...
+
+      }//end while listLen...
+
+      /// Step 3: Test the new solution.
+      int mbSkipRun = 0;
+	    bitCost = 0;
+	    for(int mb = 0; mb < len; mb++)
+	    {
+        MacroBlockH264* pMb = &(_codec->_pMb[mb]);
+
+        pMb->_mbQP = pMb->_mbEncQP; ///< Restore the QP that the mb was coded with.
+        bitCost += _codec->ProcessInterMbImplStd(pMb, 0, 1);
+        if(!pMb->_skip)
+        {
+          bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+          mbSkipRun = 0;
+        }//end if !_skip...
+        else
+          mbSkipRun++;
+
+	    }//end for mb...
+      /// Add last skip run.
+      if(mbSkipRun)
+        bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+      iterations++;
+    }//end while bitCost...
+
+    return(bitCost);
+
+//    if(bitCost >= allowedBits) ///< All failed.
+//		  minMBIndex = 0;
+
+    ///======================================================================================
+    /*
+    /// Sub-optimal Steepest Descent Algorithm
+
+    /// QP = H264V2_MAX_QP for all mbs still uses too many bits so the extended range of QP = {51..71} is 
+    /// used here to find a near optimal solution.
+    int i;
+    bitCost = 0;
+
+    /// Step 1: Test that QP = {71} will fit and set it to the initialisation of the optimisation algorithm.
+    /// Initialise the ordered mb list.
+    int listLen = 0;
+    mbSkipRun = 0;
+	  for(mb = 0; mb < len; mb++)
+	  {
+      MacroBlockH264* pMb = &(_codec->_pMb[mb]);  ///< Simplify mb addressing.
+
+      _pMbList[listLen++] = mb; ///< Arbitrary order for the mb list.
+
+      /// Note that the 1st mb will have a delta offset from _slice._qp to get it to _mbQP = H264V2_MAX_QP.
+		  pMb->_mbQP = H264V2_MAX_EXT_QP;
+
+		  /// Accumulate the rate and find the largest distortion for all mbs. Call returns 0 for skipped mbs. The ref
+      /// holding the compensated motion is not updated with the encoding in this traversal of the mbs.
+		  bitCost += _codec->ProcessInterMbImplStd(pMb, 0, 1);
+      if(!pMb->_skip)
+      {
+        /// Sum of skip run and coded mb bits accumulated.
+        bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+        mbSkipRun = 0;
+      }//end if !_skip...
+      else
+        mbSkipRun++;
+
+		  /// Early exit if this min point is still not possible.
+		  if(bitCost >= allowedBits)
+			  break;
+
+	  }//end for mb...
+    /// Add last skip run.
+    if(mbSkipRun)
+      bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+    R = 0;
+    iterations  = 0;
+
+		/// Only proceed if there is hope.
+		if(bitCost < allowedBits)
+    {
+      /// Starting from highest distortion and lowest rate, slowly decrease the distortion
+      /// and count the approx bit improvement until a good guess is acheived. Then test the
+      /// guess for the actual improvement. Reverse up the audit trail until it fits.
+
+      /// Audit trail initialisation. -1 indicates no entry.
+      memset(_pLastMbCoded, 0xFF, len * sizeof(int));
+      int lastMbPos = 0;
+
+      /// Repeat until the solution converges but limit it to 3 iterations for speed.
+      int prevBitCost = 0;
+      while( (bitCost > prevBitCost) && (iterations < 3) )
+      {
+        prevBitCost = bitCost;
+        int predR = bitCost;
+        /// Make a guess by iteratively adjusting predicted rate predR
+        while( (listLen > 1)&&(predR < allowedBits) )
+        {
+          /// Step 2: Order the mbs in decreasing distortion.
+
+          /// Included all mbs from the old list except for those that have decreased down
+          /// to QP = {51}.
+          int currListLen = listLen;
+          listLen = 0;
+          for(i = 0; i < currListLen; i++)
+          {
+            mb = _pMbList[i];
+            if(_codec->_pMb[mb]._mbEncQP > H264V2_MAX_QP) 
+              _pMbList[listLen++] = mb;
+          }//end for mb...
+
+          /// Bubble sort list in descending order of distortion.
+          int cnt = len;
+          while(cnt)
+          {
+            cnt = 0; ///< Count how many re-orderings occur.
+            for(i = 1; i < listLen; i++)
+            {
+              MacroBlockH264* pMb1 = &(_codec->_pMb[_pMbList[i-1]]);
+              MacroBlockH264* pMb2 = &(_codec->_pMb[_pMbList[i]]);
+              if( pMb2->_distortion[pMb2->_mbEncQP] > pMb1->_distortion[pMb1->_mbEncQP] )
+              {
+                /// Swap places.
+                int tmp       = _pMbList[i-1];
+                _pMbList[i-1] = _pMbList[i];
+                _pMbList[i]   = tmp;
+                cnt++;
+              }//end if _distortion...
+            }//end for i...
+          }//end while cnt...
+
+          /// Step 3: Decrease the distortion of mb at the head of the ordered list to just less than the
+          /// next one in the list.
+          int mb1 = _pMbList[0]; /// Head of ordered list.
+          int mb2 = _pMbList[1]; /// Next in ordered list.
+          int d1 = _codec->_pMb[mb1]._distortion[_codec->_pMb[mb1]._mbEncQP];
+          int d2 = _codec->_pMb[mb2]._distortion[_codec->_pMb[mb2]._mbEncQP];
+
+          /// For the unusual case where the listLen == 1, set them to the same.
+          if(listLen == 1)
+            d2 = d1;
+
+          MacroBlockH264* pMb = &(_codec->_pMb[mb1]);  ///< Simplify mb addressing.
+
+          /// Store the current mb encoding in the audit trail lists.
+          _pLastMbCoded[lastMbPos]  = mb1;
+          _pLastMbQP[lastMbPos++]   = pMb->_mbEncQP;
+          if(lastMbPos >= len) ///< Loop around.
+            lastMbPos = 0;
+
+          R = pMb->_rate[pMb->_mbEncQP];  ///< Remember R at this point in case the loop below does not execute.
+          predR -= pMb->_rate[pMb->_mbEncQP]; ///< Remove old bits before processing.
+          while( (pMb->_distortion[pMb->_mbEncQP] >= d2) && (pMb->_mbEncQP > H264V2_MAX_QP) && ((predR+R) <= allowedBits) )
+          {
+            /// Select new QP and process.
+            pMb->_mbQP = NextQPDec[pMb->_mbEncQP];
+         	  R = _codec->ProcessInterMbImplStd(pMb, 0, 1);
+          }//end while _distortion[]...
+
+          /// Add back new bits.
+          predR += R;
+
+        }//end while listLen...
+
+        /// Step 3: Test the new solution. On exit of the above loop, the approx 
+        /// bit rate is just too high and therefore the audit trail is used to reverse
+        /// until it fits.
+
+        if(lastMbPos != 0)  ///< Back up by 1.
+          lastMbPos--;
+        else ///< Wrap around.
+          lastMbPos = len - 1;
+
+        bitCost = predR;  ///< Start with the guess made above.
+
+        while( (bitCost >= allowedBits) && (_pLastMbCoded[lastMbPos] != -1) )
+        {
+          _codec->_pMb[_pLastMbCoded[lastMbPos]]._mbEncQP = _pLastMbQP[lastMbPos];
+          _pLastMbCoded[lastMbPos] = -1;  ///< Mark as used goods.
+          if(lastMbPos != 0)  ///< Back up by 1.
+            lastMbPos--;
+          else ///< Wrap around.
+            lastMbPos = len - 1;
+
+          mbSkipRun = 0;
+	        bitCost = 0;
+	        for(int mb = 0; mb < len; mb++)
+	        {
+            MacroBlockH264* pMb = &(_codec->_pMb[mb]);
+
+            pMb->_mbQP = pMb->_mbEncQP; ///< Restore the QP that the mb was coded with.
+            bitCost += _codec->ProcessInterMbImplStd(pMb, 0, 1);
+            if(!pMb->_skip)
+            {
+              bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+              mbSkipRun = 0;
+            }//end if !_skip...
+            else
+              mbSkipRun++;
+
+	        }//end for mb...
+          /// Add last skip run.
+          if(mbSkipRun)
+            bitCost += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+        }//end while bitCost...
+
+        iterations++;
+      }//end while bitCost...
+
+    }//end if bitCost...
+    else ///< All failed so mark all for min encodings and hope for the best.
+    {
+		  minMBIndex = 0;
+    }//end else...
+    */
+   ///======================================================================================
+    /*
+    /// Alternating Bi-Section Algorithm.
+
+    Ru = Rl;  ///< Upper is now QP = {51} determined above. 
+    Du = Dl;
+    Rl = 0;
+    Dl = 0;
+    mbDmax = 0;
+    qEnd   = H264V2_MAX_QP;
+
+    /// Step 1: Test that QP = {71} will fit and set it to the initialisation of the optimisation algorithm.
+    mbSkipRun = 0;
+	  for(mb = 0; mb < len; mb++)
+	  {
+      MacroBlockH264* pMb = &(_codec->_pMb[mb]);  ///< Simplify mb addressing.
+
+      /// Note that the 1st mb will have a delta offset from _slice._qp to get it to _mbQP = H264V2_MAX_QP.
+		  pMb->_mbQP	  = H264V2_MAX_EXT_QP;
+		  /// Include all macroblocks at the start.
+		  pMb->_include = 1;	
+		  _pQl[mb]      = H264V2_MAX_EXT_QP;
+		  _pQ[mb]	      = H264V2_MAX_EXT_QP;	///< Active quantiser vector is always the lower (max distortion) side.
+
+		  /// Accumulate the rate and find the largest distortion for all mbs. Call returns 0 for skipped mbs. The ref
+      /// holding the compensated motion is not updated with the encoding in this traversal of the mbs.
+		  Rl += _codec->ProcessInterMbImplStd(pMb, 0, 1);
+      if(!pMb->_skip)
+      {
+        /// Sum of skip run and coded mb bits accumulated.
+        Rl += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+        mbSkipRun = 0;
+      }//end if !_skip...
+      else
+        mbSkipRun++;
+
+		  if(pMb->_distortion[H264V2_MAX_EXT_QP] > Dl)
+		  {
+			  Dl = pMb->_distortion[H264V2_MAX_EXT_QP];
+			  mbDmax = mb;	///< Mark the mb index with the peak distortion.
+		  }//end if _distortion...
+
+		  /// Early exit if this min point is still not possible. Mark all as min encodings and hope it fits.
+		  if(Rl > allowedBits)
+      {
+			  minMBIndex = 0;
+			  break;
+      }//end if Rl...
+
+	  }//end for mb...
+    /// Add last skip run.
+    if(mbSkipRun)
+      Rl += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+    /// Step 2: Proceed with optimisation algorithm with QP = {51..71}
+    if(Rl < allowedBits)
+    {
+		  /// Create an epsilon at 0.4% of the available bits with a min limit of 16 bits.
+		  /// Adjust the available bits to be epsilon below allowedBits.
+		  int closeEnough = allowedBits/250;	///< 0.4%
+		  if(closeEnough < 16)
+			  closeEnough = 16;
+		  int closeEnoughDist = 8;	///< Sqr error per macroblock.
+
+      /// Model based faster algorithm to improve on the bi-section method.
+
+		  /// Modify the target rate to a close offset on the low rate side.
+		  int bitTarget = allowedBits - closeEnough;
+
+		  /// Initialisation is complete and the adapting bi-section/power model algorithm starts 
+		  /// here. The stopping criteria are 1) a rate less than, but close to, the allowed bits
+		  /// or 2) small change in distortion when reducing the interval.
+		  int done = 0;
+		  while(!done)
+		  {
+			  int prevDmax = Dmax;
+
+			  /// Make a prediction assuming a power law model.
+  //			Dmax = _codec->FitDistPowerModel(Rl, Dl, Ru, Du, bitTarget);
+			  /// Only use this prediction if it is bounded by (Rl,Dl) and (Ru,Du).
+  //			if( (Dmax < Du)||(Dmax > Dl) )	///< Out of bound.
+  //				Dmax = _codec->FitDistLinearModel(Rl, Dl, Ru, Du, bitTarget);
+
+			  /// Encourage the descent direction by adding a decreasing factor to the
+			  /// predicted Dmax such that convergence to Dmax is from the (Rl,Dl) side.
+  //		  Dmax += abs(Dl - Dmax)/4;
+
+  //			if( (Dmax < Du)||(Dmax > Dl)||(Dmax == prevDmax) )	///< Still out of bound.
+				  Dmax = ((Du + Dl) + 1) >> 1;	///< Set the midpoint max distortion.
+
+			  /// At each macroblock reduce the quant value until the distortion is lower
+			  /// than Dmax. pQ[] must always hold the lower rate (smaller valued) quant vector 
+			  /// as the previous best choice.
+			  R = 0;
+			  int firstMbChange = len;
+			  if(invalidated)	///< Frame encoded coeffs must be invalidated if _pQ[] does not represent the actual QPs used.
+				  firstMbChange = 0;
+        mbSkipRun = 0;
+			  for(mb = 0; mb < len; mb++)
+			  {
+				  MacroBlockH264* pMb = &(_codec->_pMb[mb]);
+
+				  /// Record the found QP where the macroblock dist is just below Dmax and accumulate the rate for this macroblock.
+				  _pQ[mb] = _codec->GetMbQPBelowDmaxVer3(*pMb, _pQ[mb], Dmax, &firstMbChange, qEnd, FALSE);
+				  R += pMb->_rate[_pQ[mb]]; ///< Rate = 0 for skipped mbs.
+          if(!pMb->_skip)
+          {
+            /// Sum of skip run and coded mb bits accumulated.
+            R += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+            mbSkipRun = 0;
+          }//end if !_skip...
+          else
+            mbSkipRun++;
+
+				  /// An accurate early exit strategy is not possible because the model prediction require two valid (Dmax,R) points 
+				  /// for the whole frame. 
+
+			  }//end for mb...
+        /// Add last skip run.
+        if(mbSkipRun)
+          R += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
+
+			  /// Test the stopping criteria.
+			  int rBndDiff = abs(Ru - Rl);			///< Optimal solution is rate bounded in a small enough range.
+			  int dDiff = abs(prevDmax - Dmax);	///< Has not changed by much from the previous iteration (converged).
+			  int rDiff = abs(bitTarget - R);		///< Close enough to the allowed bits.
+			  if( (rBndDiff < (4*closeEnough)) ||
+					  ( (rDiff < closeEnough)||((dDiff < closeEnoughDist))) ||
+            (iterations > _codec->_interIterations) )
+		    {
+				  /// The new point is the preferable point to choose but if the rate is not below allowedBits
+				  /// then the (Rl,Dl) point is selected. Use the invalidated signal to indicate if the mbs 
+          /// must be re-processed.
+				  if(R > allowedBits)
+				  {
+					  /// Load the lower vector as it is always below the target rate.
+					  memcpy((void *)_pQ, (const void *)_pQl, len * sizeof(int));
+					  R = Rl;
+            invalidated = 1;
+				  }//end if R...
+          else
+            invalidated = 0;
+
+				  /// Optimal solution is found.
+				  done = 1;
+			  }//end if rDiff...
+			  else
+			  {
+				  if(allowedBits > R)	///< Inner predicted point is now lower point.
+				  {
+					  Dl	= Dmax;
+					  Rl	= R;
+					  /// pQ[] is the lower vector. 
+					  memcpy((void *)_pQl, (const void *)_pQ, len * sizeof(int));
+					  invalidated = 0;
+				  }//end if allowedBits...
+				  else							///< Inner predicted point is now upper point.
+				  {
+					  Du	= Dmax;
+					  Ru	= R;
+					  /// pQ[] must be reset to lower vector to maintain a descent convergence.
+					  memcpy((void *)_pQ, (const void *)_pQl, len * sizeof(int));
+					  invalidated = 1;	///< pQ[] now does not represented the state of the last encoded frame.
+				  }//end else...
+
+			  }//end else...
+
+			  iterations++;
+		  }//end while !done...
+
+		  /// Set the macroblock QP values to their found states.
+      if(invalidated)
+      {
+		    for(mb = 0; mb < len; mb++)
+		    {
+			    _codec->_pMb[mb]._mbQP    = _pQ[mb];
+			    _codec->_pMb[mb]._mbEncQP = _pQ[mb];
+		    }//end for mb...
+      }//end if invalidated...
+
+    }//end if Rl...
+    */
+    ///======================================================================================
+    /*
+    /// Simple Truncation Algorithm
+
 		/// If QP = H264V2_MAX_QP and still does not fit then a truncation process is nessecary. The truncation
 		/// is somewhere between every mb encoded with motion with zero'ed coeffs and some mbs with max QP. The 
     /// _rate[0] member of the mbs holds the min encoding and is zero for skipped. Proceed by encoding each
@@ -8991,47 +10931,8 @@ int H264v2Codec::InterImgPlaneEncoderImplMinMax::Encode(int allowedBits, int* bi
         mbSkipRun++;
 
 		}//end for mb...
-
-	}//end else...
-
-	/*
-	-------------------------------------------------------------------------------------------
-	Residual macroblock final encoding.
-	-------------------------------------------------------------------------------------------
-	*/
-	/// Rip through each macroblock as a linear array and process each block within the macroblock.
-	/// The _mbEncPQ values have been set in the above encoding.
-//  mbSkipRun = 0;
-	bitCount = 0;
-	for(int mb = 0; mb < len; mb++)
-	{
-    MacroBlockH264* pMb = &(_codec->_pMb[mb]);
-
-    /// Encode the mbs and add to Ref img until min null mb position.
-    if(mb < minMBIndex)
-    {
-      pMb->_mbQP = pMb->_mbEncQP; ///< Restore the QP that the mb was coded with.
-      bitCount += _codec->ProcessInterMbImplStd(pMb, 1, 0);
-//      bitCount += _codec->ProcessInterMbImplStd(pMb, 1, 1);
-    }//end if mb...
-    else
-      bitCount += _codec->ProcessInterMbImplStdMin(pMb);
-//    if(!pMb->_skip)
-//    {
-//      bitCount += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
-//      mbSkipRun = 0;
-//    }//end if !_skip...
-//    else
-//      mbSkipRun++;
-
-	}//end for mb...
-  /// Add last skip run.
-//  if(mbSkipRun)
-//    bitCount += _codec->_pHeaderUnsignedVlcEnc->Encode(mbSkipRun);
-
-	*bitsUsed = 0;
-	return(1);
-}//end InterImgPlaneEncoderImplMinMax::Encode.
+    */
+}//end DamageControl.
 
 /** Decode the Inter macroblocks to the reference img.
 The macroblock obj encodings must be fully defined before calling
@@ -9147,7 +11048,6 @@ void H264v2Codec::DumpBlock(OverlayMem2Dv2* pBlk, char* filename, const char* ti
   int i,j; 
 
   MeasurementTable* pT = new MeasurementTable();
-	pT->SetTitle(title);
 
   int cols = pBlk->GetWidth();
   int rows = pBlk->GetHeight();
@@ -9159,11 +11059,12 @@ void H264v2Codec::DumpBlock(OverlayMem2Dv2* pBlk, char* filename, const char* ti
     pT->SetDataType(j, MeasurementTable::INT);
   }//end for j...
 
+	pT->SetTitle(title);
 	for(i = 0; i < rows; i++)
 		for(j = 0; j < cols; j++)
 			pT->WriteItem(j, i, pBlk->Read(j, i));
 
-  pT->Save(filename, ",");
+  pT->Save(filename, ",", 1);
 
   delete pT;
 }//end DumpBlock.
