@@ -1,6 +1,9 @@
-2013/10/23
+2013/10/23 - Version 1.1.0
 - Added Stereo2Mono filter
 - Updated H.264 codec to include many bug-fixes and compatibility changes
+- H264 Encoder can now output MEDIASUBTYPE_AVC
+- H264 Source parses parameter sets on IFileSourceFilter::Load
+- RTSP supports H.264 video and AAC audio
 
 2010/11/03
 - Added AudioMixingFilter alpha version
