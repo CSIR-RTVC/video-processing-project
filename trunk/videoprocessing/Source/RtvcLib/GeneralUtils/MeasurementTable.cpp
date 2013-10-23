@@ -1,20 +1,43 @@
 /** @file
 
-MODULE						: MeasurementTable
+MODULE				: MeasurementTable
 
-TAG								: MT
+TAG						: MT
 
-FILE NAME					: MeasurementTable.cpp
+FILE NAME			: MeasurementTable.cpp
 
-DESCRIPTION				: A class to hold measurement data in the form of a table
-										with a set number of columns and rows.
+DESCRIPTION		: A class to hold measurement data in the form of a table
+								with a set number of columns and rows.
 
-REVISION HISTORY	:
-									: 
+COPYRIGHT			: (c)CSIR 2007-2013 all rights resevered
 
-COPYRIGHT					:
+LICENSE				: Software License Agreement (BSD License)
 
-RESTRICTIONS			: 
+RESTRICTIONS	: Redistribution and use in source and binary forms, with or without 
+								modification, are permitted provided that the following conditions 
+								are met:
+
+								* Redistributions of source code must retain the above copyright notice, 
+								this list of conditions and the following disclaimer.
+								* Redistributions in binary form must reproduce the above copyright notice, 
+								this list of conditions and the following disclaimer in the documentation 
+								and/or other materials provided with the distribution.
+								* Neither the name of the CSIR nor the names of its contributors may be used 
+								to endorse or promote products derived from this software without specific 
+								prior written permission.
+
+								THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+								"AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+								LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
+								A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR
+								CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+								EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+								PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+								PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+								LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+								NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+								SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
 ===========================================================================
 */
 #ifdef _WINDOWS
@@ -75,7 +98,7 @@ int MeasurementTable::Create(int columns, int rows)
 	}//end if !_ppHead...
 	for(int col = 0; col < columns; col++)
 	{
-		_ppHead[col] = new char[80];
+		_ppHead[col] = new char[128];
 		if(_ppHead[col] == NULL)
 		{
 			Destroy();
@@ -85,7 +108,7 @@ int MeasurementTable::Create(int columns, int rows)
 	}//end for col...
 
 	// File title.
-	_pTitle = new char[120];
+	_pTitle = new char[128];
 	if(_pTitle == NULL)
 	{
 		Destroy();
@@ -141,7 +164,7 @@ void MeasurementTable::Destroy(void)
 	_rows    = 0;
 }//end Destroy.
 
-int	MeasurementTable::Save(char* filename, char* delimiter)
+int	MeasurementTable::Save(char* filename, char* delimiter, int withHeadings)
 {
 	int col, row;
 
@@ -154,10 +177,13 @@ int	MeasurementTable::Save(char* filename, char* delimiter)
 
 	// File title.
 	if(_pTitle != NULL)
-		fprintf(stream, "%s\n", _pTitle);
+  {
+    if(strcmp("", (const char*)_pTitle) != 0)
+		  fprintf(stream, "%s\n", _pTitle);
+  }//end if _pTitle...
 
 	// Column headings.
-	if(_ppHead != NULL)
+	if((_ppHead != NULL) && (withHeadings))
 	{
 		for(col = 0; col < (_columns - 1); col++)
 		{
