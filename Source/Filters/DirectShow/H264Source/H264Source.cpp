@@ -219,7 +219,7 @@ STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
     // parse sequence parameter set
     // Only fail if using the RTVC decoder
     // The MS one might be more forgiving
-    if (!parseParameterSets() && m_bUseRtvcH264)
+    if (!parseParameterSets() /*&& m_bUseRtvcH264*/)
     {
       SetLastError("Failed to parse parameter required for RTVC codec sets in: " + m_sFile, true);
       return E_FAIL;
