@@ -14,7 +14,7 @@ DESCRIPTION		: A fast unrestricted motion compensator implementation for
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -29,6 +29,7 @@ GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ===========================================================================
 */
 #ifdef _WINDOWS
@@ -398,7 +399,7 @@ in PrepareForSingleVectorMode().
 */
 void MotionCompensatorH264ImplStd::Compensate(int tlx, int tly, int mvx, int mvy)
 {
-	/// Don't bother if the vector is zero.
+	/// Don't bother if the vector is zero unless invalidated.
 	if( mvx || mvy || _invalid )
   {
     /// Lum first.

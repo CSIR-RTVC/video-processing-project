@@ -13,7 +13,7 @@ DESCRIPTION		: A class to hold H.264 macroblock specific data. Only static
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ===========================================================================
 */
 #ifndef _MACROBLOCKH264_H
@@ -155,7 +156,7 @@ public:
 	/** Unpack macroblock type to the prediction modes.
 	Pull out and set the _intraFlag, _mbPartPredMode and, if Intra_16x16 mode 
 	then also	set the _coded_blk_pattern member	from the _mb_type member decoded 
-	from the stream. If  notIntra_16x16 then GetCodedBlockPattern() should be called 
+	from the stream. If not Intra_16x16 then GetCodedBlockPattern() should be called 
 	after this method.
 	@param mb					: Macroblock to set.
 	@param sliceType	: Slice type that this macroblock belongs to.
@@ -260,6 +261,20 @@ public:
 	*/
 	int HasNonZeroCoeffs(void) { return(HasNonZeroCoeffsProxy(this)); }
 	static int HasNonZeroCoeffsProxy(MacroBlockH264* mb);
+
+  /** Calculate the distortion between two overlays at this mb's postion.
+  Align the two lum and chr images over this mb and calculate the sum of square error for
+  the three colour spaces. The image spaces must have identical width and height and match
+  the mb initialisation settings. The format must be YCbCr 4:2:0 16x16:8x8:8x8.
+  @param  p1Y   : 1st Image lum overlay
+  @param  p1Cb  : 1st Image chr overlay
+  @param  p1Cr  :
+  @param  p2Y   : 2nd Image lum overlay
+  @param  p2Cb  : 2nd Image chr overlay
+  @param  p2Cr  :
+  @return       : Square error distortion
+  */
+  int Distortion(OverlayMem2Dv2* p1Y, OverlayMem2Dv2* p1Cb, OverlayMem2Dv2* p1Cr, OverlayMem2Dv2* p2Y, OverlayMem2Dv2* p2Cb, OverlayMem2Dv2* p2Cr);
 
   /** Mark this macroblock onto the image.
   For debugging.
@@ -371,8 +386,8 @@ public:
 	/// heuristic elimination.
 	int			_mvDistortion;		///< Total motion compensated distortion.
 	int			_mvRate;					///< Total motion vector bit count.
-	int			_distortion[55];	///< mbQP = {0...51} + 3 extras.
-	int			_rate[55];
+	int			_distortion[87];	///< mbQP = {0...51} + {52..66 (Lum + Chr AC coeff)} + {67..70 (Chr DC)} + {71..86 (Lum DC)} extras.
+	int			_rate[87];
 	int			_include;
 
 // Coded data members.
@@ -414,6 +429,13 @@ public:
 	/// Block references and their associated parameters to iterate
 	/// through during encoding and decoding.
 	MBH264_CODING_STRUCT	_blkParam[MBH264_NUM_BLKS];
+
+  /// Extensions for Vector Quantisation.
+  int _vq_flag;
+  int _vq_distortion;     ///< Total VQ distortion (squared error) for the mb.
+  int _vq_LumCode[4][4];  ///< VQ table address.
+  int _vq_CbCode[2][2];
+  int _vq_CrCode[2][2];
 
 };// end class MacroBlockH264.
 

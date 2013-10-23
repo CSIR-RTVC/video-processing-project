@@ -12,7 +12,7 @@ DESCRIPTION		: A class to hold H.264 block data and define all block
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -107,25 +107,27 @@ public:
 	*/
 	int IsZero(void)
 	{
-		for(int i = 0; i < _length; i++)
-		{
-			if(_pBlk[i] != 0)
-			{
+    for(int i = 0; i < _length; i++)
+    {
+      if(_pBlk[i++] || _pBlk[i++] || _pBlk[i++] || _pBlk[i])
+      {
 				_coded = 1;
 				return(0);	///< Early exit.
-			}//end if _pBlk...
-		}//end for i...
+      }//end if _pBlk...
+    }//end for i...
+
 		_coded = 0;
 		return(1);
 	}//end IsZero.
 	/// Version without setting _coded flag.
 	int IsZero2(void)
 	{
-		for(int i = 0; i < _length; i++)
-		{
-			if(_pBlk[i] != 0)
+    for(int i = 0; i < _length; i++)
+    {
+      if(_pBlk[i++] || _pBlk[i++] || _pBlk[i++] || _pBlk[i])
 				return(0);	///< Early exit.
-		}//end for i...
+    }//end for i...
+
 		return(1);
 	}//end IsZero2.
 

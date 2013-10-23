@@ -12,7 +12,7 @@ DESCRIPTION		: A IVlcEncoder Interface as an abstract base class. The
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -62,6 +62,7 @@ public:
 	virtual void	SetEsc(int numEscBits, int escMask)							{ }
 	virtual void	SetMode(int mode)																{ }
 	virtual int		GetMode(void)																		{ return(0); }
+  virtual int   GetExtCode(void)                                { return(0); }
 
 };// end class IVlcEncoder.
 

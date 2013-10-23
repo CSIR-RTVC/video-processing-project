@@ -12,7 +12,7 @@ DESCRIPTION		: A IBitStreamWriter interface as an abstract base class
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -49,13 +49,22 @@ public:
 	*/
 	virtual void Write(int val) = 0;
 
-	/** Write bits to the stream.
-	Write multiple bits into the current stream position.
+	/** Write bits to the stream - 32 bits.
+	Write multiple bits into the current stream position for 32 bit values.
 	@param numBits	: No. of bits to write.
 	@param val			: Bit value to write.
 	@return					: none.
 	*/
 	virtual void Write(int numBits, int val) = 0;
+
+	/** Write bits to the stream - 64 bits.
+	Write multiple bits into the current stream position for 64 bit values.
+	@param numBits	: No. of bits to write.
+	@param valH			: Upper 32 bit value to write.
+	@param valL			: Lower 32 bit value to write.
+	@return					: none.
+	*/
+  virtual void Write(int numBits, int valH, int valL) = 0;
 
 	/** Poke bits to the stream.
 	Write multiple bits from into the specified stream 
@@ -112,6 +121,12 @@ public:
 	@return	: Bits left.
 	*/
 	virtual int GetStreamBitsRemaining(void) = 0;
+
+	/** Copy the contents from another bitstream.
+  @param pFrom  : Bitstream to copy from.
+	@return	      : none.
+	*/
+  virtual void  Copy(IBitStreamWriter* pFrom)  = 0;
 
 };// end class IBitStreamWriter.
 

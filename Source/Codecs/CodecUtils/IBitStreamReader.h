@@ -12,7 +12,7 @@ DESCRIPTION		: A IBitStreamReader interface as an abstract base class
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -109,6 +109,12 @@ public:
 	@return	: Bits left.
 	*/
 	virtual int GetStreamBitsRemaining(void) = 0;
+
+	/** Copy the contents from another bitstream.
+  @param pFrom  : Bitstream to copy from.
+	@return	      : none.
+	*/
+  virtual void  Copy(IBitStreamReader* pFrom)  = 0;
 
 };// end class IBitStreamReader.
 

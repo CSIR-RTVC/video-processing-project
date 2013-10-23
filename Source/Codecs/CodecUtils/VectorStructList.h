@@ -1,20 +1,18 @@
 /** @file
 
-MODULE						: VectorStructList
+MODULE				: VectorStructList
 
-TAG								: VSL
+TAG						: VSL
 
-FILE NAME					: VectorStructList.h
+FILE NAME			: VectorStructList.h
 
-DESCRIPTION				: A generic base class to contain vectors in a contiguous 
-										list of structs defined by the extended implementations.
-										The structure of the vectors is determined by its type. 
-
-REVISION HISTORY	:	 
+DESCRIPTION		: A generic base class to contain vectors in a contiguous 
+								list of structs defined by the extended implementations.
+								The structure of the vectors is determined by its type.
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -86,6 +84,7 @@ class VectorStructList
 		virtual int		GetSimpleElement(int pos, int element);
 		virtual void	SetComplexElement(int pos, int vec, int element, int val);
 		virtual int		GetComplexElement(int pos, int vec, int element);
+    virtual void  Dump(char* filename, const char* title);
 
 	public:
 		static const int	SIMPLE2D;

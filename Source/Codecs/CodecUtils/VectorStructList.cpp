@@ -1,20 +1,18 @@
 /** @file
 
-MODULE						: VectorStructList
+MODULE				: VectorStructList
 
-TAG								: VSL
+TAG						: VSL
 
-FILE NAME					: VectorStructList.cpp
+FILE NAME			: VectorStructList.cpp
 
-DESCRIPTION				: A generic base class to contain vectors in a contiguous 
-										list of structs defined by the extended implementations.
-										The structure of the vectors is determined by its type.
-
-REVISION HISTORY	:	
+DESCRIPTION		: A generic base class to contain vectors in a contiguous 
+								list of structs defined by the extended implementations.
+								The structure of the vectors is determined by its type.
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -43,7 +41,8 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <string.h>
 #include <stdlib.h>
 
-#include	"VectorStructList.h"
+#include "VectorStructList.h"
+#include "MeasurementTable.h"
 
 /*
 --------------------------------------------------------------------------
@@ -223,4 +222,40 @@ int	VectorStructList::GetComplexElement(int pos, int vec, int element)
 		val = (int)(p[pos].vec[vec].y);
 	return(val);
 }//end GetComplexElement.
+
+/** Dump the list into a file.
+Treat all elements as type integer.
+@param filename : File name to use.
+@param title    : Title to use in the text file.
+@return         : None.
+*/
+void VectorStructList::Dump(char* filename, const char* title)
+{
+  int i; 
+
+  /// Currently only support simple type.
+	if(_type != SIMPLE2D)
+    return;
+
+  MeasurementTable* pT = new MeasurementTable();
+	pT->SetTitle(title);
+
+	pT->Create(2, _length);
+  /// Motion X
+  pT->SetHeading(0, "mv x");
+  pT->SetDataType(0, MeasurementTable::INT);
+  /// Motion Y
+  pT->SetHeading(1, "mv y");
+  pT->SetDataType(1, MeasurementTable::INT);
+
+	for(i = 0; i < _length; i++)
+  {
+		pT->WriteItem(0, i, GetSimpleElement(i, 0));
+		pT->WriteItem(1, i, GetSimpleElement(i, 1));
+  }//end for i...
+
+  pT->Save(filename, ",", 1);
+
+  delete pT;
+}//end Dump.
 
