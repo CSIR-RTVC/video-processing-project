@@ -13,7 +13,7 @@ DESCRIPTION		: An Exp-Golomb Vlc encoder implementation for unsigned
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -51,12 +51,16 @@ public:
 	/// Interface implementation.
 	int GetNumCodedBits(void)	{ return(_numCodeBits); }
 	int GetCode(void)					{ return(_bitCode); }
+  /// For extended codes of greater than 32 bits but less than 64 bits. _bitCode
+  /// holds the lower 32 bits and _extBitCode the upper 32 bits.
+  int GetExtCode(void)      { return(_extBitCode); }
 	/// A single symbol encoding is the only requirement.
 	virtual int Encode(int symbol);
 
 protected:
 	int 	_numCodeBits;	///< Number of coded bits for the encoding.
-	int 	_bitCode;			///< The code of length numCodeBits.
+	int 	_bitCode;			///< The lower 32 bits of code of length numCodeBits or 32.
+  int   _extBitCode;  ///< The upper 32 bits of code of length 0 or numCodeBits - 32.
 
 };// end class ExpGolombUnsignedVlcEncoder.
 

@@ -13,7 +13,7 @@ DESCRIPTION		: An Exp-Golomb Vlc encoder implementation for unsigned
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -50,6 +50,7 @@ ExpGolombUnsignedVlcEncoder::ExpGolombUnsignedVlcEncoder(void)
 {
 	_numCodeBits	= 0;
 	_bitCode			= 0;
+  _extBitCode   = 0;
 }//end constructor.
 
 ExpGolombUnsignedVlcEncoder::~ExpGolombUnsignedVlcEncoder(void)
@@ -64,13 +65,14 @@ ExpGolombUnsignedVlcEncoder::~ExpGolombUnsignedVlcEncoder(void)
 /** Encode unsigned integer symbol.
 The unsigned integer is encoded and the number of bits of the symbol is returned. 
 The _numCodeBits and _bitCode members are set accordingly. This implementation
-is limited to 32 bit code words.
+is limited to 32 bit code words (default) with an extension to 64 bit.
 @param symbol	:	Unsigned integer to code 
 @return				: Num of bits in the codeword.
 */
 int	ExpGolombUnsignedVlcEncoder::Encode(int symbol)
 {
 	_bitCode			= 0;
+  _extBitCode   = 0;  ///< Upper 32 bits will always be leading zeros in this implementation.
 	_numCodeBits	= 0;
 
 	if(symbol == 0)
@@ -83,7 +85,7 @@ int	ExpGolombUnsignedVlcEncoder::Encode(int symbol)
 		int x = symbol + 1;
 		int leadingZeros = (int)(log((double)x)/double(0.69314718055994529));	///< log(2.0) = 0.69314718055994529.
 		_numCodeBits = 2*leadingZeros + 1;
-		if(_numCodeBits <= 32)
+		if(_numCodeBits <= 64)
 		{
 			int a = 1 << leadingZeros;
 			_bitCode = (x - a) | a;

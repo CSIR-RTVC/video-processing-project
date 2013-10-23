@@ -13,7 +13,7 @@ DESCRIPTION		: A class to hold H.264 macroblock specific data. Only static
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -28,6 +28,7 @@ GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 ===========================================================================
 */
 #ifdef _WINDOWS
@@ -262,6 +263,19 @@ MacroBlockH264::MacroBlockH264(void)
 			_crBlkTmp[i][j].SetDcFlag(0);
 			blkNum++;
 		}//end for i & j...
+
+  /// Vector Quantisation extensions.
+  _vq_flag        = 0;
+  _vq_distortion  = 0;     ///< Total VQ distortion (squared error) for the mb.
+	for(i = 0; i < 4; i++)	
+		for(j = 0; j < 4; j++)	
+      _vq_LumCode[i][j] = 0;
+	for(i = 0; i < 2; i++)	
+		for(j = 0; j < 2; j++)
+    {
+      _vq_CbCode[i][j] = 0;
+      _vq_CrCode[i][j] = 0;
+    }//end for i & j...
 
 }//end constructor.
 
@@ -695,9 +709,9 @@ void MacroBlockH264::UnpackMbType(MacroBlockH264* mb, int sliceType)
 /** Test condition where skipped macroblock will force the motion vector to zero.
 The prediction for the macroblock motion vector is either the median of the 
 neighbouring macroblock vectors or (0,0) under some conditions of the macroblock 
-neighbourhood. 
+neighbourhood. Defined in ITU-T Recommendation H.264 (03/2005) Section 8.4.1.1 p138.
 @param mb					: Macroblock to set.
-return						: Condition for forcing the zero vector.
+@return						: Condition for forcing the zero vector.
 */
 bool MacroBlockH264::SkippedZeroMotionPredCondition(MacroBlockH264* mb)
 {
@@ -718,8 +732,10 @@ bool MacroBlockH264::SkippedZeroMotionPredCondition(MacroBlockH264* mb)
 /** Predict the macroblock motion vector.
 The prediction for the macroblock motion vector is the median of the 
 neighbouring macroblock vectors. Special conditions apply when the
-neighbours are outside of the image space or in another slice. 
-@param mb					: Macroblock to set.
+neighbours are outside of the image space or in another slice. This 
+method assumes that all the (_mvX[],_mvY) values are correct before 
+being called.
+@param mb					: Macroblock to test.
 @param mvpx				: Reference to returned predicted horiz component.
 @param mvpy				: Reference to returned predicted vert component.
 return						: None.
@@ -1083,6 +1099,90 @@ int MacroBlockH264::HasNonZeroCoeffsProxy(MacroBlockH264* mb)
 	return(0);
 }//end HasNonZeroCoeffsProxy.
 
+/** Calculate the distortion between two overlays at this mb's postion.
+Align the two lum and chr images over this mb and calculate the sum of square error for
+the three colour spaces. The image spaces must have identical width and height and match
+the mb initialisation settings. The format must be YCbCr 4:2:0 16x16:8x8:8x8.
+@param  p1Y   : 1st Image lum overlay
+@param  p1Cb  : 1st Image chr overlay
+@param  p1Cr  :
+@param  p2Y   : 2nd Image lum overlay
+@param  p2Cb  : 2nd Image chr overlay
+@param  p2Cr  :
+@return       : Square error distortion
+*/
+int MacroBlockH264::Distortion(OverlayMem2Dv2* p1Y, OverlayMem2Dv2* p1Cb, OverlayMem2Dv2* p1Cr, OverlayMem2Dv2* p2Y, OverlayMem2Dv2* p2Cb, OverlayMem2Dv2* p2Cr)
+{
+  int distortion = 0;
+  int tmp1Width, tmp1Height, tmp1OrgX, tmp1OrgY;
+  int tmp2Width, tmp2Height, tmp2OrgX, tmp2OrgY;
+
+  /// Lum
+  tmp1Width   = p1Y->GetWidth();
+  tmp1Height  = p1Y->GetHeight();
+  tmp1OrgX    = p1Y->GetOriginX();
+  tmp1OrgY    = p1Y->GetOriginY();
+  p1Y->SetOverlayDim(16,16);
+  p1Y->SetOrigin(_offLumX, _offLumY);
+  tmp2Width   = p2Y->GetWidth();
+  tmp2Height  = p2Y->GetHeight();
+  tmp2OrgX    = p2Y->GetOriginX();
+  tmp2OrgY    = p2Y->GetOriginY();
+  p2Y->SetOverlayDim(16,16);
+  p2Y->SetOrigin(_offLumX, _offLumY);
+
+  distortion = p1Y->Tsd16x16( *p2Y );
+
+  p1Y->SetOverlayDim(tmp1Width,tmp1Height);
+  p1Y->SetOrigin(tmp1OrgX, tmp1OrgY);
+  p2Y->SetOverlayDim(tmp2Width,tmp2Height);
+  p2Y->SetOrigin(tmp2OrgX, tmp2OrgY);
+
+  /// Cb
+  tmp1Width   = p1Cb->GetWidth();
+  tmp1Height  = p1Cb->GetHeight();
+  tmp1OrgX    = p1Cb->GetOriginX();
+  tmp1OrgY    = p1Cb->GetOriginY();
+  p1Cb->SetOverlayDim(8,8);
+  p1Cb->SetOrigin(_offChrX, _offChrY);
+  tmp2Width   = p2Cb->GetWidth();
+  tmp2Height  = p2Cb->GetHeight();
+  tmp2OrgX    = p2Cb->GetOriginX();
+  tmp2OrgY    = p2Cb->GetOriginY();
+  p2Cb->SetOverlayDim(8,8);
+  p2Cb->SetOrigin(_offChrX, _offChrY);
+
+  distortion += p1Cb->Tsd8x8( *p2Cb );
+
+  p1Cb->SetOverlayDim(tmp1Width,tmp1Height);
+  p1Cb->SetOrigin(tmp1OrgX, tmp1OrgY);
+  p2Cb->SetOverlayDim(tmp2Width,tmp2Height);
+  p2Cb->SetOrigin(tmp2OrgX, tmp2OrgY);
+
+  /// Cr
+  tmp1Width   = p1Cr->GetWidth();
+  tmp1Height  = p1Cr->GetHeight();
+  tmp1OrgX    = p1Cr->GetOriginX();
+  tmp1OrgY    = p1Cr->GetOriginY();
+  p1Cr->SetOverlayDim(8,8);
+  p1Cr->SetOrigin(_offChrX, _offChrY);
+  tmp2Width   = p2Cr->GetWidth();
+  tmp2Height  = p2Cr->GetHeight();
+  tmp2OrgX    = p2Cr->GetOriginX();
+  tmp2OrgY    = p2Cr->GetOriginY();
+  p2Cr->SetOverlayDim(8,8);
+  p2Cr->SetOrigin(_offChrX, _offChrY);
+
+  distortion += p1Cr->Tsd8x8( *p2Cr );
+
+  p1Cr->SetOverlayDim(tmp1Width,tmp1Height);
+  p1Cr->SetOrigin(tmp1OrgX, tmp1OrgY);
+  p2Cr->SetOverlayDim(tmp2Width,tmp2Height);
+  p2Cr->SetOrigin(tmp2OrgX, tmp2OrgY);
+
+  return(distortion);
+}//end Distortion.
+
 /** Mark this macroblock onto the image.
 For debugging.
 @param  mb  : Macroblock to mark
@@ -1135,8 +1235,8 @@ void MacroBlockH264::Dump(MacroBlockH264* mb, char* filename, const char* title)
   int j; 
 
   MeasurementTable* pT = new MeasurementTable();
-	pT->SetTitle(title);
 	pT->Create(18, 1);
+	pT->SetTitle(title);
   
   pT->SetHeading(0, "Index");
   pT->SetHeading(1, "Type");
@@ -1179,7 +1279,7 @@ void MacroBlockH264::Dump(MacroBlockH264* mb, char* filename, const char* title)
 	pT->WriteItem(16, 0, mb->_codedBlkPatternLum);
 	pT->WriteItem(17, 0, mb->_codedBlkPatternChr);
 
-  pT->Save(filename, ",");
+  pT->Save(filename, ",", 1);
 
   delete pT;
 }//end Dump.

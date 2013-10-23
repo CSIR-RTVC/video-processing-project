@@ -19,7 +19,7 @@ DESCRIPTION		: A bit stream reader implementation of the BitStreamBase
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -104,6 +104,13 @@ public:
 
 	int GetStreamBitsRemaining(void) { return(BitStreamBaseMSB::GetStreamBitsRemaining()); }
 
+	void Copy(IBitStreamReader* pFrom)
+    {
+      _bitStream  = (unsigned char*)pFrom->GetStream();
+      _bitSize    = pFrom->GetStreamBitSize();
+      _bytePos    = pFrom->GetStreamBytePos();
+      _bitPos     = pFrom->GetStreamBitPos() % 8;
+    }//end Copy.
 };// end class BitStreamReaderMSB.
 
 #endif	// _BITSTREAMREADERMSB_H

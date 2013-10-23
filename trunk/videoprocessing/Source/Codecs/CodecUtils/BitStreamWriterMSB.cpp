@@ -19,7 +19,7 @@ DESCRIPTION		: A bit stream writer implementation of the BitStreamBase
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -91,7 +91,7 @@ void BitStreamWriterMSB::Write(int numBits, int val)
   int b		= val;
 	unsigned char cachedByte = _bitStream[_bytePos];
 
-	int inMask = 1 << (numBits - 1);	// Align a 1 on the MSB of the input val.
+	unsigned int inMask = 1 << (numBits - 1);	// Align a 1 on the MSB of the input val.
   for(int i = numBits; i > 0; i--)
   {
     // Strip out the bit of the input from the MSB valid bit downwards 

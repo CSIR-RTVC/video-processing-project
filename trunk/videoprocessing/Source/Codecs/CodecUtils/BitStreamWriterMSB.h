@@ -20,7 +20,7 @@ DESCRIPTION		: A bit stream writer implementation of the extending the
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -66,7 +66,7 @@ public:
 	*/
 	void Write(int val);
 
-	/** Write bits to the stream.
+	/** Write bits to the stream 32 bits.
 	Write multiple bits from the most significant bit downwards
 	into the current stream position.
 	@param numBits	: No. of bits to write.
@@ -74,6 +74,24 @@ public:
 	@return					: none.
 	*/
 	void Write(int numBits, int val);
+
+	/** Write bits to the stream - 64 bits.
+	Write multiple bits into the current stream position for 64 bit values.
+	@param numBits	: No. of bits to write.
+	@param valH			: Upper 32 bit value to write.
+	@param valL			: Lower 32 bit value to write.
+	@return					: none.
+	*/
+	void Write(int numBits, int valH, int valL)
+  {
+    if(numBits > 32)
+    {
+      Write(numBits-32, valH);  ///< MSBs first.
+      Write(32, valL);
+    }//end if numBits...
+    else
+      Write(numBits, valL);
+  }//end Write.
 
 	/** Poke bits to the stream.
 	Write multiple bits from the most significant bit downwards
@@ -105,6 +123,14 @@ public:
 	int GetStreamBitSize(void) { return(BitStreamBaseMSB::GetStreamBitSize()); }
 
 	int GetStreamBitsRemaining(void) { return(BitStreamBaseMSB::GetStreamBitsRemaining()); }
+
+  void Copy(IBitStreamWriter* pFrom)
+  {
+    _bitStream  = (unsigned char*)pFrom->GetStream();
+    _bitSize    = pFrom->GetStreamBitSize();
+    _bytePos    = pFrom->GetStreamBytePos();
+    _bitPos     = pFrom->GetStreamBitPos() % 8;
+  }//end Copy.
 
 };// end class BitStreamWriterMSB.
 

@@ -18,7 +18,7 @@ DESCRIPTION		: A bit stream writer implementation of the BitStreamBase
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -33,7 +33,6 @@ GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
 
 ===========================================================================
 */
@@ -73,6 +72,7 @@ public:
 	@return					: none.
 	*/
 	void Write(int numBits, int val);
+  void Write(int numBits, int valH, int ValL) { }
 
 	/** Poke bits to the stream.
 	Write multiple bits from the least significant bit upwards
