@@ -12,7 +12,7 @@ DESCRIPTION		: A class to hold H.264 block data and define all block
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
