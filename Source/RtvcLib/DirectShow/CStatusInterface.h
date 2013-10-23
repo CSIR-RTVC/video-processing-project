@@ -21,7 +21,7 @@ DESCRIPTION			: Implementation of COM IStatusInterface
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -49,8 +49,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/StatusInterface.h>
 #include <Windows.h>
 
-#define MAX_MESSAGE_LENGTH 256
-
 /**
 * \ingroup DirectShowLib
 *  IStatusInterface implementation.
@@ -60,7 +58,10 @@ class CStatusInterface : public IStatusInterface
 public:
 	/// Constructor
 	CStatusInterface();
-	/// Sets the error string and notifies the application using the media event sink if set
+
+	STDMETHODIMP GetNotificationMessage( char* szMessage, int nBufferSize );
+    STDMETHODIMP SetNotificationMessage( const char* szMessage );
+    /// Sets the error string and notifies the application using the media event sink if set
 	STDMETHODIMP SetLastError( std::string sError, bool bNotifyApplication = false);
 	/// Returns the last error that occurred in the filter
 	STDMETHODIMP GetLastError( std::string& sError );
@@ -70,9 +71,6 @@ public:
 	STDMETHODIMP SetFriendlyID( long lId );
 	/// Accessor for friendly ID
 	STDMETHODIMP GetFriendlyID( long& lId );
-
-  STDMETHODIMP GetNotificationMessage( char* szMessage, int nBufferSize );
-  STDMETHODIMP SetNotificationMessage( const char* szMessage );
 
 protected:
 	/// This method notifies the application with the specified params
@@ -84,7 +82,4 @@ protected:
 	IMediaEventSink* m_pMediaEventSink;
 	/// Friendly id of the filter
 	long m_lFriendlyId;
-  /// String to store last error
-  char m_szNotification[MAX_MESSAGE_LENGTH];
-
 };

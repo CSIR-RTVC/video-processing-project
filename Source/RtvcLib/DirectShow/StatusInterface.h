@@ -8,7 +8,7 @@ DESCRIPTION			: COM Status interface class for application - filter communicatio
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -72,12 +72,15 @@ DEFINE_GUID( IID_IStatusInterface, /* 60178ec0-c670-11d0-837a-0000f80220b9 */
 DECLARE_INTERFACE_( IStatusInterface, IUnknown )
 {
 	// *** methods ***
+
+    // HACK FOR RTVC compatibility
+    STDMETHOD(GetNotificationMessage)( char* szError, int nBufferSize) = 0;
+    STDMETHOD(SetNotificationMessage)( const char* szError ) = 0;
+
 	STDMETHOD(GetLastError)( std::string& sError ) = 0;
 	STDMETHOD(SetLastError)( std::string sError, bool bNotifyApplication) = 0;
 	STDMETHOD(SetMediaEventSink) (IMediaEventSink* pEventSink) = 0;
 	//We need an id for when we perform a callback
 	STDMETHOD(SetFriendlyID) ( long lId) = 0;
 	STDMETHOD(GetFriendlyID) ( long& lId) = 0;
-  STDMETHOD(GetNotificationMessage)( char* szError, int nBufferSize) = 0;
-  STDMETHOD(SetNotificationMessage)( const char* szError ) = 0;
 };
