@@ -14,7 +14,7 @@ DESCRIPTION		: A class to implement a fast inverse 2x2 2-D integer
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify

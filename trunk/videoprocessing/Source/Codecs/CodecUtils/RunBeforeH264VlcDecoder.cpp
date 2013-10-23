@@ -14,7 +14,7 @@ DESCRIPTION		: A run before Vlc decoder implementation as defined in
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify

@@ -14,7 +14,7 @@ DESCRIPTION		: An Exp-Golomb Vlc decoder implementation for truncated
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2013, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
