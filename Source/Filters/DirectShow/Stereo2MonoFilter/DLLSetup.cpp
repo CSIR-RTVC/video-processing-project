@@ -76,7 +76,7 @@ AMOVIESETUP_FILTER FilterInfo =
 {
 	&CLSID_RTVCStereo2MonoFilter, // CLSID
 	g_wszName,							// Name
-	MERIT_NORMAL,					// Merit
+	MERIT_DO_NOT_USE,					// Merit
 	2,									// Number of AMOVIESETUP_PIN structs
 	sudPin								// Pin registration information.
 };
