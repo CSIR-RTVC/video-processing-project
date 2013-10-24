@@ -39,6 +39,7 @@
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverse4x4On16x16ITImpl1.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverseDC2x2ITImpl1.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\FastInverseDC4x4ITImpl1.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\H264MotionVectorPredictorImpl1.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IBitStreamReader.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IBitStreamWriter.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\ICodecInnerAccess.h" />
@@ -48,6 +49,7 @@
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IInverseTransform.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IMotionCompensator.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IMotionEstimator.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IMotionVectorPredictor.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IRunLengthCodec.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IStreamHeaderReader.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\IVlcDecoder.h" />
@@ -56,6 +58,7 @@
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionCompensatorH264ImplStd.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultires.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultiresCross.h" />
+    <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultiresCrossVer2.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\NalHeaderH264.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\PicParamSetH264.h" />
     <ClInclude Include="..\..\..\..\..\Source\Codecs\CodecUtils\PrefixH264VlcDecoderImpl1.h" />
@@ -99,6 +102,7 @@
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionCompensatorH264ImplStd.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultires.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultiresCross.cpp" />
+    <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\MotionEstimatorH264ImplMultiresCrossVer2.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\NalHeaderH264.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\PicParamSetH264.cpp" />
     <ClCompile Include="..\..\..\..\..\Source\Codecs\CodecUtils\RunBeforeH264VlcDecoder.cpp" />
