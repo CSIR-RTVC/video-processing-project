@@ -1,14 +1,17 @@
 REM Set this to VC8 or VC9 depending on which VS version you want to use
-@set VS_VERSION=VC11
+@set VS_VERSION=VC12
 
-REM Set this to devenv.exe or VCExpress.exe
-@set VC_EXE=devenv.exe
+REM Set this to devenv.exe or VCExpress.exe, for >= VS2012 Windows Desktop Express editions use WDExpress.exe
+REM @set VC_EXE=devenv.exe
+REM @set VC_EXE=VCExpress.exe
+@set VC_EXE=WDExpress.exe
 
 @IF %VS_VERSION% EQU VC7 GOTO SETUP_VC7_FOLDER
 @IF %VS_VERSION% EQU VC8 GOTO SETUP_VC8_FOLDER
 @IF %VS_VERSION% EQU VC9 GOTO SETUP_VC9_FOLDER
 @IF %VS_VERSION% EQU VC10 GOTO SETUP_VC10_FOLDER
 @IF %VS_VERSION% EQU VC11 GOTO SETUP_VC11_FOLDER
+@IF %VS_VERSION% EQU VC12 GOTO SETUP_VC12_FOLDER
 
 :SETUP_VC7_FOLDER
 @set VisualStudioFolder=Microsoft Visual Studio .NET 2003
@@ -35,6 +38,11 @@ REM Set this to devenv.exe or VCExpress.exe
 @set VisualCDir=VC
 @GOTO SET_VC_PATH
 
+:SETUP_VC12_FOLDER
+@set VisualStudioFolder=Microsoft Visual Studio 12.0
+@set VisualCDir=VC
+@GOTO SET_VC_PATH
+
 :SET_C_X86
   @set InstallRoot=C:\Program Files (x86)
   @echo -- Install root: %InstallRoot%
@@ -55,7 +63,23 @@ REM Set this to devenv.exe or VCExpress.exe
   @echo -- Install root: %InstallRoot%
   @goto SET_VISUAL_STUDIO
 
+:SET_E_X86
+  @set InstallRoot=E:\Program Files (x86)
+  @echo -- Install root: %InstallRoot%
+  @goto SET_VISUAL_STUDIO
+
+:SET_E
+  @set InstallRoot=E:\Program Files
+  @echo -- Install root: %InstallRoot%
+  @goto SET_VISUAL_STUDIO
+
 :SET_VC_PATH
+
+REM try the E drive first
+@IF exist "E:\Program Files (x86)\%VisualStudioFolder%" GOTO SET_E_X86
+
+@IF exist "E:\Program Files\%VisualStudioFolder%" GOTO SET_E
+
 REM try the D drive first
 @IF exist "D:\Program Files (x86)\%VisualStudioFolder%" GOTO SET_D_X86
 
