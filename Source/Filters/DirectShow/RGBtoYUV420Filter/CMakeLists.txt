@@ -1,0 +1,47 @@
+# CMakeLists.txt for <RGBtoYUV420Filter> 
+
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BUILD_FOR_SHORT")
+
+INCLUDE_DIRECTORIES(
+${vppIncludes}
+)
+
+# Lib directories
+LINK_DIRECTORIES(
+${vppLink}
+)
+
+SET(FLT_HDRS
+RGBtoYUV420Filter.h
+stdafx.h
+)
+
+SET(FLT_SRCS 
+DLLSetup.cpp
+RGBtoYUV420Filter.cpp
+RGBtoYUV420Filter.def
+stdafx.cpp
+)
+
+ADD_LIBRARY(
+RGBtoYUV420Filter SHARED ${FLT_SRCS} ${FLT_HDRS})
+
+TARGET_LINK_LIBRARIES (
+RGBtoYUV420Filter
+${vppLibs}
+vpp
+) 
+
+INSTALL(
+  TARGETS RGBtoYUV420Filter
+  ARCHIVE DESTINATION bin
+  LIBRARY DESTINATION bin
+)
+
+IF (REGISTER_DS_FILTERS)
+ADD_CUSTOM_COMMAND(
+TARGET RGBtoYUV420Filter 
+POST_BUILD COMMAND 
+regsvr32 /s \"$(TargetPath)\"
+)
+ENDIF(REGISTER_DS_FILTERS)
