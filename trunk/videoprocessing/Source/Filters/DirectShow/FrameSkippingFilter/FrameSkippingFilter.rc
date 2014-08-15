@@ -7,7 +7,13 @@
 //
 // Generated from the TEXTINCLUDE 2 resource.
 //
-#include "afxres.h"
+#include "Windows.h"
+
+#ifdef IDC_STATIC
+#undef IDC_STATIC
+#endif
+#define IDC_STATIC              (-1)     // all static controls
+
 
 /////////////////////////////////////////////////////////////////////////////
 #undef APSTUDIO_READONLY_SYMBOLS
@@ -59,7 +65,10 @@ BEGIN
     LTEXT           "Skip Frames:",IDC_STATIC,22,19,46,8
     EDITTEXT        IDC_EDIT_SKIP_FRAME_NUMBER,78,18,40,14,ES_AUTOHSCROLL
     CONTROL         "",IDC_SPIN1,"msctls_updown32",UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS,117,17,10,14
-    END
+    LTEXT           "Every Frames:", IDC_STATIC, 22, 34, 50, 23
+    EDITTEXT        IDC_EDIT_SKIP_FRAME_TOTAL, 78, 33, 40, 14, ES_AUTOHSCROLL
+    CONTROL         "", IDC_SPIN2, "msctls_updown32", UDS_SETBUDDYINT | UDS_ALIGNRIGHT | UDS_AUTOBUDDY | UDS_ARROWKEYS, 117, 27, 10, 14
+END
 
 
 /////////////////////////////////////////////////////////////////////////////
