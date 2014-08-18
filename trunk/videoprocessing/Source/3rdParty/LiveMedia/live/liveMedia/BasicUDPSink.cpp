@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // A simple UDP sink (i.e., without RTP or other headers added); one frame per packet
 // Implementation
 
@@ -82,12 +82,10 @@ void BasicUDPSink::afterGettingFrame1(unsigned frameSize, unsigned numTruncatedB
 
   struct timeval timeNow;
   gettimeofday(&timeNow, NULL);
-  int uSecondsToGo;
-  if (fNextSendTime.tv_sec < timeNow.tv_sec) {
-    uSecondsToGo = 0; // prevents integer underflow if too far behind
-  } else {
-    uSecondsToGo = (fNextSendTime.tv_sec - timeNow.tv_sec)*1000000
-      + (fNextSendTime.tv_usec - timeNow.tv_usec);
+  int secsDiff = fNextSendTime.tv_sec - timeNow.tv_sec;
+  int64_t uSecondsToGo = secsDiff*1000000 + (fNextSendTime.tv_usec - timeNow.tv_usec);
+  if (uSecondsToGo < 0 || secsDiff < 0) { // sanity check: Make sure that the time-to-delay is non-negative:
+    uSecondsToGo = 0;
   }
 
   // Delay this amount of time:

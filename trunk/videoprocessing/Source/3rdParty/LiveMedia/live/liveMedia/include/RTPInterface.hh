@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // An abstraction of a network interface used for RTP (or RTCP).
 // (This allows the RTP-over-TCP hack (RFC 2326, section 10.12) to
 // be implemented transparently.)
@@ -33,7 +33,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 // Typedef for an optional auxilliary handler function, to be called
 // when each new packet is read:
 typedef void AuxHandlerFunc(void* clientData, unsigned char* packet,
-			    unsigned packetSize);
+			    unsigned& packetSize);
 
 typedef void ServerRequestAlternativeByteHandler(void* instance, u_int8_t requestByte);
 // A hack that allows a handler for RTP/RTCP packets received over TCP to process RTSP commands that may also appear within
@@ -62,14 +62,15 @@ public:
   void setStreamSocket(int sockNum, unsigned char streamChannelId);
   void addStreamSocket(int sockNum, unsigned char streamChannelId);
   void removeStreamSocket(int sockNum, unsigned char streamChannelId);
-  void setServerRequestAlternativeByteHandler(ServerRequestAlternativeByteHandler* handler, void* clientData);
+  static void setServerRequestAlternativeByteHandler(UsageEnvironment& env, int socketNum,
+						     ServerRequestAlternativeByteHandler* handler, void* clientData);
+  static void clearServerRequestAlternativeByteHandler(UsageEnvironment& env, int socketNum);
 
-  void sendPacket(unsigned char* packet, unsigned packetSize);
+  Boolean sendPacket(unsigned char* packet, unsigned packetSize);
   void startNetworkReading(TaskScheduler::BackgroundHandlerProc*
                            handlerProc);
   Boolean handleRead(unsigned char* buffer, unsigned bufferMaxSize,
-		     unsigned& bytesRead,
-		     struct sockaddr_in& fromAddress);
+		     unsigned& bytesRead, struct sockaddr_in& fromAddress, Boolean& packetReadWasIncomplete);
   void stopNetworkReading();
 
   UsageEnvironment& envir() const { return fOwner->envir(); }
@@ -83,6 +84,12 @@ public:
   // A hack for supporting handlers for RTCP packets arriving interleaved over TCP:
   int nextTCPReadStreamSocketNum() const { return fNextTCPReadStreamSocketNum; }
   unsigned char nextTCPReadStreamChannelId() const { return fNextTCPReadStreamChannelId; }
+
+private:
+  // Helper functions for sending a RTP or RTCP packet over a TCP connection:
+  Boolean sendRTPorRTCPPacketOverTCP(unsigned char* packet, unsigned packetSize,
+				     int socketNum, unsigned char streamChannelId);
+  Boolean sendDataOverTCP(int socketNum, u_int8_t const* data, unsigned dataSize, Boolean forceSendToSucceed);
 
 private:
   friend class SocketDescriptor;

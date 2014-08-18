@@ -13,35 +13,33 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2010, Live Networks, Inc.  All rights reserved
+// Copyright (c) 1996-2014, Live Networks, Inc.  All rights reserved
 // A common framework, used for the "openRTSP" and "playSIP" applications
 // Interfaces
 
 #include "liveMedia.hh"
 
-extern Medium* createClient(UsageEnvironment& env, int verbosityLevel,
-			    char const* applicationName);
+extern Medium* createClient(UsageEnvironment& env, char const* URL, int verbosityLevel, char const* applicationName);
+extern void assignClient(Medium* client);
+extern RTSPClient* ourRTSPClient;
+extern SIPClient* ourSIPClient;
 
-extern char* getOptionsResponse(Medium* client, char const* url,
-				char* username, char* password);
+extern void getOptions(RTSPClient::responseHandler* afterFunc);
 
-extern char* getSDPDescriptionFromURL(Medium* client, char const* url,
-				      char const* username,
-				      char const* password,
-				      char const* proxyServerName,
-				      unsigned short proxyServerPortNum,
-				      unsigned short clientStartPortNum);
+extern void getSDPDescription(RTSPClient::responseHandler* afterFunc);
 
-extern Boolean clientSetupSubsession(Medium* client,
-				     MediaSubsession* subsession,
-				     Boolean streamUsingTCP);
+extern void setupSubsession(MediaSubsession* subsession, Boolean streamUsingTCP, Boolean forceMulticastOnUnspecified, RTSPClient::responseHandler* afterFunc);
 
-extern Boolean clientStartPlayingSession(Medium* client,
-					 MediaSession* session);
+extern void startPlayingSession(MediaSession* session, double start, double end, float scale, RTSPClient::responseHandler* afterFunc);
 
-extern Boolean clientTearDownSession(Medium* client,
-				     MediaSession* session);
+extern void startPlayingSession(MediaSession* session, char const* absStartTime, char const* absEndTime, float scale, RTSPClient::responseHandler* afterFunc);
+  // For playing by 'absolute' time (using strings of the form "YYYYMMDDTHHMMSSZ" or "YYYYMMDDTHHMMSS.<frac>Z"
 
+extern void tearDownSession(MediaSession* session, RTSPClient::responseHandler* afterFunc);
+
+extern void setUserAgentString(char const* userAgentString);
+
+extern Authenticator* ourAuthenticator;
 extern Boolean allowProxyServers;
 extern Boolean controlConnectionUsesTCP;
 extern Boolean supportCodecSelection;

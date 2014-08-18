@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // A 'ServerMediaSubsession' object that creates new, unicast, "RTPSink"s
 // on demand, from a DV video file.
 // Implementation
@@ -75,7 +75,8 @@ float DVVideoFileServerMediaSubsession::duration() const {
   return fFileDuration;
 }
 
-void DVVideoFileServerMediaSubsession::seekStreamSource(FramedSource* inputSource, double seekNPT) {
+void DVVideoFileServerMediaSubsession
+::seekStreamSource(FramedSource* inputSource, double& seekNPT, double streamDuration, u_int64_t& numBytes) {
   // First, get the file source from "inputSource" (a framer):
   DVVideoStreamFramer* framer = (DVVideoStreamFramer*)inputSource;
   ByteStreamFileSource* fileSource = (ByteStreamFileSource*)(framer->inputSource());
@@ -83,6 +84,20 @@ void DVVideoFileServerMediaSubsession::seekStreamSource(FramedSource* inputSourc
   // Then figure out where to seek to within the file:
   if (fFileDuration > 0.0) {
     u_int64_t seekByteNumber = (u_int64_t)(((int64_t)fFileSize*seekNPT)/fFileDuration);
-    fileSource->seekToByteAbsolute(seekByteNumber);
+    numBytes = (u_int64_t)(((int64_t)fFileSize*streamDuration)/fFileDuration);
+    fileSource->seekToByteAbsolute(seekByteNumber, numBytes);
+  }
+}
+
+void DVVideoFileServerMediaSubsession
+::setStreamSourceDuration(FramedSource* inputSource, double streamDuration, u_int64_t& numBytes) {
+  // First, get the file source from "inputSource" (a framer):
+  DVVideoStreamFramer* framer = (DVVideoStreamFramer*)inputSource;
+  ByteStreamFileSource* fileSource = (ByteStreamFileSource*)(framer->inputSource());
+
+  // Then figure out how many bytes to limit the streaming to:
+  if (fFileDuration > 0.0) {
+    numBytes = (u_int64_t)(((int64_t)fFileSize*streamDuration)/fFileDuration);
+    fileSource->seekToByteRelative(0, numBytes);
   }
 }

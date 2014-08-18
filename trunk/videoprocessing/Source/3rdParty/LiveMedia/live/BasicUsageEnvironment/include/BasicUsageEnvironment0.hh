@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // Basic Usage Environment: for a simple, non-scripted, console application
 // C++ header
 
@@ -47,7 +47,7 @@ public:
   virtual void setResultMsg(MsgString msg1,
 		    MsgString msg2,
 		    MsgString msg3);
-  virtual void setResultErrMsg(MsgString msg);
+  virtual void setResultErrMsg(MsgString msg, int err = 0);
 
   virtual void appendToResultMsg(MsgString msg);
 
@@ -66,6 +66,8 @@ private:
 };
 
 class HandlerSet; // forward
+
+#define MAX_NUM_EVENT_TRIGGERS 32
 
 // An abstract base class, useful for subclassing
 // (e.g., to redefine the implementation of socket event handling)
@@ -86,6 +88,10 @@ public:
 
   virtual void doEventLoop(char* watchVariable);
 
+  virtual EventTriggerId createEventTrigger(TaskFunc* eventHandlerProc);
+  virtual void deleteEventTrigger(EventTriggerId eventTriggerId);
+  virtual void triggerEvent(EventTriggerId eventTriggerId, void* clientData = NULL);
+
 protected:
   BasicTaskScheduler0();
 
@@ -94,8 +100,14 @@ protected:
   DelayQueue fDelayQueue;
 
   // To implement background reads:
-  HandlerSet* fReadHandlers;
+  HandlerSet* fHandlers;
   int fLastHandledSocketNum;
+
+  // To implement event triggers:
+  EventTriggerId fTriggersAwaitingHandling, fLastUsedTriggerMask; // implemented as 32-bit bitmaps
+  TaskFunc* fTriggeredEventHandlers[MAX_NUM_EVENT_TRIGGERS];
+  void* fTriggeredEventClientDatas[MAX_NUM_EVENT_TRIGGERS];
+  unsigned fLastUsedTriggerNum; // in the range [0,MAX_NUM_EVENT_TRIGGERS)
 };
 
 #endif
