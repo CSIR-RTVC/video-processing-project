@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // RTP sink for DV video (RFC 3189)
 // (Thanks to Ben Hutchings for prototyping this.)
 // Implementation
@@ -46,7 +46,7 @@ Boolean DVVideoRTPSink::sourceIsCompatibleWithUs(MediaSource& source) {
 void DVVideoRTPSink::doSpecialFrameHandling(unsigned fragmentationOffset,
 					      unsigned char* /*frameStart*/,
 					      unsigned /*numBytesInFrame*/,
-					      struct timeval frameTimestamp,
+					      struct timeval framePresentationTime,
 					      unsigned numRemainingBytes) {
   if (numRemainingBytes == 0) {
     // This packet contains the last (or only) fragment of the frame.
@@ -55,7 +55,7 @@ void DVVideoRTPSink::doSpecialFrameHandling(unsigned fragmentationOffset,
   }
 
   // Also set the RTP timestamp:
-  setTimestamp(frameTimestamp);
+  setTimestamp(framePresentationTime);
 }
 
 unsigned DVVideoRTPSink::computeOverflowForNewFrame(unsigned newFrameSize) const {

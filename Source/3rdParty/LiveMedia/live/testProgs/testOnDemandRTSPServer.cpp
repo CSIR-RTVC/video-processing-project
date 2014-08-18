@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2010, Live Networks, Inc.  All rights reserved
+// Copyright (c) 1996-2014, Live Networks, Inc.  All rights reserved
 // A test program that demonstrates how to stream - via unicast RTP
 // - various kinds of file on demand, using a built-in RTSP server.
 // main program
@@ -35,6 +35,20 @@ Boolean iFramesOnly = False;
 
 static void announceStream(RTSPServer* rtspServer, ServerMediaSession* sms,
 			   char const* streamName, char const* inputFileName); // fwd
+
+static char newDemuxWatchVariable;
+
+static MatroskaFileServerDemux* matroskaDemux;
+static void onMatroskaDemuxCreation(MatroskaFileServerDemux* newDemux, void* /*clientData*/) {
+  matroskaDemux = newDemux;
+  newDemuxWatchVariable = 1;
+}
+
+static OggFileServerDemux* oggDemux;
+static void onOggDemuxCreation(OggFileServerDemux* newDemux, void* /*clientData*/) {
+  oggDemux = newDemux;
+  newDemuxWatchVariable = 1;
+}
 
 int main(int argc, char** argv) {
   // Begin by setting up our usage environment:
@@ -73,6 +87,34 @@ int main(int argc, char** argv) {
       = ServerMediaSession::createNew(*env, streamName, streamName,
 				      descriptionString);
     sms->addSubsession(MPEG4VideoFileServerMediaSubsession
+		       ::createNew(*env, inputFileName, reuseFirstSource));
+    rtspServer->addServerMediaSession(sms);
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // A H.264 video elementary stream:
+  {
+    char const* streamName = "h264ESVideoTest";
+    char const* inputFileName = "test.264";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+    sms->addSubsession(H264VideoFileServerMediaSubsession
+		       ::createNew(*env, inputFileName, reuseFirstSource));
+    rtspServer->addServerMediaSession(sms);
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // A H.265 video elementary stream:
+  {
+    char const* streamName = "h265ESVideoTest";
+    char const* inputFileName = "test.265";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+    sms->addSubsession(H265VideoFileServerMediaSubsession
 		       ::createNew(*env, inputFileName, reuseFirstSource));
     rtspServer->addServerMediaSession(sms);
 
@@ -235,6 +277,166 @@ int main(int argc, char** argv) {
     rtspServer->addServerMediaSession(sms);
 
     announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // A AC3 video elementary stream:
+  {
+    char const* streamName = "ac3AudioTest";
+    char const* inputFileName = "test.ac3";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+
+    sms->addSubsession(AC3AudioFileServerMediaSubsession
+		       ::createNew(*env, inputFileName, reuseFirstSource));
+
+    rtspServer->addServerMediaSession(sms);
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // A Matroska ('.mkv') file, with video+audio+subtitle streams:
+  {
+    char const* streamName = "matroskaFileTest";
+    char const* inputFileName = "test.mkv";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+
+    newDemuxWatchVariable = 0;
+    MatroskaFileServerDemux::createNew(*env, inputFileName, onMatroskaDemuxCreation, NULL);
+    env->taskScheduler().doEventLoop(&newDemuxWatchVariable);
+
+    Boolean sessionHasTracks = False;
+    ServerMediaSubsession* smss;
+    while ((smss = matroskaDemux->newServerMediaSubsession()) != NULL) {
+      sms->addSubsession(smss);
+      sessionHasTracks = True;
+    }
+    if (sessionHasTracks) {
+      rtspServer->addServerMediaSession(sms);
+    }
+    // otherwise, because the stream has no tracks, we don't add a ServerMediaSession to the server.
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // A WebM ('.webm') file, with video(VP8)+audio(Vorbis) streams:
+  // (Note: ".webm' files are special types of Matroska files, so we use the same code as the Matroska ('.mkv') file code above.)
+  {
+    char const* streamName = "webmFileTest";
+    char const* inputFileName = "test.webm";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+
+    newDemuxWatchVariable = 0;
+    MatroskaFileServerDemux::createNew(*env, inputFileName, onMatroskaDemuxCreation, NULL);
+    env->taskScheduler().doEventLoop(&newDemuxWatchVariable);
+
+    Boolean sessionHasTracks = False;
+    ServerMediaSubsession* smss;
+    while ((smss = matroskaDemux->newServerMediaSubsession()) != NULL) {
+      sms->addSubsession(smss);
+      sessionHasTracks = True;
+    }
+    if (sessionHasTracks) {
+      rtspServer->addServerMediaSession(sms);
+    }
+    // otherwise, because the stream has no tracks, we don't add a ServerMediaSession to the server.
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // An Ogg ('.ogg') file, with video and/or audio streams:
+  {
+    char const* streamName = "oggFileTest";
+    char const* inputFileName = "test.ogg";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+
+    newDemuxWatchVariable = 0;
+    OggFileServerDemux::createNew(*env, inputFileName, onOggDemuxCreation, NULL);
+    env->taskScheduler().doEventLoop(&newDemuxWatchVariable);
+
+    Boolean sessionHasTracks = False;
+    ServerMediaSubsession* smss;
+    while ((smss = oggDemux->newServerMediaSubsession()) != NULL) {
+      sms->addSubsession(smss);
+      sessionHasTracks = True;
+    }
+    if (sessionHasTracks) {
+      rtspServer->addServerMediaSession(sms);
+    }
+    // otherwise, because the stream has no tracks, we don't add a ServerMediaSession to the server.
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // An Opus ('.opus') audio file:
+  // (Note: ".opus' files are special types of Ogg files, so we use the same code as the Ogg ('.ogg') file code above.)
+  {
+    char const* streamName = "opusFileTest";
+    char const* inputFileName = "test.opus";
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+
+    newDemuxWatchVariable = 0;
+    OggFileServerDemux::createNew(*env, inputFileName, onOggDemuxCreation, NULL);
+    env->taskScheduler().doEventLoop(&newDemuxWatchVariable);
+
+    Boolean sessionHasTracks = False;
+    ServerMediaSubsession* smss;
+    while ((smss = oggDemux->newServerMediaSubsession()) != NULL) {
+      sms->addSubsession(smss);
+      sessionHasTracks = True;
+    }
+    if (sessionHasTracks) {
+      rtspServer->addServerMediaSession(sms);
+    }
+    // otherwise, because the stream has no tracks, we don't add a ServerMediaSession to the server.
+
+    announceStream(rtspServer, sms, streamName, inputFileName);
+  }
+
+  // A MPEG-2 Transport Stream, coming from a live UDP (raw-UDP or RTP/UDP) source:
+  {
+    char const* streamName = "mpeg2TransportStreamFromUDPSourceTest";
+    char const* inputAddressStr = "239.255.42.42";
+        // This causes the server to take its input from the stream sent by the "testMPEG2TransportStreamer" demo application.
+        // (Note: If the input UDP source is unicast rather than multicast, then change this to NULL.)
+    portNumBits const inputPortNum = 1234;
+        // This causes the server to take its input from the stream sent by the "testMPEG2TransportStreamer" demo application.
+    Boolean const inputStreamIsRawUDP = False; 
+    ServerMediaSession* sms
+      = ServerMediaSession::createNew(*env, streamName, streamName,
+				      descriptionString);
+    sms->addSubsession(MPEG2TransportUDPServerMediaSubsession
+		       ::createNew(*env, inputAddressStr, inputPortNum, inputStreamIsRawUDP));
+    rtspServer->addServerMediaSession(sms);
+
+    char* url = rtspServer->rtspURL(sms);
+    *env << "\n\"" << streamName << "\" stream, from a UDP Transport Stream input source \n\t(";
+    if (inputAddressStr != NULL) {
+      *env << "IP multicast address " << inputAddressStr << ",";
+    } else {
+      *env << "unicast;";
+    }
+    *env << " port " << inputPortNum << ")\n";
+    *env << "Play this stream using the URL \"" << url << "\"\n";
+    delete[] url;
+  }
+
+  // Also, attempt to create a HTTP server for RTSP-over-HTTP tunneling.
+  // Try first with the default HTTP port (80), and then with the alternative HTTP
+  // port numbers (8000 and 8080).
+
+  if (rtspServer->setUpTunnelingOverHTTP(80) || rtspServer->setUpTunnelingOverHTTP(8000) || rtspServer->setUpTunnelingOverHTTP(8080)) {
+    *env << "\n(We use port " << rtspServer->httpServerPortNum() << " for optional RTSP-over-HTTP tunneling.)\n";
+  } else {
+    *env << "\n(RTSP-over-HTTP tunneling is not available.)\n";
   }
 
   env->taskScheduler().doEventLoop(); // does not return

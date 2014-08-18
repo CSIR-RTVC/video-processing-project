@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
-// Copyright (c) 1996-2010, Live Networks, Inc.  All rights reserved
+// Copyright (c) 1996-2014, Live Networks, Inc.  All rights reserved
 // A test program that streams a MP3 file via RTP/RTCP
 // main program
 
@@ -188,6 +188,8 @@ void play() {
 
 void afterPlaying(void* /*clientData*/) {
   *env << "...done streaming\n";
+
+  sessionState.sink->stopPlaying();
 
   // End this loop by closing the current source:
   Medium::close(sessionState.source);

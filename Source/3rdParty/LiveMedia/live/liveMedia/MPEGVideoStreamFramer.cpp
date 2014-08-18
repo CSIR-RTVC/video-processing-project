@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // A filter that breaks up an MPEG video elementary stream into
 //   headers and frames
 // Implementation
@@ -165,7 +165,7 @@ void MPEGVideoStreamFramer::continueReadProcessing() {
       = (fFrameRate == 0.0 || ((int)fPictureCount) < 0) ? 0
       : (unsigned)((fPictureCount*1000000)/fFrameRate);
 #ifdef DEBUG
-    fprintf(stderr, "fDurationInMicroseconds: %d ((%d*1000000)/%f)\n", fDurationInMicroseconds, fPictureCount, fFrameRate);
+    fprintf(stderr, "%d bytes @%u.%06d, fDurationInMicroseconds: %d ((%d*1000000)/%f)\n", acquiredFrameSize, fPresentationTime.tv_sec, fPresentationTime.tv_usec, fDurationInMicroseconds, fPictureCount, fFrameRate);
 #endif
     fPictureCount = 0;
 

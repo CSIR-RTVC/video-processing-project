@@ -13,7 +13,7 @@ You should have received a copy of the GNU Lesser General Public License
 along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
- // Copyright (c) 1996-2010, Live Networks, Inc.  All rights reserved
+ // Copyright (c) 1996-2014, Live Networks, Inc.  All rights reserved
 // Delay queue
 // C++ header
 
@@ -111,9 +111,9 @@ DelayInterval operator*(short arg1, DelayInterval const& arg2);
 
 extern DelayInterval const DELAY_ZERO;
 extern DelayInterval const DELAY_SECOND;
-DelayInterval const DELAY_MINUTE = 60*DELAY_SECOND;
-DelayInterval const DELAY_HOUR = 60*DELAY_MINUTE;
-DelayInterval const DELAY_DAY = 24*DELAY_HOUR;
+extern DelayInterval const DELAY_MINUTE;
+extern DelayInterval const DELAY_HOUR;
+extern DelayInterval const DELAY_DAY;
 
 ///// EventTime /////
 
@@ -136,7 +136,7 @@ class DelayQueueEntry {
 public:
   virtual ~DelayQueueEntry();
 
-  long token() {
+  intptr_t token() {
     return fToken;
   }
 
@@ -151,8 +151,8 @@ private:
   DelayQueueEntry* fPrev;
   DelayInterval fDeltaTimeRemaining;
 
-  long fToken;
-  static long tokenCounter;
+  intptr_t fToken;
+  static intptr_t tokenCounter;
 };
 
 ///// DelayQueue /////
@@ -164,16 +164,16 @@ public:
 
   void addEntry(DelayQueueEntry* newEntry); // returns a token for the entry
   void updateEntry(DelayQueueEntry* entry, DelayInterval newDelay);
-  void updateEntry(long tokenToFind, DelayInterval newDelay);
+  void updateEntry(intptr_t tokenToFind, DelayInterval newDelay);
   void removeEntry(DelayQueueEntry* entry); // but doesn't delete it
-  DelayQueueEntry* removeEntry(long tokenToFind); // but doesn't delete it
+  DelayQueueEntry* removeEntry(intptr_t tokenToFind); // but doesn't delete it
 
   DelayInterval const& timeToNextAlarm();
   void handleAlarm();
 
 private:
   DelayQueueEntry* head() { return fNext; }
-  DelayQueueEntry* findEntryByToken(long token);
+  DelayQueueEntry* findEntryByToken(intptr_t token);
   void synchronize(); // bring the 'time remaining' fields up-to-date
 
   EventTime fLastSyncTime;

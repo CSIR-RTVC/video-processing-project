@@ -14,7 +14,7 @@ along with this library; if not, write to the Free Software Foundation, Inc.,
 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301  USA
 **********/
 // "liveMedia"
-// Copyright (c) 1996-2010 Live Networks, Inc.  All rights reserved.
+// Copyright (c) 1996-2014 Live Networks, Inc.  All rights reserved.
 // An object that redirects one or more RTP/RTCP streams - forming a single
 // multimedia session - into a 'Darwin Streaming Server' (for subsequent
 // reflection to potentially arbitrarily many remote RTSP clients).
@@ -72,12 +72,12 @@ DarwinInjector::DarwinInjector(UsageEnvironment& env,
   : Medium(env),
     fApplicationName(strDup(applicationName)), fVerbosityLevel(verbosityLevel),
     fRTSPClient(NULL), fSubstreamSDPSizes(0),
-    fHeadSubstream(NULL), fTailSubstream(NULL), fSession(NULL), fLastTrackId(0) {
+    fHeadSubstream(NULL), fTailSubstream(NULL), fSession(NULL), fLastTrackId(0), fResultString(NULL) {
 }
 
 DarwinInjector::~DarwinInjector() {
   if (fSession != NULL) { // close down and delete the session
-    fRTSPClient->teardownMediaSession(*fSession);
+    fRTSPClient->sendTeardownCommand(*fSession, NULL);
     Medium::close(fSession);
   }
 
@@ -100,6 +100,17 @@ void DarwinInjector::addStream(RTPSink* rtpSink, RTCPInstance* rtcpInstance) {
   fSubstreamSDPSizes += strlen(newDescriptor->sdpLines());
 }
 
+// Define a special subclass of "RTSPClient" that has a pointer field to a "DarwinInjector".  We'll use this to implement RTSP ops:
+class RTSPClientForDarwinInjector: public RTSPClient {
+public:
+  RTSPClientForDarwinInjector(UsageEnvironment& env, char const* rtspURL, int verbosityLevel, char const* applicationName,
+			      DarwinInjector* ourDarwinInjector)
+    : RTSPClient(env, rtspURL, verbosityLevel, applicationName, 0, -1),
+      fOurDarwinInjector(ourDarwinInjector) {}
+  virtual ~RTSPClientForDarwinInjector() {}
+  DarwinInjector* fOurDarwinInjector;
+};
+
 Boolean DarwinInjector
 ::setDestination(char const* remoteRTSPServerNameOrAddress,
 		 char const* remoteFileName,
@@ -116,8 +127,15 @@ Boolean DarwinInjector
   Boolean success = False; // until we learn otherwise
 
   do {
+    // Construct a RTSP URL for the remote stream:
+    char const* const urlFmt = "rtsp://%s:%u/%s";
+    unsigned urlLen
+      = strlen(urlFmt) + strlen(remoteRTSPServerNameOrAddress) + 5 /* max short len */ + strlen(remoteFileName);
+    url = new char[urlLen];
+    sprintf(url, urlFmt, remoteRTSPServerNameOrAddress, remoteRTSPServerPortNumber, remoteFileName);
+
     // Begin by creating our RTSP client object:
-    fRTSPClient = RTSPClient::createNew(envir(), fVerbosityLevel, fApplicationName);
+    fRTSPClient = new RTSPClientForDarwinInjector(envir(), url, fVerbosityLevel, fApplicationName, this);
     if (fRTSPClient == NULL) break;
 
     // Get the remote RTSP server's IP address:
@@ -128,7 +146,7 @@ Boolean DarwinInjector
       NetAddress const* address = addresses.firstAddress();
       addr.s_addr = *(unsigned*)(address->data());
     }
-    char const* remoteRTSPServerAddressStr = our_inet_ntoa(addr);
+    AddressString remoteRTSPServerAddressStr(addr);
 
     // Construct a SDP description for the session that we'll be streaming:
     char const* const sdpFmt =
@@ -148,21 +166,21 @@ Boolean DarwinInjector
       + 20 /* max int len */ + 20 /* max int len */
       + strlen(sessionName)
       + strlen(sessionInfo)
-      + strlen(remoteRTSPServerAddressStr)
+      + strlen(remoteRTSPServerAddressStr.val())
       + strlen(sessionName)
       + strlen(sessionInfo)
       + strlen(fApplicationName)
       + strlen(sessionAuthor)
       + strlen(sessionCopyright)
       + fSubstreamSDPSizes;
-    unsigned const sdpSessionId = our_random();
+    unsigned const sdpSessionId = our_random32();
     unsigned const sdpVersion = sdpSessionId;
     sdp = new char[sdpLen];
     sprintf(sdp, sdpFmt,
 	    sdpSessionId, sdpVersion, // o= line
 	    sessionName, // s= line
 	    sessionInfo, // i= line
-	    remoteRTSPServerAddressStr, // c= line
+	    remoteRTSPServerAddressStr.val(), // c= line
 	    sessionName, // a=x-qt-text-nam: line
 	    sessionInfo, // a=x-qt-text-inf: line
 	    fApplicationName, // a=x-qt-text-cmt: line
@@ -176,24 +194,23 @@ Boolean DarwinInjector
       p += strlen(p);
     }
 
-    // Construct a RTSP URL for the remote stream:
-    char const* const urlFmt = "rtsp://%s:%u/%s";
-    unsigned urlLen
-      = strlen(urlFmt) + strlen(remoteRTSPServerNameOrAddress) + 5 /* max short len */ + strlen(remoteFileName);
-    url = new char[urlLen];
-    sprintf(url, urlFmt, remoteRTSPServerNameOrAddress, remoteRTSPServerPortNumber, remoteFileName);
-
     // Do a RTSP "ANNOUNCE" with this SDP description:
-    Boolean announceSuccess;
+    Authenticator auth;
+    Authenticator* authToUse = NULL;
     if (remoteUserName[0] != '\0' || remotePassword[0] != '\0') {
-      announceSuccess
-	= fRTSPClient->announceWithPassword(url, sdp, remoteUserName, remotePassword, timeout);
-    } else {
-      announceSuccess = fRTSPClient->announceSDPDescription(url, sdp, NULL, timeout);
+      auth.setUsernameAndPassword(remoteUserName, remotePassword);
+      authToUse = &auth;
     }
-    if (!announceSuccess) break;
+    fWatchVariable = 0;
+    (void)fRTSPClient->sendAnnounceCommand(sdp, genericResponseHandler, authToUse);
 
-    // Tell the remote server to start receiving the stream from us.
+    // Now block (but handling events) until we get a response:
+    envir().taskScheduler().doEventLoop(&fWatchVariable);
+
+    delete[] fResultString;
+    if (fResultCode != 0) break; // an error occurred with the RTSP "ANNOUNCE" command
+
+    // Next, tell the remote server to start receiving the stream from us.
     // (To do this, we first create a "MediaSession" object from the SDP description.)
     fSession = MediaSession::createNew(envir(), sdp);
     if (fSession == NULL) break;
@@ -206,11 +223,15 @@ Boolean DarwinInjector
     while ((subsession = iter.next()) != NULL) {
       if (!subsession->initiate()) break;
 
-      if (!fRTSPClient->setupMediaSubsession(*subsession,
-					     True /*streamOutgoing*/,
-					     True /*streamUsingTCP*/)) {
-	break;
-      }
+      fWatchVariable = 0;
+      (void)fRTSPClient->sendSetupCommand(*subsession, genericResponseHandler,
+					  True /*streamOutgoing*/,
+					  True /*streamUsingTCP*/);
+      // Now block (but handling events) until we get a response:
+      envir().taskScheduler().doEventLoop(&fWatchVariable);
+
+      delete[] fResultString;
+      if (fResultCode != 0) break; // an error occurred with the RTSP "SETUP" command
 
       // Tell this subsession's RTPSink and RTCPInstance to use
       // the RTSP TCP connection:
@@ -224,7 +245,14 @@ Boolean DarwinInjector
     if (subsession != NULL) break; // an error occurred above
 
     // Tell the RTSP server to start:
-    if (!fRTSPClient->playMediaSession(*fSession)) break;
+    fWatchVariable = 0;
+    (void)fRTSPClient->sendPlayCommand(*fSession, genericResponseHandler);
+
+    // Now block (but handling events) until we get a response:
+    envir().taskScheduler().doEventLoop(&fWatchVariable);
+
+    delete[] fResultString;
+    if (fResultCode != 0) break; // an error occurred with the RTSP "PLAY" command
 
     // Finally, make sure that the output TCP buffer is a reasonable size:
     increaseSendBufferTo(envir(), fRTSPClient->socketNum(), 100*1024);
@@ -241,6 +269,19 @@ Boolean DarwinInjector::isDarwinInjector() const {
   return True;
 }
 
+void DarwinInjector::genericResponseHandler(RTSPClient* rtspClient, int responseCode, char* responseString) {
+  DarwinInjector* di = ((RTSPClientForDarwinInjector*)rtspClient)-> fOurDarwinInjector;
+  di->genericResponseHandler1(responseCode, responseString);
+}
+
+void DarwinInjector::genericResponseHandler1(int responseCode, char* responseString) {
+  // Set result values:
+  fResultCode = responseCode;
+  fResultString = responseString;
+
+  // Signal a break from the event loop (thereby returning from the blocking command):                                              
+  fWatchVariable = ~0;
+}
 
 ////////// SubstreamDescriptor implementation //////////
 
