@@ -33,11 +33,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "stdafx.h"
 #include "RtspClientSessionManager.h"
+// RTVC
+#include "RtvcRtpSink.h"
+
 // live555
 #include <MPEG4LATMAudioRTPSource.hh>
 
-// RTVC
-#include "RtvcRtpSink.h"
+#define RTVC_SYNC_RTSP
+#ifdef RTVC_SYNC_RTSP
 
 RtspClientSessionManager::RtspClientSessionManager(MediaPacketManager& rMediaPacketManager)
   :m_rMediaPacketManager(rMediaPacketManager),
@@ -61,7 +64,11 @@ bool RtspClientSessionManager::createMediaSession( const std::string& sUrl )
 
   const char* szUrl = sUrl.c_str();
 
-  m_pRtspClient = RTSPClient::createNew(*m_pEnv);
+  if (!m_bStreamOverHttp)
+    m_pRtspClient = RTSPClient::createNew(*m_pEnv);
+  else
+    m_pRtspClient = RTSPClient::createNew(*m_pEnv, 0, 0, 80);
+
   int nTimeOut = -1;
 
   // Get options response
@@ -78,8 +85,8 @@ bool RtspClientSessionManager::createMediaSession( const std::string& sUrl )
   }
 
   *m_pEnv << "Opened URL \"" << szUrl << "\", returning a SDP description:\n" << sdpDescription << "\n";
-  unsigned statusCode = m_pRtspClient->describeStatus();
-  *m_pEnv << "Status code: " << statusCode << "\n";
+  //unsigned statusCode = m_pRtspClient->describeStatus();
+  //*m_pEnv << "Status code: " << statusCode << "\n";
 
   // Create a media session object from this SDP description:
   m_pSession = MediaSession::createNew(*m_pEnv, sdpDescription);
@@ -213,6 +220,7 @@ bool RtspClientSessionManager::createRtpSource( MediaSubsession* pSubsession )
       MPEG4LATMAudioRTPSource* pSource = (MPEG4LATMAudioRTPSource*)pSubsession->rtpSource();
       pSource->omitLATMDataLengthField();
     }
+
     return true;
   }
 }
@@ -376,3 +384,5 @@ bool RtspClientSessionManager::createReceivers(MediaSession* pSession)
   }
   return madeProgress;
 }
+
+#endif
