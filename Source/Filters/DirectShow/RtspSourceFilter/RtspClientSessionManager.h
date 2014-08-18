@@ -55,6 +55,9 @@ public:
   bool getStreamUsingTcp() const { return m_bStreamUsingTcp; }
   void setStreamUsingTcp(bool val) { m_bStreamUsingTcp = val; }
 
+  bool getStreamOverHttp() const { return m_bStreamOverHttp; }
+  void setStreamOverHttp(bool val) { m_bStreamOverHttp = val; }
+
   MediaPacketManager& getMediaPacketManager() const { return m_rMediaPacketManager; }
   MediaSession* getMediaSession() const { return m_pSession; }
 
@@ -101,6 +104,8 @@ private:
   MediaPacketManager& m_rMediaPacketManager;
   /// TCP
   bool m_bStreamUsingTcp;
+  /// HTTP tunneling
+  bool m_bStreamOverHttp;
 
   /// Livemedia scheduler
   TaskScheduler* m_pScheduler;
