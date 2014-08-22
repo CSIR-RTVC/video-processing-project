@@ -14,8 +14,9 @@ ${vppLink}
 )
 
 SET(FLT_HDRS
-#AsyncRtspClientAdapter.h
-#AsyncRtspClientSessionManager.h
+AsyncRtspClientAdapter.h
+AsyncRtspClientSessionManager.h
+GlobalDefs.h
 MediaPacketManager.h
 MediaPacketQueue.h
 MediaParameterExtractor.h
@@ -29,9 +30,10 @@ stdafx.h
 )
 
 SET(FLT_SRCS 
-#AsyncRtspClientAdapter.cpp
-#AsyncRtspClientSessionManager.cpp
+AsyncRtspClientAdapter.cpp
+AsyncRtspClientSessionManager.cpp
 DllSetup.cpp
+GlobalDefs.cpp
 MediaPacketManager.cpp
 MediaPacketQueue.cpp
 MediaParameterExtractor.cpp

@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // live555
 #include <MPEG4LATMAudioRTPSource.hh>
 
-#define RTVC_SYNC_RTSP
+// #define RTVC_SYNC_RTSP
 #ifdef RTVC_SYNC_RTSP
 
 RtspClientSessionManager::RtspClientSessionManager(MediaPacketManager& rMediaPacketManager)

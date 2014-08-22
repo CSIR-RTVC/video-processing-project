@@ -35,6 +35,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 // RTVC
+#include "AsyncRtspClientSessionManager.h"
 #include "MediaPacketManager.h"
 #include <Shared/MediaSample.h>
 
@@ -42,6 +43,21 @@ class RtvcRtpSink : public MediaSink
 {
 public:
   /// Constructor
+#ifndef RTVC_SYNC_RTSP
+  RtvcRtpSink(UsageEnvironment& env, unsigned uiSourceID, AsyncRtspClientSessionManager& rSessionManager, MediaSubsession* pSubsession, unsigned uiBufferSize)
+    : MediaSink(env),
+    m_uiSourceID(uiSourceID),
+    m_rSessionManager(rSessionManager),
+    m_rMediaPacketManager(rSessionManager.getMediaPacketManager()),
+    m_pSubsession(pSubsession),
+    m_pRtpSource(pSubsession->rtpSource()),
+    m_pAmrSource(NULL),
+    m_uiBufferSize(uiBufferSize),
+    m_pBuffer(new unsigned char[uiBufferSize]),
+    m_bFirstPacketDelivered(false)
+  {
+  }
+#else
   RtvcRtpSink(UsageEnvironment& env, unsigned uiSourceID, RtspClientSessionManager& rSessionManager, MediaSubsession* pSubsession, unsigned uiBufferSize)
     : MediaSink(env),
     m_uiSourceID(uiSourceID),
@@ -55,6 +71,7 @@ public:
     m_bFirstPacketDelivered(false)
   {
   }
+#endif
 
   /// Destructor
   virtual ~RtvcRtpSink()
@@ -141,7 +158,11 @@ private:
   /// ID of the sink which is the "source" of the output pin
   unsigned m_uiSourceID;
   /// Session manager
+#ifndef RTVC_SYNC_RTSP
+  AsyncRtspClientSessionManager& m_rSessionManager;
+#else
   RtspClientSessionManager& m_rSessionManager;
+#endif
   /// The handler that processes the media samples
   MediaPacketManager& m_rMediaPacketManager;
   /// Subsession

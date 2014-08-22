@@ -45,6 +45,8 @@ class RtvcRtpSink;
 
 class AsyncRtspClientSessionManager
 {
+  friend class AsyncRtspClientAdapter;
+
 public:
 
   AsyncRtspClientSessionManager(MediaPacketManager& rMediaPacketManager);
@@ -74,8 +76,8 @@ public:
 
 private:
   // Prohibit copying
-  AsyncRtspClientSessionManager(const RtspClientSessionManager&);
-  AsyncRtspClientSessionManager operator=(const RtspClientSessionManager&);
+  AsyncRtspClientSessionManager(const AsyncRtspClientSessionManager&);
+  AsyncRtspClientSessionManager operator=(const AsyncRtspClientSessionManager&);
 
   void createMediaSession( const std::string& sUrl );
   void setupMediaSession();
@@ -178,7 +180,6 @@ private:
   unsigned m_uiSuccessfulSubsessions;
   /// iterator used for async setup
   MediaSubsessionIterator* m_pSubsessionIter;
-
   /// LiveMediaEventLoop watch variable
   char m_watchVariable;
   /// Live media error code
