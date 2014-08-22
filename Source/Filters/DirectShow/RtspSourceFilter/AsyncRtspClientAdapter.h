@@ -32,97 +32,91 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #pragma once
-#include <boost/function.hpp>
 
+class AsyncRtspClientSessionManager;
+
+/**
+ * @brief The AsyncRtspClientAdapter is an adapter class to forward
+ * the results of the async RTSP requests to our AsyncRtspClientSessionManager
+ * object.
+ */
 class AsyncRtspClientAdapter : public RTSPClient
 {
 public:
-  typedef boost::function<void(int resultCode, char* resultString)> RtspCallback_t;
 
 public:
-  static AsyncRtspClientAdapter* createNew(UsageEnvironment& env, char const* rtspURL,
+  /**
+   * @brief Named constructor
+   */
+  static AsyncRtspClientAdapter* createNew(AsyncRtspClientSessionManager& rtspClientSessionManager, UsageEnvironment& env, char const* rtspURL,
     int verbosityLevel = 0,
     char const* applicationName = NULL,
     portNumBits tunnelOverHTTPPortNum = 0);
-
-  AsyncRtspClientAdapter(UsageEnvironment& env, char const* rtspURL, int verbosityLevel, char const* applicationName, portNumBits tunnelOverHTTPPortNum);
-
-  // Callbacks
-  void setOptionsCallback(AsyncRtspClientAdapter::RtspCallback_t val) { m_optionsCallback = val; }
-  void setDescribeCallback(AsyncRtspClientAdapter::RtspCallback_t val) { m_describeCallback = val; }
-  void setSetupCallback(AsyncRtspClientAdapter::RtspCallback_t val) { m_setupCallback = val; }
-  void setPlayCallback(AsyncRtspClientAdapter::RtspCallback_t val) { m_playCallback = val; }
-  void setTeardownCallback(AsyncRtspClientAdapter::RtspCallback_t val) { m_teardownCallback = val; }
-
-  // Need a static method to get a regular function pointer
+  /**
+   * @brief Constructor
+   */
+  AsyncRtspClientAdapter(AsyncRtspClientSessionManager& rtspClientSessionManager, UsageEnvironment& env, char const* rtspURL, int verbosityLevel, char const* applicationName, portNumBits tunnelOverHTTPPortNum);
+  /**
+   * @brief Method to handle OPTIONS response of live555 RTSPClient
+   */ 
   static void optionsHandler(RTSPClient* _this, int resultCode, char* resultString) 
   {
     AsyncRtspClientAdapter* pClient = static_cast<AsyncRtspClientAdapter*>(_this);
     pClient->doHandleOptions(resultCode, resultString);
   }
-
-  void doHandleOptions(int resultCode, char* resultString) 
-  {
-    if (m_optionsCallback)
-      m_optionsCallback(resultCode, resultString);
-  }
-
-  // Need a static method to get a regular function pointer
+  /**
+   * @brief Method to handle DESCRIBE response of live555 RTSPClient
+   */ 
   static void describeHandler(RTSPClient* _this, int resultCode, char* resultString) 
   {
     AsyncRtspClientAdapter* pClient = static_cast<AsyncRtspClientAdapter*>(_this);
     pClient->doHandleDescribe(resultCode, resultString);
   }
-
-  void doHandleDescribe(int resultCode, char* resultString) 
-  {
-    if (m_describeCallback)
-      m_describeCallback(resultCode, resultString);
-  }
-
-  // Need a static method to get a regular function pointer
+  /**
+   * @brief Method to handle SETUP response of live555 RTSPClient
+   */ 
   static void setupHandler(RTSPClient* _this, int resultCode, char* resultString) 
   {
     AsyncRtspClientAdapter* pClient = static_cast<AsyncRtspClientAdapter*>(_this);
     pClient->doHandleSetup(resultCode, resultString);
   }
-
-  void doHandleSetup(int resultCode, char* resultString) 
-  {
-    if (m_setupCallback)
-      m_setupCallback(resultCode, resultString);
-  }
-
-  // Need a static method to get a regular function pointer
+  /**
+   * @brief Method to handle PLAY response of live555 RTSPClient
+   */ 
   static void playHandler(RTSPClient* _this, int resultCode, char* resultString) 
   {
     AsyncRtspClientAdapter* pClient = static_cast<AsyncRtspClientAdapter*>(_this);
     pClient->doHandlePlay(resultCode, resultString);
   }
-
-  void doHandlePlay(int resultCode, char* resultString) 
-  {
-    if (m_playCallback)
-      m_playCallback(resultCode, resultString);
-  }
-
-  // Need a static method to get a regular function pointer
+  /**
+   * @brief Method to handle TEARDOWN response of live555 RTSPClient
+   */ 
   static void teardownHandler(RTSPClient* _this, int resultCode, char* resultString) 
   {
     AsyncRtspClientAdapter* pClient = static_cast<AsyncRtspClientAdapter*>(_this);
     pClient->doHandleTeardown(resultCode, resultString);
   }
-
-  void doHandleTeardown(int resultCode, char* resultString) 
-  {
-    if (m_teardownCallback)
-      m_teardownCallback(resultCode, resultString);
-  }
+  /**
+   * @brief Handles OPTIONS response by forwarding to RTSP session manager
+   */
+  void doHandleOptions(int resultCode, char* resultString);
+  /**
+   * @brief Handles DESCRIBE response
+   */
+  void doHandleDescribe(int resultCode, char* resultString);
+  /**
+   * @brief Handles SETUP response by forwarding to RTSP session manager
+   */
+  void doHandleSetup(int resultCode, char* resultString);
+  /**
+   * @brief Handles PLAY response by forwarding to RTSP session manager
+   */
+  void doHandlePlay(int resultCode, char* resultString);
+  /**
+   * @brief Handles TEARDOWN response by forwarding to RTSP session manager
+   */
+  void doHandleTeardown(int resultCode, char* resultString);
 
 private:
-  RtspCallback_t m_optionsCallback;
-  RtspCallback_t m_describeCallback;
-  RtspCallback_t m_setupCallback;
-  RtspCallback_t m_playCallback;
-  RtspCallback_t m_teardownCallback;
+  AsyncRtspClientSessionManager& m_rtspClientSessionManager;
 };

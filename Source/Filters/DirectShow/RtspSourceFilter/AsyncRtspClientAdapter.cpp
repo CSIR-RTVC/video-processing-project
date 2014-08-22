@@ -33,18 +33,44 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include "stdafx.h"
 #include "AsyncRtspClientAdapter.h"
+#include "AsyncRtspClientSessionManager.h"
 
-AsyncRtspClientAdapter* AsyncRtspClientAdapter::createNew(UsageEnvironment& env, char const* rtspURL,
+AsyncRtspClientAdapter* AsyncRtspClientAdapter::createNew(AsyncRtspClientSessionManager& rtspClientSessionManager, UsageEnvironment& env, char const* rtspURL,
   int verbosityLevel,
   char const* applicationName,
   portNumBits tunnelOverHTTPPortNum) 
 {
-  return new AsyncRtspClientAdapter(env, rtspURL, verbosityLevel, applicationName, tunnelOverHTTPPortNum);
+  return new AsyncRtspClientAdapter(rtspClientSessionManager, env, rtspURL, verbosityLevel, applicationName, tunnelOverHTTPPortNum);
 }
 
-AsyncRtspClientAdapter::AsyncRtspClientAdapter( UsageEnvironment& env, char const* rtspURL, int verbosityLevel, char const* applicationName, portNumBits tunnelOverHTTPPortNum )
-  : RTSPClient(env, rtspURL, verbosityLevel, applicationName, tunnelOverHTTPPortNum)
+AsyncRtspClientAdapter::AsyncRtspClientAdapter(AsyncRtspClientSessionManager& rtspClientSessionManager, UsageEnvironment& env, char const* rtspURL, int verbosityLevel, char const* applicationName, portNumBits tunnelOverHTTPPortNum)
+  : RTSPClient(env, rtspURL, verbosityLevel, applicationName, tunnelOverHTTPPortNum, -1),
+  m_rtspClientSessionManager(rtspClientSessionManager)
 {
 
 }
 
+void AsyncRtspClientAdapter::doHandleOptions(int resultCode, char* resultString)
+{
+  m_rtspClientSessionManager.continueAfterOPTIONS(resultCode, resultString);
+}
+
+void AsyncRtspClientAdapter::doHandleDescribe(int resultCode, char* resultString)
+{
+  m_rtspClientSessionManager.continueAfterDESCRIBE(resultCode, resultString);
+}
+
+void AsyncRtspClientAdapter::doHandleSetup(int resultCode, char* resultString)
+{
+  m_rtspClientSessionManager.continueAfterSETUP(resultCode, resultString);
+}
+
+void AsyncRtspClientAdapter::doHandlePlay(int resultCode, char* resultString)
+{
+  m_rtspClientSessionManager.continueAfterPLAY(resultCode, resultString);
+}
+
+void AsyncRtspClientAdapter::doHandleTeardown(int resultCode, char* resultString)
+{
+  m_rtspClientSessionManager.continueAfterTEARDOWN(resultCode, resultString);
+}

@@ -37,7 +37,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 // RTVC includes
 #include "MediaPacketManager.h"
+#ifndef RTVC_SYNC_RTSP
+#include "AsyncRtspClientSessionManager.h"
+#else
 #include "RtspClientSessionManager.h"
+#endif
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
 
@@ -63,6 +67,9 @@ static const GUID CLSID_RtspProperties =
  * \ingroup DirectShowFilters
  * RTSP Source filter that receives PCM audio data from an RTSP server using the LGPL liveMedia streaming library.
  * The liveMedia library can be obtained at http://www.live555.com
+ *
+ * Note: RTVC_SYNC_RTSP can only be defined if you are using an old version of the live555 library
+ * that still supports the synchronous RTSP client interface.
  */
 class RtspSourceFilter :	public CSource,     /* Source Filter */
 							public CSettingsInterface,      /* Rtvc Settings Interface */
@@ -190,5 +197,9 @@ private:
   MediaPacketManager m_mediaPacketManager;
 
   /// RTSP Session Manager
+#ifndef RTVC_SYNC_RTSP
+  AsyncRtspClientSessionManager m_rtspSessionManager;
+#else
   RtspClientSessionManager m_rtspSessionManager;
+#endif
 };

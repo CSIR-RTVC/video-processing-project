@@ -34,9 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "stdafx.h"
 #include "AsyncRtspClientSessionManager.h"
 
-// boost
-#include <boost/bind.hpp>
-
 // RTVC
 #include "RtvcRtpSink.h"
 
@@ -75,15 +72,9 @@ void AsyncRtspClientSessionManager::createMediaSession( const std::string& sUrl 
   const char* szUrl = sUrl.c_str();
 
   if (!m_bStreamOverHttp)
-    m_pRtspClient = AsyncRtspClientAdapter::createNew(*m_pEnv, sUrl.c_str());
+    m_pRtspClient = AsyncRtspClientAdapter::createNew(*this, *m_pEnv, sUrl.c_str());
   else
-    m_pRtspClient = AsyncRtspClientAdapter::createNew(*m_pEnv, sUrl.c_str(), 0, 0, 80);
-
-  m_pRtspClient->setOptionsCallback(boost::bind(&AsyncRtspClientSessionManager::continueAfterOPTIONS, this, _1, _2));
-  m_pRtspClient->setDescribeCallback(boost::bind(&AsyncRtspClientSessionManager::continueAfterDESCRIBE, this, _1, _2));
-  m_pRtspClient->setSetupCallback(boost::bind(&AsyncRtspClientSessionManager::continueAfterSETUP, this, _1, _2));
-  m_pRtspClient->setPlayCallback(boost::bind(&AsyncRtspClientSessionManager::continueAfterPLAY, this, _1, _2));
-  m_pRtspClient->setTeardownCallback(boost::bind(&AsyncRtspClientSessionManager::continueAfterTEARDOWN, this, _1, _2));
+    m_pRtspClient = AsyncRtspClientAdapter::createNew(*this, *m_pEnv, sUrl.c_str(), 0, 0, 80);
 
   DbgLog((LOG_TRACE, 0, TEXT("AsyncRtspClientSessionManager: Sending OPTIONS")));
 
