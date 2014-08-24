@@ -3,6 +3,8 @@
 #include <memory>
 #include <DirectShow/CSettingsInterface.h>
 #include <DirectShow/CStatusInterface.h>
+#include <Media/SingleChannelManager.h>
+#include <Media/RtspService.h>
 
 #include "RtspSinkGuids.h"
 
@@ -58,15 +60,18 @@ public:
   STDMETHODIMP Stop();
 	
   HRESULT sendMediaSample(unsigned uiId, IMediaSample* pSample);
+
+  /// starts live555 session
+  void startLive555EventLoop();
+
 private:
+  /// Ends the live555 session
+  void stopLive555EventLoop();
 
 	///Private Constructor
 	RtspSinkFilter(IUnknown* pUnk, HRESULT* phr);
 	virtual ~RtspSinkFilter(void);
 
-  //void createInputPin(HRESULT* pHr, uint32_t uiPayloadType);
-  /// Creates the input pins based on the SDP
-  //STDMETHODIMP createInputPins();
   void createInputPin(HRESULT* pHr);
 
 	/// vector of output pins
@@ -75,5 +80,21 @@ private:
 	CCritSec m_stateLock;
 
   // map for incoming media samples mapping pin index to type
-  std::map<unsigned, RTSP_MediaSubtype> m_mMediaSubtype;
+  typedef std::map<unsigned, RTSP_MediaSubtype> SubtypeMap_t;
+  SubtypeMap_t m_mMediaSubtype;
+
+  /// LiveMediaExt channel manager
+  lme::SingleChannelManager m_channelManager;
+  /// RTSP service
+  lme::RtspService m_rtspService;
+
+  /// Live555 Thread Handle
+  HANDLE m_hLiveMediaThreadHandle;
+  /// live555 thread id
+  DWORD m_dwThreadID;
+  /// Handle to let the filter know that the RTSP thread has finished
+  /// The Stop method waits for a signal that the liveMedia event loop has ended before it proceeds
+  HANDLE m_hLiveMediaStopEvent;
+  /// TO start streaming on an IDR
+  bool m_bHaveSeenSpsPpsIdr;
 };

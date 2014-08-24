@@ -4,6 +4,8 @@ INCLUDE_DIRECTORIES(
 ${vppIncludes}
 ${vppCodecIncludes}
 ${vppUtilIncludes}
+$ENV{LIVE_MEDIA_EXT_ROOT}/include
+$ENV{LIVE_MEDIA_EXT_ROOT}/externals/glog/src/windows
 )
  
 # Lib directories
@@ -33,6 +35,12 @@ TARGET_LINK_LIBRARIES (
 RtspSinkFilter
 ${vppLibs}
 vpp
+LiveMediaExt
+groupsock
+liveMedia
+UsageEnvironment
+BasicUsageEnvironment
+glog
 ) 
 
 INSTALL(

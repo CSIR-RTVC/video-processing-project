@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include "RtspSinkGuids.h"
+#include <Media/AudioChannelDescriptor.h>
+#include <Media/VideoChannelDescriptor.h>
 
 class RtspSinkFilter;
 
@@ -53,6 +55,9 @@ protected:
   HRESULT CompleteConnect(IPin *pReceivePin);
 
 private:
+  void extractVideoParameters(const CMediaType *pmt);
+  void extractAudioParameters(const CMediaType *pmt);
+  void extractH264Parameters(const CMediaType *pmt);
 
 	/// Sink filter
 	RtspSinkFilter* m_pFilter;
@@ -68,6 +73,7 @@ private:
 
   std::string m_sMLine;
 	//// Audio parameters
+  lme::AudioChannelDescriptor m_audioDescriptor;
 	//int m_nBitsPerSample;
 	//int m_nChannels;
 	//int m_nBytesPerSecond;
@@ -75,7 +81,8 @@ private:
  // unsigned m_uiSamplingRate;
 
  // // Video Parameters
- // int m_nWidth;
+  lme::VideoChannelDescriptor m_videoDescriptor;
+  // int m_nWidth;
  // int m_nHeight;
  // int m_nSize;
  // // H264

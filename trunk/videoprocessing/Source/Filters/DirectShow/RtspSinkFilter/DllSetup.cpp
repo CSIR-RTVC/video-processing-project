@@ -29,26 +29,37 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes[] =
 
 const AMOVIESETUP_PIN sudRtspSinkSet = 
 {
-	L"Output",        // Obsolete, not used.
-	TRUE,             // Is this pin rendered?
-	FALSE,            // Is it an output pin?
-	FALSE,            // Can the filter create zero instances?
-	TRUE,             // Does the filter create multiple instances?
-	&CLSID_NULL,      // Obsolete.
-	NULL,             // Obsolete.
-	3,                // Number of media types.
-	&sudOpPinTypes[0] // Pointer to media types.
+  L"Output",        // Obsolete, not used.
+  TRUE,             // Is this pin rendered?
+  FALSE,            // Is it an output pin?
+  FALSE,            // Can the filter create zero instances?
+  TRUE,             // Does the filter create multiple instances?
+  &CLSID_NULL,      // Obsolete.
+  NULL,             // Obsolete.
+  3,                // Number of media types.
+  &sudOpPinTypes[0] // Pointer to media types.
 };
 
+#if 1
+const AMOVIESETUP_FILTER sudRtspSink =
+{
+  &CLSID_CSIR_VPP_RtspSinkFilter,  // Filter CLSID
+  g_wszName,                       // String name
+  MERIT_DO_NOT_USE,                // Filter merit
+  0,                               // Number pins
+  NULL                             // Pin details
+};
+
+#else
 const AMOVIESETUP_FILTER sudRtspSink=
 {
-  &CLSID_CSIR_VPP_RtspSinkFilter,	  // Filter CLSID
-	g_wszName,			              // String name
-	MERIT_DO_NOT_USE,				      // Filter merit
-	1,								            // Number pins
-	&sudRtspSinkSet        	  	  // Pin details
+  &CLSID_CSIR_VPP_RtspSinkFilter,  // Filter CLSID
+  g_wszName,                       // String name
+  MERIT_DO_NOT_USE,                // Filter merit
+  1,                               // Number pins
+  &sudRtspSinkSet                  // Pin details
 };
-
+#endif
 
 // List of class IDs and creator functions for the class factory. This
 // provides the link between the OLE entry point in the DLL and an object
@@ -57,13 +68,13 @@ const AMOVIESETUP_FILTER sudRtspSink=
 
 CFactoryTemplate g_Templates[] = 
 {
-	{ 
-		g_wszName,					            // Name
+  { 
+    g_wszName,                      // Name
     &CLSID_CSIR_VPP_RtspSinkFilter, // CLSID
-		RtspSinkFilter::CreateInstance,	// Method to create an instance of MyComponent
-		NULL,								            // Initialization function
-		&sudRtspSink					          // Set-up information (for filters)
-	}
+    RtspSinkFilter::CreateInstance, // Method to create an instance of MyComponent
+    NULL,                           // Initialization function
+    &sudRtspSink                    // Set-up information (for filters)
+    }
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
@@ -79,12 +90,12 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 STDAPI DllRegisterServer()
 {
-	return AMovieDllRegisterServer2( TRUE );
+  return AMovieDllRegisterServer2( TRUE );
 }
 
 STDAPI DllUnregisterServer()
 {
-	return AMovieDllRegisterServer2( FALSE );
+  return AMovieDllRegisterServer2( FALSE );
 }
 
 //
@@ -93,9 +104,9 @@ STDAPI DllUnregisterServer()
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
 BOOL APIENTRY DllMain(HANDLE hModule, 
-					  DWORD  dwReason, 
-					  LPVOID lpReserved)
+                      DWORD  dwReason, 
+                      LPVOID lpReserved)
 {
-	return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
+  return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }
 
