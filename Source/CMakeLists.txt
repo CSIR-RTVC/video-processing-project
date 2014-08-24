@@ -21,10 +21,13 @@ message("Adding DS baselasses ${DSHOWBASECLASSES}")
 IF(WIN32)
 IF(MSVC12)
 set(vpp_CONTRIB_DIR_LIBS $ENV{vpp_CONTRIB_DIR}/lib/VC12)
+set(MSVC_VER VC12)
 ELSEIF(MSVC11)
 set(vpp_CONTRIB_DIR_LIBS $ENV{vpp_CONTRIB_DIR}/lib/VC11)
+set(MSVC_VER VC11)
 ELSEIF(MSVC10)
 set(vpp_CONTRIB_DIR_LIBS $ENV{vpp_CONTRIB_DIR}/lib/VC10)
+set(MSVC_VER VC10)
 ELSE(MSVC12)
 set(vpp_CONTRIB_DIR_LIBS $ENV{vpp_CONTRIB_DIR}/lib)
 ENDIF(MSVC12)
@@ -32,6 +35,21 @@ ENDIF(WIN32)
 
 # registering of DS filters
 SET(REGISTER_DS_FILTERS false)
+
+# NOTE: this has many additional dependencies such as boost, glog, LiveMediaExt, cpp-util
+# RtspSinkFilter relies on LiveMediaExt
+SET(REGISTER_BUILD_RTSP_SINK_FILTER false)
+
+IF (REGISTER_BUILD_RTSP_SINK_FILTER)
+message("LiveMediaExt: $ENV{LIVE_MEDIA_EXT_ROOT}")
+# we need glog
+add_library( glog UNKNOWN IMPORTED )
+set_target_properties( glog PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/externals/glog/vsprojects/libglog/${MSVC_VER}/Debug/libglog.lib )
+set_target_properties( glog PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/externals/glog/vsprojects/libglog/${MSVC_VER}/Release/libglog.lib )
+add_library( LiveMediaExt UNKNOWN IMPORTED )
+set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Debug/LiveMediaExt.lib )
+set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Release/LiveMediaExt.lib )
+ENDIF(REGISTER_BUILD_RTSP_SINK_FILTER)
 
 #define 3rd party libs under windows
 # on linux these will have been installed
@@ -41,10 +59,10 @@ add_library( amr UNKNOWN IMPORTED )
 #add_library( baseclasses UNKNOWN IMPORTED )
 add_library( faac UNKNOWN IMPORTED )
 add_library( faad UNKNOWN IMPORTED )
-add_library( liveMedia UNKNOWN IMPORTED )
-add_library( BasicUsageEnvironment UNKNOWN IMPORTED )
-add_library( groupsock UNKNOWN IMPORTED )
-add_library( UsageEnvironment UNKNOWN IMPORTED )
+#add_library( liveMedia UNKNOWN IMPORTED )
+#add_library( BasicUsageEnvironment UNKNOWN IMPORTED )
+#add_library( groupsock UNKNOWN IMPORTED )
+#add_library( UsageEnvironment UNKNOWN IMPORTED )
 
 # You can define two import-locations: one for debug and one for release.
 
@@ -60,16 +78,23 @@ set_target_properties( faac PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_D
 set_target_properties( faad PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libfaadD.lib )
 set_target_properties( faad PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libfaad.lib )
 
-set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libliveMediaD.lib )
-set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libBasicUsageEnvironmentD.lib )
-set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libgroupsockD.lib )
-set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libUsageEnvironmentD.lib )
-set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libliveMedia.lib )
-set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libBasicUsageEnvironment.lib )
-set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libgroupsock.lib )
-set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libUsageEnvironment.lib )
+#set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libliveMediaD.lib )
+#set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libBasicUsageEnvironmentD.lib )
+#set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libgroupsockD.lib )
+#set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_DEBUG ${vpp_CONTRIB_DIR_LIBS}/libUsageEnvironmentD.lib )
+#set_target_properties( liveMedia PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libliveMedia.lib )
+#set_target_properties( BasicUsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libBasicUsageEnvironment.lib )
+#set_target_properties( groupsock PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libgroupsock.lib )
+#set_target_properties( UsageEnvironment PROPERTIES IMPORTED_LOCATION_RELEASE ${vpp_CONTRIB_DIR_LIBS}/libUsageEnvironment.lib )
 
 ENDIF(WIN32)
+
+SET(live555Includes
+${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/BasicUsageEnvironment/include
+${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/groupsock/include
+${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/liveMedia/include
+${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/UsageEnvironment/include
+)
 
 IF(WIN32)
 SET(vppIncludes
