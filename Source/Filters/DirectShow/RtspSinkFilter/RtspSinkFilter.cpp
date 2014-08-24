@@ -4,8 +4,21 @@
 #include "RtspSinkInputPin.h"
 #include <Shared/StringUtil.h>
 
+#include <Media/MediaTypes.h>
+#include <Media/PacketManagerMediaChannel.h>
+#include <Media/SingleChannelManager.h>
+#include <Media/RtspService.h>
+
+#define CHANNEL_ID 1
+
 RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
-  : CBaseFilter(NAME("CSIR VPP RTSP Sink Filter"), pUnk, &m_stateLock, CLSID_CSIR_VPP_RtspSinkFilter, phr)
+  : CBaseFilter(NAME("CSIR VPP RTSP Sink Filter"), pUnk, &m_stateLock, CLSID_CSIR_VPP_RtspSinkFilter, phr),
+  m_channelManager(CHANNEL_ID),
+  m_rtspService(m_channelManager),
+  m_hLiveMediaThreadHandle(NULL),
+  m_hLiveMediaStopEvent(NULL),
+  m_dwThreadID(0),
+  m_bHaveSeenSpsPpsIdr(false)
 {
 #if 0
   DbgSetModuleLevel(LOG_MEMORY, 5);
@@ -19,10 +32,30 @@ RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
     // create one input pin
     createInputPin(phr);
   }
+
+  // Create Live Media Event loop handle - this will be used to notify the main thread that the live Media RTSP thread has finished
+  m_hLiveMediaStopEvent = CreateEvent(
+    NULL,                       // default security attributes
+    FALSE,                      // auto-reset event
+    FALSE,                      // initial state is nonsignaled
+    TEXT("LiveMediaStopEvent")  // object name
+    );
+
 }
 
 RtspSinkFilter::~RtspSinkFilter(void)
 {
+  if (m_hLiveMediaThreadHandle)
+  {
+    stopLive555EventLoop();
+
+    CloseHandle(m_hLiveMediaThreadHandle);
+    m_hLiveMediaThreadHandle = NULL;
+  }
+
+  CloseHandle(m_hLiveMediaStopEvent);
+  m_hLiveMediaStopEvent = NULL;
+
   // Release all the COM interfaces
   for (size_t i = 0; i < m_vInputPins.size(); i++)
   {
@@ -149,19 +182,133 @@ STDMETHODIMP RtspSinkFilter::FindPin( LPCWSTR Id, IPin **ppPin )
 	return hr;
 }
 
+void RtspSinkFilter::startLive555EventLoop()
+{
+  ResetEvent(m_hLiveMediaStopEvent);
+  // Blocks until end of liveMedia eventloop
+  boost::system::error_code ec = m_rtspService.start();
+  assert(!ec);
+  // The Stop method waits for this event
+  SetEvent(m_hLiveMediaStopEvent);
+}
+
+static DWORD WINAPI LiveMediaThread(LPVOID pvParam)
+{
+  RtspSinkFilter* pSourceFilter = (RtspSinkFilter*)pvParam;
+  pSourceFilter->startLive555EventLoop();
+  return S_OK;
+}
+
 STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
 {
   CAutoLock cAutoLock(&m_stateLock);
   // start live555 thread
-  
+  if (m_hLiveMediaThreadHandle == NULL)
+  {
+    if (m_vInputPins[0]->IsConnected())
+    {
+      m_mMediaSubtype[0] = m_vInputPins[0]->getRtspMediaSubtype();
+    }
+    if (m_vInputPins.size() == 2 && m_vInputPins[1]->IsConnected())
+    {
+      m_mMediaSubtype[1] = m_vInputPins[1]->getRtspMediaSubtype();
+    }
+
+    // try and setup RTSP service
+    int32_t iVideo = -1;
+    int32_t iAudio = -1;
+
+    for (SubtypeMap_t::iterator it = m_mMediaSubtype.begin(); it != m_mMediaSubtype.end(); ++it)
+    {
+      if (it->second == MST_H264)
+      {
+        iVideo = it->first;
+        m_channelManager.setVideoSourceId(iVideo);
+      }
+      else if (it->second == MST_AMR)
+      {
+        iAudio = it->first;
+        m_channelManager.setAudioSourceId(iAudio);
+      }
+      else if (it->second == MST_AAC)
+      {
+        // TODO
+        assert(false);
+      }
+    }
+
+    // Create a new thread for the RTSP liveMedia event loop
+    if (iVideo != -1 && iAudio != -1)
+    {
+      RtspSinkInputPin* pPin = m_vInputPins[iVideo];
+      lme::VideoChannelDescriptor& videoDescriptor = pPin->m_videoDescriptor;
+      assert(videoDescriptor.Codec == lme::H264);
+      assert(videoDescriptor.Width > 0);
+      assert(videoDescriptor.Height > 0);
+   
+      RtspSinkInputPin* pPin2 = m_vInputPins[iAudio];
+      lme::AudioChannelDescriptor& audioDescriptor = pPin2->m_audioDescriptor;
+      assert(audioDescriptor.Codec == lme::AMR);
+      assert(audioDescriptor.BitsPerSample > 0);
+      assert(audioDescriptor.SamplingFrequency > 0);
+      assert(audioDescriptor.Channels > 0);
+      boost::system::error_code ec = m_rtspService.createChannel(CHANNEL_ID, "live", videoDescriptor, audioDescriptor);
+      if (ec)
+      {
+        LOG(WARNING) << "Error creating RTSP H264/AMR service channel: " << ec.message();
+        return E_FAIL;
+      }
+    }
+    else if (iVideo != -1)
+    {
+      RtspSinkInputPin* pPin = m_vInputPins[iVideo];
+      lme::VideoChannelDescriptor& videoDescriptor = pPin->m_videoDescriptor;
+      assert(videoDescriptor.Codec == lme::H264);
+      assert(videoDescriptor.Width > 0);
+      assert(videoDescriptor.Height > 0);
+      boost::system::error_code ec = m_rtspService.createChannel(CHANNEL_ID, "live", videoDescriptor);
+      if (ec)
+      {
+        LOG(WARNING) << "Error creating RTSP H264 service channel: " << ec.message();
+        return E_FAIL;
+      }
+    }
+    else if (iAudio != -1)
+    {
+      RtspSinkInputPin* pPin = m_vInputPins[iAudio];
+      lme::AudioChannelDescriptor& audioDescriptor = pPin->m_audioDescriptor;
+      assert(audioDescriptor.Codec == lme::AMR);
+      assert(audioDescriptor.BitsPerSample > 0);
+      assert(audioDescriptor.SamplingFrequency > 0);
+      assert(audioDescriptor.Channels > 0);
+      boost::system::error_code ec = m_rtspService.createChannel(CHANNEL_ID, "live", audioDescriptor);
+      if (ec)
+      {
+        LOG(WARNING) << "Error creating RTSP AMR service channel: " << ec.message();
+        return E_FAIL;
+      }
+    }
+    m_hLiveMediaThreadHandle = CreateThread(0, 0, LiveMediaThread, (void*)this, 0, &m_dwThreadID);
+  }
   return CBaseFilter::Run(tStart);
+}
+
+void RtspSinkFilter::stopLive555EventLoop()
+{
+  boost::system::error_code ec = m_rtspService.stop();
+  assert(!ec);
+  // Wait for the liveMedia eventloop to finish
+  DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
+  CloseHandle(m_hLiveMediaThreadHandle);
+  m_hLiveMediaThreadHandle = NULL;
 }
 
 STDMETHODIMP RtspSinkFilter::Stop()
 {
 	CAutoLock cAutoLock(&m_stateLock);
-
   // stop live555 thread
+  stopLive555EventLoop();
+
 	return CBaseFilter::Stop();
 }
 
@@ -169,6 +316,50 @@ STDMETHODIMP RtspSinkFilter::Pause()
 {
 	CAutoLock cAutoLock(&m_stateLock);
 	return CBaseFilter::Pause();
+}
+
+bool isIdrFrame(unsigned char nalUnitHeader)
+{
+  unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+  //assert(uiForbiddenZeroBit == 0);
+  unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+  unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+  switch (uiNalUnitType)
+  {
+    // IDR nal unit types
+  case 5:
+    return true;
+  default:
+    return false;
+  }
+}
+bool isSps(unsigned char nalUnitHeader)
+{
+  unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+  unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+  unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+  switch (uiNalUnitType)
+  {
+    // IDR nal unit types
+  case 7:
+    return true;
+  default:
+    return false;
+  }
+}
+bool isPps(unsigned char nalUnitHeader)
+{
+  unsigned uiForbiddenZeroBit = nalUnitHeader & 0x80;
+  unsigned uiNalRefIdc = nalUnitHeader & 0x60;
+  unsigned char uiNalUnitType = nalUnitHeader & 0x1f;
+  switch (uiNalUnitType)
+  {
+    // IDR nal unit types
+  case 8:
+    return true;
+  default:
+    return false;
+  }
 }
 
 HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
@@ -188,6 +379,12 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
     return hr;
   }
 
+//  VLOG(2) << "RtspSinkFilter::sendMediaSample: " << uiId;
+  lme::PacketManagerMediaChannel& packetManager = m_channelManager.getPacketManager();
+
+  double dStartTime = (double)tStart / (10000000.0);
+
+//  VLOG(2) << "RtspSinkFilter::sendMediaSample: " << dStartTime;
   switch (m_mMediaSubtype[uiId])
   {
   case MST_H264:
@@ -239,26 +436,57 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
     mediaSamples.push_back(mediaSample);
 
     m_pRtspServer->sendVideo(mediaSamples);
+#else
+//    VLOG(2) << "RtspSinkFilter::sendMediaSample: H264";
+    if (m_bHaveSeenSpsPpsIdr)
+    {
+      std::vector<lme::MediaSample> mediaSamples;
+      lme::MediaSample mediaSample;
+      mediaSample.setPresentationTime(dStartTime);
+      uint32_t uiLen = pSample->GetActualDataLength();
+      BYTE* pData = new BYTE[uiLen];
+      memcpy(pData, pbData, uiLen);
+      mediaSample.setData(pData, uiLen);
+      mediaSamples.push_back(mediaSample);
+      packetManager.addVideoMediaSamples(mediaSamples);
+    }
+    else
+    {
+      VLOG(2) << "Waiting for SPS/PPS/IDR";
+      // simple check for now: check for SPS
+      // TODO: improve! Proper parsing and check for IDR
+      if (isSps(pbData[4]))
+      {
+        VLOG(2) << "SPS/PPS/IDR found";
+        m_bHaveSeenSpsPpsIdr = true;
+        std::vector<lme::MediaSample> mediaSamples;
+        lme::MediaSample mediaSample;
+        mediaSample.setPresentationTime(dStartTime);
+        uint32_t uiLen = pSample->GetActualDataLength();
+        BYTE* pData = new BYTE[uiLen];
+        memcpy(pData, pbData, uiLen);
+        mediaSample.setData(pData, uiLen);
+        mediaSamples.push_back(mediaSample);
+        packetManager.addVideoMediaSamples(mediaSamples);
+      }
+    }
 #endif
     break;
   }
-  case MT_AUDIO:
+  case MST_AMR:
   {
-#if 0
-    // send the sample using our RTP library
-    // make a copy of the data, maybe we can avoid this?
+//    VLOG(2) << "RtspSinkFilter::sendMediaSample: AMR";
+    std::vector<lme::MediaSample> mediaSamples;
+    lme::MediaSample mediaSample;
+    mediaSample.setPresentationTime(dStartTime);
     uint32_t uiLen = pSample->GetActualDataLength();
     BYTE* pData = new BYTE[uiLen];
     memcpy(pData, pbData, uiLen);
-
-    // now use rtp++ to send sample
-    double dStartTime = (double)tStart / (10000000.0);
-    rtp_plus_plus::media::MediaSample mediaSample;
-    mediaSample.setStartTime(dStartTime);
-    mediaSample.setData(pData, uiLen);
-
-    m_pRtspServer->sendAudio(mediaSample);
-#endif
+    mediaSample.setData(pData, pSample->GetActualDataLength());
+    mediaSamples.push_back(mediaSample);
+//    VLOG(2) << "RtspSinkFilter::sendMediaSample: Adding to packet manager";
+    packetManager.addAudioMediaSamples(mediaSamples);
+//    VLOG(2) << "RtspSinkFilter::sendMediaSample: Added to packet manager";
     break;
   }
   default:

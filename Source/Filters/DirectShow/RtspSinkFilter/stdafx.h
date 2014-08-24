@@ -17,3 +17,14 @@
 // DirectShow
 #include <Streams.h>
 #pragma warning(pop)      // restore original warning level
+
+#ifdef _WIN32
+#pragma warning(push)     // disable for this header only
+#pragma warning(disable:4251) 
+// To get around compile error on windows: ERROR macro is defined
+#define GLOG_NO_ABBREVIATED_SEVERITIES
+#endif
+#include <glog/logging.h>
+#ifdef _WIN32
+#pragma warning(pop)     // restore original warning level
+#endif

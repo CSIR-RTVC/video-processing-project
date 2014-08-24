@@ -2,12 +2,15 @@
 #include "RtspSinkInputPin.h"
 #include "RtspSinkFilter.h"
 #include <DirectShow/CustomMediaTypes.h>
-
+#include <cassert>
+// live555
+#include <Base64.hh>
 // Experimental for H264
 #ifdef RTVC_USE_MS_H264_DECODER
 #include <dvdmedia.h>
 #include <wmcodecdsp.h>
 #endif
+#include <Media/MediaTypes.h>
 
 RtspSinkInputPin::RtspSinkInputPin( HRESULT* phr, RtspSinkFilter* pFilter, unsigned uiId )
 : CRenderedInputPin(NAME("CSIR VPP RTSP Sink Filter Input Pin"), pFilter, &m_stateLock, phr, L"Input"),
@@ -15,11 +18,6 @@ RtspSinkInputPin::RtspSinkInputPin( HRESULT* phr, RtspSinkFilter* pFilter, unsig
   m_uiId(uiId),
   m_eType(MT_NOT_SET),
   m_eSubtype(MST_NOT_SET)
-  //m_nBitsPerSample(0),
-	//m_nChannels(0),
-	//m_nBytesPerSecond(0),
-	//m_nSamplesPerSecond(0),
- // m_uiSamplingRate(0),
 {
 	if (!SUCCEEDED(*phr))
 	{
@@ -83,6 +81,8 @@ HRESULT RtspSinkInputPin::CheckMediaType( const CMediaType *pmt )
   {
     if (pmt->subtype == MEDIASUBTYPE_VPP_H264)
     {
+      extractVideoParameters(pmt);
+      extractH264Parameters(pmt);
       m_eType = MT_VIDEO;
       m_eSubtype = MST_H264;
       return S_OK;
@@ -92,13 +92,15 @@ HRESULT RtspSinkInputPin::CheckMediaType( const CMediaType *pmt )
   {
     if (pmt->subtype == MEDIASUBTYPE_AMR)
     {
+      extractAudioParameters(pmt);
       m_eType = MT_AUDIO;
       m_eSubtype = MST_AMR;
       return S_OK;
     }
     else if (pmt->subtype == MEDIASUBTYPE_AAC)
     {
-      // TODO:
+      extractAudioParameters(pmt);
+      // TODO
       return VFW_E_TYPE_NOT_ACCEPTED;
       m_eType = MT_AUDIO;
       m_eSubtype = MST_AAC;
@@ -107,6 +109,107 @@ HRESULT RtspSinkInputPin::CheckMediaType( const CMediaType *pmt )
   }
 
   return VFW_E_TYPE_NOT_ACCEPTED;
+}
+
+inline void RtspSinkInputPin::extractVideoParameters(const CMediaType *pMediaType)
+{
+  assert(pMediaType->formattype == FORMAT_VideoInfo);
+  if (pMediaType->subtype == MEDIASUBTYPE_VPP_H264)
+    m_videoDescriptor.Codec = lme::H264;
+
+  VIDEOINFOHEADER* pVih = (VIDEOINFOHEADER*)pMediaType->pbFormat;
+  int nWidth = pVih->bmiHeader.biWidth;
+  int nHeight = pVih->bmiHeader.biHeight;
+  m_videoDescriptor.Width = nWidth;
+  m_videoDescriptor.Height = nHeight;
+}
+
+inline void RtspSinkInputPin::extractAudioParameters(const CMediaType *pMediaType)
+{
+  if (pMediaType->subtype == MEDIASUBTYPE_AMR)
+    m_audioDescriptor.Codec = lme::AMR;
+  else if (pMediaType->subtype == MEDIASUBTYPE_AAC)
+    m_audioDescriptor.Codec = lme::AMR;
+  else
+    assert(false);
+
+  WAVEFORMATEX *pWF = (WAVEFORMATEX *)pMediaType->pbFormat;
+  // Get bits per sample
+  m_audioDescriptor.BitsPerSample = pWF->wBitsPerSample;
+  // Get samples per second
+  m_audioDescriptor.SamplingFrequency = pWF->nSamplesPerSec;
+  // Get channels
+  m_audioDescriptor.Channels = pWF->nChannels;
+  
+  if (pMediaType->subtype == MEDIASUBTYPE_AAC)
+  {
+    // extract AAC specific info
+    DWORD cbDecoderSpecific = pWF->cbSize;
+    ASSERT(cbDecoderSpecific == 2);
+    unsigned char audioSpecificConfig[2];
+    memcpy(audioSpecificConfig, pWF + 1, cbDecoderSpecific);
+
+    // Adopted from liveMedia\ADTSAudioFileSource.cpp
+    const int buf_size = 5;
+    char fConfigStr[buf_size];
+#if 0
+    sprintf(fConfigStr, "%02X%02x", audioSpecificConfig[0], audioSpecificConfig[1]);
+#else
+    sprintf_s(fConfigStr, buf_size, "%02X%02x", audioSpecificConfig[0], audioSpecificConfig[1]);
+#endif
+    std::string sAudioConfigStr(fConfigStr, buf_size);
+    m_audioDescriptor.ConfigString = sAudioConfigStr;
+  }
+}
+
+void RtspSinkInputPin::extractH264Parameters(const CMediaType *pMediaType)
+{
+  // Extract width and height of video -> this is assuming that all multiplexed videos have the same dimension!!!!!!!		
+  // Add the number of streams parameter to the subsession
+  BYTE* pFormat = pMediaType->pbFormat;
+  // Get size of entire format header: this is our custom header for media type H264
+  int nSize = pMediaType->cbFormat;
+  // The last byte stores the additional header size
+  unsigned uiAdditionalSize(0);
+  memcpy(&uiAdditionalSize, pFormat + nSize - sizeof(int), sizeof(int));
+
+  if (uiAdditionalSize > 0)
+  {
+    unsigned char startCode[4] = { 0, 0, 0, 1 };
+    char* pBuffer = new char[uiAdditionalSize];
+    memcpy(pBuffer, pFormat + (nSize - uiAdditionalSize), uiAdditionalSize);
+    // check for first start code
+    if (memcmp(startCode, pBuffer, 4) == 0)
+    {
+      int index = 0;
+      // adjust to compensate for start code
+      for (size_t i = 4; i < uiAdditionalSize - 8; ++i) // skip 1st start code and since start code is 4 bytes long don't cmp past the end
+      {
+        // search for second start code
+        if (memcmp(startCode, &pBuffer[i], 4) == 0)
+        {
+          index = i;
+          break;
+        }
+      }
+
+      std::string sps, pps;
+      // if we found the second start code
+      if (index != 0)
+      {
+        sps = std::string(pBuffer + 4, index - 4);
+        pps = std::string(pBuffer + index + 4, uiAdditionalSize - index - 4 - sizeof(int));
+
+        char* szSps = base64Encode(sps.c_str(), sps.length());
+        char* szPps = base64Encode(pps.c_str(), pps.length());
+        m_videoDescriptor.Sps = std::string(szSps);
+        m_videoDescriptor.Pps = std::string(szPps);
+        delete[] szSps;
+        delete[] szPps;
+      }
+    }
+    delete[] pBuffer;
+  }
 }
 
 HRESULT RtspSinkInputPin::GetMediaType( int iPosition, CMediaType *pMediaType )
