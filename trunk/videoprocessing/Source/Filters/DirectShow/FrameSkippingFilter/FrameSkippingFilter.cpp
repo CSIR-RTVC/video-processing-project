@@ -32,18 +32,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #include "stdafx.h"
-
 #include "FrameSkippingFilter.h"
+#include <set>
 #include <Shared/StringUtil.h>
 
-
-
 FrameSkippingFilter::FrameSkippingFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-: CTransInPlaceFilter(NAME("CSIR RTVC Frame Skipping Filter"), pUnk, CLSID_RTVCFrameSkippingFilter, pHr, false),
-  m_SkipFrameNumber(0),
-  seenFirstFrame(false),
-  previousTimestamp(0),
-  in_framecount(0)
+: CTransInPlaceFilter(NAME("CSIR RTVC Frame Skipping Filter"), pUnk, CLSID_RTVC_VPP_FrameSkippingFilter, pHr, false),
+  m_uiSkipFrameNumber(0),
+  m_uiTotalFrames(0),
+  m_uiCurrentFrame(0)
 {
   // Init parameters
 	initParameters();
@@ -79,31 +76,21 @@ STDMETHODIMP FrameSkippingFilter::NonDelegatingQueryInterface( REFIID riid, void
 }
 
 HRESULT FrameSkippingFilter::Transform(IMediaSample *pSample)
-{  
-    REFERENCE_TIME tStart;
-    REFERENCE_TIME tStop;
+{
+  if (m_vFramesToBeSkipped.empty())
+    return S_OK;
 
-    //int m_SkipFrameNumber = 1; // parameter to define how many frames to skip
+  int iSkip = m_vFramesToBeSkipped[m_uiCurrentFrame++];
+  if (m_uiCurrentFrame >= m_vFramesToBeSkipped.size())
+  {
+    m_uiCurrentFrame = 0;
+  }
 
-    HRESULT hr = pSample->GetTime(&tStart, &tStop); //get the current time now
-       
-    in_framecount++ ; // counting the incoming samples
-
-    REFERENCE_TIME tDiff = tStart - previousTimestamp;
-    // Make sure timestamps are increasing
-    if (tDiff > 0)
-    { 
-      if(m_SkipFrameNumber != 0)
-      {
-
-        if((in_framecount % (m_SkipFrameNumber+1))== 0) 
-        {
-          return S_FALSE; // skip this frame if it is true
-        }        
-      }
-      previousTimestamp = tStart;
-    }
-	  return S_OK;
+  if (iSkip == 1)
+  {
+    return S_FALSE; 
+  }        
+  return S_OK;
 }
 
 HRESULT FrameSkippingFilter::CheckInputType(const CMediaType* mtIn)
@@ -129,16 +116,52 @@ HRESULT FrameSkippingFilter::CheckInputType(const CMediaType* mtIn)
 
 HRESULT FrameSkippingFilter::Run( REFERENCE_TIME tStart )
 {
+  m_vFramesToBeSkipped.clear();
+  // calculate which frames should be dropped
+  if (m_uiSkipFrameNumber < m_uiTotalFrames)
+  {
+    double dRatio = m_uiTotalFrames / static_cast<double>(m_uiSkipFrameNumber);
+    std::set<int> toBeSkipped;
+    std::set<int> toBePlayed;
+    // populate to be skipped: note that this index is 1-indexed
+    for (size_t iCount = 1; iCount <= m_uiSkipFrameNumber; ++iCount)
+    {
+#if _MSC_VER > 1600
+      int iToBeSkipped = static_cast<int>(round(iCount * dRatio));
+#else
+      int iToBeSkipped = static_cast<int>(floor(iCount * dRatio + 0.5));
+#endif
+      toBeSkipped.insert(iToBeSkipped);
+    }
+
+    // populate to be played
+    for (size_t iCount = 1; iCount <= m_uiTotalFrames; ++iCount)
+    {
+      auto found = toBeSkipped.find(iCount);
+      if (found == toBeSkipped.end())
+      {
+        toBePlayed.insert(iCount);
+        m_vFramesToBeSkipped.push_back(0);
+      }
+      else
+      {
+        m_vFramesToBeSkipped.push_back(1);
+      }
+    }
+  }
+  else
+  {
+    // invalid input
+    m_vFramesToBeSkipped.clear();
+  }
+
   return CTransInPlaceFilter::Run(tStart);
 }
 
 HRESULT FrameSkippingFilter::Stop( void )
 {
-  seenFirstFrame = false;
-  previousTimestamp = 0;
-  in_framecount = 0;
-  m_SkipFrameNumber = 0;
-
+  m_uiCurrentFrame = 0;
+  m_vFramesToBeSkipped.clear();
   return CTransInPlaceFilter::Stop();
 }
 

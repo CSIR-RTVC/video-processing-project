@@ -36,6 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/FilterPropertiesBase.h>
 
 #include <climits>
+#include <sstream>
+#include <string>
 #include "resource.h"
 
 #define BUFFER_SIZE 256
@@ -59,10 +61,12 @@ public:
 	}
 
 	FrameSkippingProperties::FrameSkippingProperties(IUnknown *pUnk) : 
-	FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION)
+	FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION),
+    m_framenumber(0),
+    m_totalFrames(0)
 	{;}
 
-	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+	BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		// Let the parent class handle the message.
 		return FilterPropertiesBase::OnReceiveMessage(hwnd,uMsg,wParam,lParam);
@@ -74,26 +78,39 @@ public:
 		short upper = SHRT_MAX;
 
 		 //Init UI
-		long lResult = SendMessage(			// returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN1),	// handle to destination control
-			(UINT) UDM_SETRANGE,			// message ID
-			(WPARAM) 0,						// = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+		long lResult = SendMessage(         // returns LRESULT in lResult
+			GetDlgItem(m_Dlg, IDC_SPIN1),	    // handle to destination control
+			(UINT) UDM_SETRANGE,              // message ID
+			(WPARAM) 0,                       // = 0; not used, must be zero
+			(LPARAM) MAKELONG ( upper, lower) // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
 			);
 	
+    lResult = SendMessage(          // returns LRESULT in lResult
+      GetDlgItem(m_Dlg, IDC_SPIN2),	    // handle to destination control
+      (UINT)UDM_SETRANGE,              // message ID
+      (WPARAM)0,                       // = 0; not used, must be zero
+      (LPARAM)MAKELONG(upper, lower) // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+      );
+
 		int nLength = 0;
 		char szBuffer[BUFFER_SIZE];
 		HRESULT hr = m_pSettingsInterface->GetParameter("skipframe", sizeof(szBuffer), szBuffer, &nLength);
 		if (SUCCEEDED(hr))
 		{
-			SetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_NUMBER, szBuffer);
-			m_framenumber = atoi(szBuffer);
-      return S_OK;
-		}
+      m_framenumber = atoi(szBuffer);
+      SetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_NUMBER, szBuffer);		}
 		else
 		{
 			return E_FAIL;
 		}
+
+    hr = m_pSettingsInterface->GetParameter("totalframes", sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+    {
+      m_totalFrames = atoi(szBuffer);
+      SetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_TOTAL, szBuffer);
+    }
+
     return hr;
 	}
  
@@ -102,14 +119,21 @@ public:
 		int nLength = 0;
 		char szBuffer[BUFFER_SIZE];
 		nLength = GetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_NUMBER, szBuffer, BUFFER_SIZE);
-		m_framenumber = atoi(szBuffer);
-		m_pSettingsInterface->SetParameter("skipframe", szBuffer);
-		return S_OK;
+    m_framenumber = atoi(szBuffer);
+    HRESULT hr = m_pSettingsInterface->SetParameter("skipframe", szBuffer);
+    if (FAILED(hr)) return hr;
+
+    nLength = GetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_TOTAL, szBuffer, BUFFER_SIZE);
+    m_totalFrames = atoi(szBuffer);
+    hr = m_pSettingsInterface->SetParameter("totalframes", szBuffer);
+
+		return hr;
 	} 
 
 private:
 
 	unsigned m_framenumber; // number of frames to skip
-	
+  unsigned m_totalFrames; // total number of frames
+
 };
 
