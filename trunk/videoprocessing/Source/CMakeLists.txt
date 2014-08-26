@@ -33,6 +33,9 @@ set(vpp_CONTRIB_DIR_LIBS $ENV{vpp_CONTRIB_DIR}/lib)
 ENDIF(MSVC12)
 ENDIF(WIN32)
 
+# hack for backwards compatibility to pre-CMake projects
+add_definitions(-DVPP_CMAKE_BUILD)
+
 # registering of DS filters
 SET(REGISTER_DS_FILTERS false)
 

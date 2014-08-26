@@ -52,10 +52,13 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 
 const unsigned char g_startCode[] = { 0, 0, 0, 1};
 
+// HACK for backwards compatibility with pre-CMake projects
+#ifndef VPP_CMAKE_BUILD
 #ifdef _DEBUG
 #pragma comment(lib, "H264v2d.lib")
 #else
 #pragma comment(lib, "H264v2.lib")
+#endif
 #endif
 
 CUnknown * WINAPI H264SourceFilter::CreateInstance(IUnknown *pUnk, HRESULT *phr)

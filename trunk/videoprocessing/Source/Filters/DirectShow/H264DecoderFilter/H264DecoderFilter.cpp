@@ -37,11 +37,14 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <Shared/CommonDefs.h>
 #include <Shared/Conversion.h>
 
+// HACK for backwards compatibility with pre-CMake projects
+#ifndef VPP_CMAKE_BUILD
 // Define used to switch between the actual switching version of the codec and the non switching
 #ifdef _DEBUG
 #pragma comment(lib, "H264v2d.lib")
 #else
 #pragma comment(lib, "H264v2.lib")
+#endif
 #endif
 
 const DWORD MAX_SUPPORTED_PROFILE = 66;
