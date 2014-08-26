@@ -33,22 +33,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #pragma once
 #include <streams.h>
-
-//#include <Filters/DirectShow/DirectShowFilterGuids.h>
+#include <vector>
 #include <DirectShow/CSettingsInterface.h>
 
 // {8E974B99-BC09-4041-98F4-1103BAA1B0EA}
-static const GUID CLSID_RTVCFrameSkippingFilter = 
+static const GUID CLSID_RTVC_VPP_FrameSkippingFilter =
 { 0xbbf2f0af, 0x9f7f, 0x4406, { 0xae, 0x9c, 0xe5, 0xf, 0x92, 0xc4, 0x63, 0xbb } };
 
 //// {F0A41B88-2311-42f9-8E26-679BE4FFC176}
 static const GUID CLSID_FrameSkippingProperties = 
 { 0xf0a41b88, 0x2311, 0x42f9, { 0x8e, 0x26, 0x67, 0x9b, 0xe4, 0xff, 0xc1, 0x76 } };
 
-
-
-// Forward declarations
-
+/**
+ * @brief The FrameSkippingFilter allows x frames out of every y frames to be skipped.
+ * TODO: Do input validation by overriding SetParameter
+ */
 class FrameSkippingFilter : public CTransInPlaceFilter,
                             public CSettingsInterface,
                             public ISpecifyPropertyPages
@@ -90,17 +89,20 @@ public:
   STDMETHODIMP Stop(void);
 
   /// Overridden from CSettingsInterface
-  virtual void initParameters() { addParameter("skipframe", &m_SkipFrameNumber, 0); }
-
+  virtual void initParameters() 
+  { 
+    addParameter("skipframe", &m_uiSkipFrameNumber, 0);
+    addParameter("totalframes", &m_uiTotalFrames, 0);
+  }
 
 private:
 
-  bool seenFirstFrame;
-  REFERENCE_TIME previousTimestamp;  
-  
-  //for frame skipper filter
-  int in_framecount;
-  int m_SkipFrameNumber;
-
- 
+  /// the total number of frames to be skipped
+  unsigned m_uiSkipFrameNumber;
+  /// the total number of frames per second
+  unsigned m_uiTotalFrames;
+  // current frame
+  unsigned m_uiCurrentFrame;
+  // vector to store which frames should be skipped: stores a 1 if a frame is to be skipped
+  std::vector<int> m_vFramesToBeSkipped;
 };
