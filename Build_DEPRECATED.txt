@@ -1,3 +1,6 @@
+These instructions are deprecated and were used to configure and
+build the initialy maintained VS solutions. CMake is now used. 
+
 --------------------------------------------------------------------------------------------------
 Build instructions:
 The batch files setup the Visual Studio environments. Follow the instructions below:
