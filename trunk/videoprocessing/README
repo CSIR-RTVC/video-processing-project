@@ -22,14 +22,18 @@ DirectShow filters:
 - Audio mixing filter
 - Crop filter
 - Framerate display
-- H264 decoder
-- H264 encoder
+- Frame skipping 
+- H264 decoder (baseline)
+- H264 encoder (baseline)
 - H264 source filter
 - Pic in pic filter
 - RGB to YUV420 Planar color converter
 - Rotate filter
-- RTSP/RTP Source filter (8/16 bit PCM AMR MP3, H264)
+- RTSP/RTP source filter (8/16 bit PCM, AMR, MP3, AAC, MP4A-LATM, H264)
+- RTSP sink filter
 - Scale filter
+- Skewing filter
+- Stereo to mono
 - Tee
 - Timestamp logger
 - Video mixing filter
