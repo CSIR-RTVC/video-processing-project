@@ -1,0 +1,40 @@
+#### Environmental variables #####################################################################################
+
+The following environmental variables have to be defined:
+
+MSSDK: e.g. D:/Program Files/Microsoft SDKs/Windows/v7.0
+DSHOWBASECLASSES: e.g. D:/Program Files/Microsoft SDKs/Windows/v7.0/Samples/Multimedia/DirectShow/BaseClasses
+
+To build the RtspSinkFilter:
+LIVE_MEDIA_EXT_ROOT: e.g. D:\projects\LiveMediaExt
+BOOST_INCLUDE_DIR: e.g. D:\Boost\include\boost-1_56
+BOOST_LIB_DIR: e.g. D:\Boost\lib
+
+#### Building with CMake #########################################################################################
+
+Use CMake to generate the Visual Studio projects
+by pointing it to the videoprocessing/Source directory.
+
+E.G.:
+Where is the source code: -> videoprocessing/Source 
+Where to build the binaries: -> videoprocssing/Projects-VS2013
+
+The directory videoprocssing/Projects is still left over from 
+the previous now deprecated build system where we used to maintain 
+the Visual Studio solutions and projects for various versions of VS.
+This proved impractical with all the new VS releases so the build 
+system has been upgraded to CMake.
+
+#### Auto-registering the DS filters #############################################################################
+NOTE: to do this you need to start VS with admin rights.
+
+In videprocessing/Source/CMakeLists.txt line 37 set REGISTER_DS_FILTERS to true 
+
+#### Building the RtspSinkFilter #################################################################################
+
+The RtspSinkFilter relies on the open source LiveMediaExt (https://github.com/miseri/LiveMediaExt) project which
+extends the Live555 library to handle live sources. To build the RtspSinkFilter
+you need to checkout the LiveMediaExt and follow the instructions to build it.
+Once built:
+- the LIVE_MEDIA_EXT_ROOT environmental variable needs to be defined.
+- In videprocessing/Source/CMakeLists.txt line 41 set REGISTER_BUILD_RTSP_SINK_FILTER to true
