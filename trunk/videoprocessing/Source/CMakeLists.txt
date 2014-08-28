@@ -10,9 +10,6 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY ${vpp_SOURCE_DIR}/../lib)
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${vpp_SOURCE_DIR}/../bin)
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${vpp_SOURCE_DIR}/../bin)
 
-set(DSHOWBASECLASSES "C:/Program Files/Microsoft SDKs/Windows/v7.1/Samples/Multimedia/DirectShow/BaseClasses")
-set(WindowsSDKDir "C:/Program Files/Microsoft SDKs/Windows/v7.1")
-
 message("vpp_CONTRIB_DIR directories:" $ENV{vpp_CONTRIB_DIR})
 message("BOOST_INCLUDE_DIR:" $ENV{BOOST_INCLUDE_DIR})
 message("MS SDK: " $ENV{MSSDK})
@@ -105,10 +102,7 @@ ${vpp_SOURCE_DIR}
 ${vpp_SOURCE_DIR}/RtvcLib
 $ENV{BOOST_INCLUDE_DIR}
 $ENV{vpp_CONTRIB_DIR}
-${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/BasicUsageEnvironment/include
-${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/groupsock/include
-${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/liveMedia/include
-${vpp_SOURCE_DIR}/3rdParty/LiveMedia/live/UsageEnvironment/include
+${live555Includes}
 $ENV{DSHOWBASECLASSES}
 $ENV{MSSDK}/Include
 $ENV{MSSDK}/Include/um
