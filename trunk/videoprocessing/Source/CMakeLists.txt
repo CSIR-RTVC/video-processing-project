@@ -38,9 +38,9 @@ SET(REGISTER_DS_FILTERS false)
 
 # NOTE: this has many additional dependencies such as boost, glog, LiveMediaExt, cpp-util
 # RtspSinkFilter relies on LiveMediaExt
-SET(REGISTER_BUILD_RTSP_SINK_FILTER false)
+SET(BUILD_RTSP_SINK_FILTER false)
 
-IF (REGISTER_BUILD_RTSP_SINK_FILTER)
+IF (BUILD_RTSP_SINK_FILTER)
 message("LiveMediaExt: $ENV{LIVE_MEDIA_EXT_ROOT}")
 # we need glog
 add_library( glog UNKNOWN IMPORTED )
@@ -52,7 +52,7 @@ set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE
 set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Release/LiveMediaExt.lib )
 set_target_properties( SimpleRateAdaptation PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Debug/SimpleRateAdaptation.lib )
 set_target_properties( SimpleRateAdaptation PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Release/SimpleRateAdaptation.lib )
-ENDIF(REGISTER_BUILD_RTSP_SINK_FILTER)
+ENDIF(BUILD_RTSP_SINK_FILTER)
 
 #define 3rd party libs under windows
 # on linux these will have been installed
