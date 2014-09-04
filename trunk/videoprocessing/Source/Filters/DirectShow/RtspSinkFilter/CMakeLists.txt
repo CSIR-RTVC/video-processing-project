@@ -15,10 +15,13 @@ ${vppLink}
 )
 
 SET(FLT_HDRS
+DirectShowNetworkCodecControlInterface.h
+INetworkCodecControlInterface.h
 RtspSinkFilter.h
 RtspSinkGuids.h
 RtspSinkInputPin.h
 stdafx.h
+StepBasedRateController.h
 )
 
 SET(FLT_SRCS 
