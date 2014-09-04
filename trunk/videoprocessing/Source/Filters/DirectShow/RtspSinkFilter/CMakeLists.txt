@@ -37,6 +37,7 @@ RtspSinkFilter
 ${vppLibs}
 vpp
 LiveMediaExt
+SimpleRateAdaptation
 groupsock
 liveMedia
 UsageEnvironment

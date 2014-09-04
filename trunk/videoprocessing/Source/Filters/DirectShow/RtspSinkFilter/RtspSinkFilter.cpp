@@ -1,9 +1,10 @@
 #include "stdafx.h"
 #include "RtspSinkFilter.h"
-#include <cassert>
 #include "RtspSinkInputPin.h"
+#include "StepBasedRateController.h"
+#include "DirectShowNetworkCodecControlInterface.h"
+#include <cassert>
 #include <Shared/StringUtil.h>
-
 #include <Media/MediaTypes.h>
 #include <Media/PacketManagerMediaChannel.h>
 #include <Media/SingleChannelManager.h>
@@ -14,12 +15,15 @@
 RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
   : CBaseFilter(NAME("CSIR VPP RTSP Sink Filter"), pUnk, &m_stateLock, CLSID_CSIR_VPP_RtspSinkFilter, phr),
   m_channelManager(CHANNEL_ID),
-  m_rtspService(m_channelManager),
+  m_pDsNetworkControlInterface(new DirectShowNetworkCodecControlInterface()),
+  m_pRateController(new StepBasedRateController(m_pDsNetworkControlInterface)),
+  m_rtspService(m_channelManager, m_pRateController),
   m_hLiveMediaThreadHandle(NULL),
   m_hLiveMediaStopEvent(NULL),
   m_dwThreadID(0),
   m_bHaveSeenSpsPpsIdr(false)
 {
+  VLOG(2) << "RtspSinkFilter()";
 #if 0
   DbgSetModuleLevel(LOG_MEMORY, 5);
 #endif
@@ -41,10 +45,18 @@ RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
     TEXT("LiveMediaStopEvent")  // object name
     );
 
+  m_hLiveMediaInitEvent = CreateEvent(
+    NULL,                       // default security attributes
+    FALSE,                      // auto-reset event
+    FALSE,                      // initial state is nonsignaled
+    TEXT("LiveMediaInitEvent")  // object name
+    );
 }
 
 RtspSinkFilter::~RtspSinkFilter(void)
 {
+  VLOG(2) << "~RtspSinkFilter()";
+
   if (m_hLiveMediaThreadHandle)
   {
     stopLive555EventLoop();
@@ -55,6 +67,9 @@ RtspSinkFilter::~RtspSinkFilter(void)
 
   CloseHandle(m_hLiveMediaStopEvent);
   m_hLiveMediaStopEvent = NULL;
+
+  CloseHandle(m_hLiveMediaInitEvent);
+  m_hLiveMediaInitEvent = NULL;
 
   // Release all the COM interfaces
   for (size_t i = 0; i < m_vInputPins.size(); i++)
@@ -184,16 +199,25 @@ STDMETHODIMP RtspSinkFilter::FindPin( LPCWSTR Id, IPin **ppPin )
 
 void RtspSinkFilter::startLive555EventLoop()
 {
+  VLOG(2) << "startLive555EventLoop";
+  ResetEvent(m_hLiveMediaInitEvent);
   ResetEvent(m_hLiveMediaStopEvent);
   // Blocks until end of liveMedia eventloop
-  boost::system::error_code ec = m_rtspService.start();
-  assert(!ec);
+  m_ecInit = m_rtspService.init();
   // The Stop method waits for this event
-  SetEvent(m_hLiveMediaStopEvent);
+  VLOG(2) << "Setting m_hLiveMediaInitEvent";
+  SetEvent(m_hLiveMediaInitEvent);
+  if (!m_ecInit)
+  {
+    m_rtspService.start();
+    VLOG(2) << "Setting m_hLiveMediaStopEvent";
+    SetEvent(m_hLiveMediaStopEvent);
+  }
 }
 
 static DWORD WINAPI LiveMediaThread(LPVOID pvParam)
 {
+  VLOG(2) << "LiveMediaThread";
   RtspSinkFilter* pSourceFilter = (RtspSinkFilter*)pvParam;
   pSourceFilter->startLive555EventLoop();
   return S_OK;
@@ -201,6 +225,7 @@ static DWORD WINAPI LiveMediaThread(LPVOID pvParam)
 
 STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
 {
+  VLOG(2) << "Run";
   CAutoLock cAutoLock(&m_stateLock);
   // start live555 thread
   if (m_hLiveMediaThreadHandle == NULL)
@@ -289,23 +314,45 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
       }
     }
     m_hLiveMediaThreadHandle = CreateThread(0, 0, LiveMediaThread, (void*)this, 0, &m_dwThreadID);
+
+    // Wait for the liveMedia to initialise
+    VLOG(2) << "Run waiting for m_hLiveMediaInitEvent";
+    DWORD result = WaitForSingleObject(m_hLiveMediaInitEvent, INFINITE);
+    // check result of init
+    if (!m_ecInit)
+    {
+      return CBaseFilter::Run(tStart);
+    }
+    else
+    {
+      LOG(WARNING) << "Failed to init RTSP service: " << m_ecInit.message();
+      return E_FAIL;
+    }
   }
+  // TODO: when is run called when the thread is not running??
+  VLOG(2) << "Run m_hLiveMediaThreadHandle != NULL";
   return CBaseFilter::Run(tStart);
 }
 
 void RtspSinkFilter::stopLive555EventLoop()
 {
-  boost::system::error_code ec = m_rtspService.stop();
-  assert(!ec);
-  // Wait for the liveMedia eventloop to finish
-  DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
-  CloseHandle(m_hLiveMediaThreadHandle);
-  m_hLiveMediaThreadHandle = NULL;
+  VLOG(2) << "stopLive555EventLoop";
+  if (!m_ecInit)
+  {
+    boost::system::error_code ec = m_rtspService.stop();
+    assert(!ec);
+    // Wait for the liveMedia eventloop to finish
+    VLOG(2) << "stopLive555EventLoop: waiting for m_hLiveMediaStopEvent";
+    DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
+    CloseHandle(m_hLiveMediaThreadHandle);
+    m_hLiveMediaThreadHandle = NULL;
+  }
 }
 
 STDMETHODIMP RtspSinkFilter::Stop()
 {
-	CAutoLock cAutoLock(&m_stateLock);
+  VLOG(2) << "Stop";
+  CAutoLock cAutoLock(&m_stateLock);
   // stop live555 thread
   stopLive555EventLoop();
 
@@ -314,7 +361,8 @@ STDMETHODIMP RtspSinkFilter::Stop()
 
 STDMETHODIMP RtspSinkFilter::Pause()
 {
-	CAutoLock cAutoLock(&m_stateLock);
+  VLOG(2) << "Pause";
+  CAutoLock cAutoLock(&m_stateLock);
 	return CBaseFilter::Pause();
 }
 
