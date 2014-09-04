@@ -47,8 +47,11 @@ add_library( glog UNKNOWN IMPORTED )
 set_target_properties( glog PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/externals/glog/vsprojects/libglog/${MSVC_VER}/Debug/libglog.lib )
 set_target_properties( glog PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/externals/glog/vsprojects/libglog/${MSVC_VER}/Release/libglog.lib )
 add_library( LiveMediaExt UNKNOWN IMPORTED )
+add_library( SimpleRateAdaptation UNKNOWN IMPORTED )
 set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Debug/LiveMediaExt.lib )
 set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Release/LiveMediaExt.lib )
+set_target_properties( SimpleRateAdaptation PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Debug/SimpleRateAdaptation.lib )
+set_target_properties( SimpleRateAdaptation PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Release/SimpleRateAdaptation.lib )
 ENDIF(REGISTER_BUILD_RTSP_SINK_FILTER)
 
 #define 3rd party libs under windows

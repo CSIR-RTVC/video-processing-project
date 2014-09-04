@@ -3,6 +3,7 @@
 #include <memory>
 #include <DirectShow/CSettingsInterface.h>
 #include <DirectShow/CStatusInterface.h>
+#include <Media/IRateController.h>
 #include <Media/SingleChannelManager.h>
 #include <Media/RtspService.h>
 
@@ -10,13 +11,10 @@
 
 // Forward
 class RtspSinkInputPin;
+class INetworkCodecControlInterface;
 
 /**
  * @brief This RtspSinkFilter class supports at most two input pins, one for video and one for audio.
- * The RtspSinkFilter will periodically send RTSP REGISTER commands to the specified proxy once the graph is played.
- * It will send these commands while no RTSP session is active. Once a session has been setup, it will cease sending
- * REGISTER requests to the specified client/proxy.
- * If the REGISTER succeeds it will await the RTSP session setup from the RTSP client or proxy
  */
 class RtspSinkFilter : public CBaseFilter,				  /* Source Filter */
                        public CSettingsInterface,	  /* Rtvc Settings Interface */
@@ -85,9 +83,14 @@ private:
 
   /// LiveMediaExt channel manager
   lme::SingleChannelManager m_channelManager;
+  /// DS codec control
+  INetworkCodecControlInterface* m_pDsNetworkControlInterface;
+  /// Rate control
+  lme::IRateController* m_pRateController;
   /// RTSP service
   lme::RtspService m_rtspService;
-
+  /// error code for init
+  boost::system::error_code m_ecInit;
   /// Live555 Thread Handle
   HANDLE m_hLiveMediaThreadHandle;
   /// live555 thread id
@@ -95,6 +98,8 @@ private:
   /// Handle to let the filter know that the RTSP thread has finished
   /// The Stop method waits for a signal that the liveMedia event loop has ended before it proceeds
   HANDLE m_hLiveMediaStopEvent;
+  /// Handle to wait for successful initialisation of live555 
+  HANDLE m_hLiveMediaInitEvent;
   /// TO start streaming on an IDR
   bool m_bHaveSeenSpsPpsIdr;
 };
