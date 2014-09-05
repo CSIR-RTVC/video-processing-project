@@ -47,6 +47,13 @@
 #define OFFSET_X				        "offsetx"
 #define OFFSET_Y				        "offsety"
 
+#define SOURCE_DIMENSIONS "sourcedimensions"
+#define SOURCE_FPS        "fps"
+
+#define YUV_FORMAT        "yuv_format"
+#define YUV420P           0
+#define YUV444I           1
+
 #define H264_VPP 0
 #define H264_H264 1
 #define H264_AVC1 2

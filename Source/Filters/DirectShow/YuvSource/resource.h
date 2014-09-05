@@ -13,6 +13,8 @@
 #define IDC_FPS                         1005
 #define IDC_SPIN_FPS                    1007
 #define IDC_COMBO1                      1008
+#define IDC_RADIO_YUV_444_INTERLEAVED   1009
+#define IDC_YUV_444                     1010
 
 // Next default values for new objects
 // 
