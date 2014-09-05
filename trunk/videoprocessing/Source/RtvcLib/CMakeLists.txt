@@ -51,7 +51,9 @@ SET(S_SRCS
 Shared/MediaSample.cpp
 )
 SET(DS_HEADERS
+DirectShow/CodecControlInterface.h
 DirectShow/CommonDefs.h
+DirectShow/ComTypeDefs.h
 DirectShow/CSettingsInterface.h
 DirectShow/CStatusInterface.h
 DirectShow/CustomBaseFilter.h
