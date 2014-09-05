@@ -15,7 +15,7 @@ class DirectShowNetworkCodecControlInterface : public INetworkCodecControlInterf
 {
 public:
 
-  DirectShowNetworkCodecControlInterface(IBaseFilterPtr pThisFilter)
+  DirectShowNetworkCodecControlInterface(IBaseFilter* pThisFilter)
     :m_pThisFilter(pThisFilter),
     m_pCodecInterface(NULL),
     m_hrInterfaceAquired(S_OK)
@@ -23,11 +23,21 @@ public:
 
   }
   
+  virtual ~DirectShowNetworkCodecControlInterface()
+  {
+    m_pThisFilter = NULL;
+    m_pCodecInterface = NULL;
+  }
+
   virtual void setFramebitLimit(unsigned uiFrameBitLimit)
   {
     VLOG(5) << "setFramebitLimit called: " << uiFrameBitLimit;
     // only try once to get the interface
-    if (FAILED(m_hrInterfaceAquired)) return;
+    if (FAILED(m_hrInterfaceAquired))
+    {
+      LOG(WARNING) << "Previously failed to find CodecControlinterface";
+      return;
+    }
     if (!m_pCodecInterface)
     {
       m_hrInterfaceAquired = CDirectShowHelper::FindFirstInterface(m_pThisFilter, PINDIR_INPUT, IID_ICodecControlInterface, (void **)&m_pCodecInterface);
@@ -41,6 +51,10 @@ public:
     if (FAILED(hr))
     {
       LOG(WARNING) << "Failed to set frame bit limit to " << uiFrameBitLimit;
+    }
+    else
+    {
+      VLOG(5) << "Set frame bit limit to " << uiFrameBitLimit;
     }
   }
 
@@ -65,7 +79,7 @@ public:
   }
 
 private:
-  IBaseFilterPtr m_pThisFilter;
+  IBaseFilter* m_pThisFilter;
   ICodecControlInterfacePtr m_pCodecInterface;
   HRESULT m_hrInterfaceAquired;
 };
