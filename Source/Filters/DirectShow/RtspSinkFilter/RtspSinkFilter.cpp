@@ -58,7 +58,7 @@ RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
 RtspSinkFilter::~RtspSinkFilter(void)
 {
   VLOG(2) << "~RtspSinkFilter()";
-
+  
   if (m_hLiveMediaThreadHandle)
   {
     stopLive555EventLoop();
@@ -74,10 +74,14 @@ RtspSinkFilter::~RtspSinkFilter(void)
   m_hLiveMediaInitEvent = NULL;
 
   // Release all the COM interfaces
-  for (size_t i = 0; i < m_vInputPins.size(); i++)
+  for (size_t i = 0; i < m_vInputPins.size(); ++i)
   {
     m_vInputPins[i]->Release();
   }
+
+  if (m_pRateController) delete m_pRateController;
+  if (m_pFactory) delete m_pFactory;
+  if (m_pDsNetworkControlInterface) delete m_pDsNetworkControlInterface;
 }
 
 CUnknown *WINAPI RtspSinkFilter::CreateInstance( IUnknown* pUnk, HRESULT* phr )
@@ -100,10 +104,11 @@ STDMETHODIMP RtspSinkFilter::NonDelegatingQueryInterface( REFIID riid, void **pp
 	{
 		return GetInterface((IStatusInterface*) this, ppv);
 	}
+  /*
 	else if (riid == IID_IFileSinkFilter)
 	{
 		return GetInterface((IFileSinkFilter*) this, ppv);
-	}
+	}*/
 	else
 	{
 		return CBaseFilter::NonDelegatingQueryInterface(riid, ppv);
