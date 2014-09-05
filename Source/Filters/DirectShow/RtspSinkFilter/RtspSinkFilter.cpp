@@ -9,15 +9,17 @@
 #include <Media/PacketManagerMediaChannel.h>
 #include <Media/SingleChannelManager.h>
 #include <Media/RtspService.h>
+#include <SimpleRateAdaptation/SimpleRateAdaptationFactory.h>
 
 #define CHANNEL_ID 1
 
 RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
   : CBaseFilter(NAME("CSIR VPP RTSP Sink Filter"), pUnk, &m_stateLock, CLSID_CSIR_VPP_RtspSinkFilter, phr),
   m_channelManager(CHANNEL_ID),
-  m_pDsNetworkControlInterface(new DirectShowNetworkCodecControlInterface()),
+  m_pDsNetworkControlInterface(new DirectShowNetworkCodecControlInterface(this)),
+  m_pFactory(new lme::SimpleRateAdaptationFactory()),
   m_pRateController(new StepBasedRateController(m_pDsNetworkControlInterface)),
-  m_rtspService(m_channelManager, m_pRateController),
+  m_rtspService(m_channelManager, m_pFactory, m_pRateController),
   m_hLiveMediaThreadHandle(NULL),
   m_hLiveMediaStopEvent(NULL),
   m_dwThreadID(0),
