@@ -46,14 +46,13 @@ Image/RealYUV420toRGB24CCIR601ConverterVer16.cpp
 Image/RealYUV420toRGB24Converter.cpp
 Image/RealYUV420toRGB24ConverterImpl2.cpp
 Image/RealYUV420toRGB24ConverterImpl2Ver16.cpp
+Image/RealYUV444toRGB24Converter.cpp
 )
 SET(S_SRCS
 Shared/MediaSample.cpp
 )
 SET(DS_HEADERS
-DirectShow/CodecControlInterface.h
 DirectShow/CommonDefs.h
-DirectShow/ComTypeDefs.h
 DirectShow/CSettingsInterface.h
 DirectShow/CStatusInterface.h
 DirectShow/CustomBaseFilter.h
@@ -112,6 +111,8 @@ Image/RealYUV420toRGB24ConverterImpl2Ver16.h
 Image/RGBtoRGBConverter.h
 Image/RGBtoYUV420Converter.h
 Image/YUV420toRGBConverter.h
+Image/YUV444toRGBConverter.h
+Image/RealYUV444toRGB24Converter.h
 )
 SET(S_HEADERS
 Shared/CommonDefs.h
