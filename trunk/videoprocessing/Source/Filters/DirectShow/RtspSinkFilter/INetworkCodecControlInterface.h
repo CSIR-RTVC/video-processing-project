@@ -12,6 +12,4 @@ public:
 
   virtual void generateIdr() = 0;
 
-private:
-
 };

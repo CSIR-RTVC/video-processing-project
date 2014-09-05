@@ -45,7 +45,9 @@ public:
 
     // TODO: can we set the starting frame bit limit here?
     // When is this code called in terms of the DS thread of execution?
-    m_pNetworkControlInterface->setFramebitLimit(m_vFrameBitLimits[m_uiFrameBitLimitIndex]);
+    // No: this is in the constructor of the RtspSinkFilter
+    // and the pins are not connected yet.
+    // m_pNetworkControlInterface->setFramebitLimit(m_vFrameBitLimits[m_uiFrameBitLimitIndex]);
   }
 
   virtual void controlBitrate(lme::SwitchDirection eSwitch)
