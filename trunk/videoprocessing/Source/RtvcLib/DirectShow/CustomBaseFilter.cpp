@@ -36,14 +36,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Dvdmedia.h>
 
 CCustomBaseFilter::CCustomBaseFilter(TCHAR *pObjectName, LPUNKNOWN lpUnk, CLSID clsid)
-: CTransformFilter(pObjectName, lpUnk, clsid),
-m_nInHeight(0),
-m_nInWidth(0),
-m_nInPixels(0),
-m_nOutHeight(0),
-m_nOutWidth(0),
-m_nOutPixels(0),
-m_nBitCount(0)
+  : CTransformFilter(pObjectName, lpUnk, clsid),
+  m_nInHeight(0),
+  m_nInWidth(0),
+  m_nInPixels(0),
+  m_nOutHeight(0),
+  m_nOutWidth(0),
+  m_nOutPixels(0),
+  m_nBitCount(0)
 {
 }
 
