@@ -85,7 +85,7 @@ H264DecoderFilter::~H264DecoderFilter()
 {
   SafeDeleteArray(m_pSeqParamSet);
   SafeDeleteArray(m_pPicParamSet);
-  if (m_uiAvc1PrefixLength != 4)
+  if (m_uiAvc1PrefixLength > 0 && m_uiAvc1PrefixLength != 4)
     SafeDeleteArray(m_pEncodedPictureBuffer);
 
   if (m_pCodec)
