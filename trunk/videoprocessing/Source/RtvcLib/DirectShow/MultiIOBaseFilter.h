@@ -53,12 +53,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 class CMultiIOInputPin;
 class CMultiIOOutputPin;
 
-using namespace std;
-
 //Typedefs
-typedef vector<CMultiIOInputPin*> INPUT_PIN_LIST;
-typedef vector<CMultiIOOutputPin*> OUTPUT_PIN_LIST;
-typedef map<int, CMediaType> MEDIA_TYPE_LIST;
+typedef std::vector<CMultiIOInputPin*> INPUT_PIN_LIST;
+typedef std::vector<CMultiIOOutputPin*> OUTPUT_PIN_LIST;
+typedef std::map<int, CMediaType> MEDIA_TYPE_LIST;
 
 enum RTVC_DIRECTION
 {
@@ -188,9 +186,9 @@ private:
 	};
 
 	// typedefs
-	typedef vector<CIOMediaType*> MEDIA_TYPE_LIST;
-	typedef map<int, MEDIA_TYPE_LIST*> MEDIA_TYPE_MAP;
-	typedef map<int, MEDIA_TYPE_LIST*>::iterator MEDIA_TYPE_MAP_ITERATOR;
+	typedef std::vector<CIOMediaType*> MEDIA_TYPE_LIST;
+  typedef std::map<int, MEDIA_TYPE_LIST*> MEDIA_TYPE_MAP;
+  typedef std::map<int, MEDIA_TYPE_LIST*>::iterator MEDIA_TYPE_MAP_ITERATOR;
 
 	// Method to do cleanup
 	void CleanupTypeMap(MEDIA_TYPE_MAP mTypeMap);
