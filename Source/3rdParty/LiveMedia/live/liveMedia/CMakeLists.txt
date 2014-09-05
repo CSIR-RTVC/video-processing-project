@@ -1,5 +1,8 @@
 # CMakeLists.txt in liveMedia
 
+# for debugging RTCP
+add_definitions(-DDEBUG_RR)
+
 SET(LIVE_MEDIA_SRCS
 rtcp_from_spec.c
 AC3AudioFileServerMediaSubsession.cpp
