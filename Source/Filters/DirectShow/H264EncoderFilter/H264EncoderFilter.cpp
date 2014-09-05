@@ -8,7 +8,7 @@ DESCRIPTION			: H.264 encoder filter implementation
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -444,6 +444,8 @@ inline unsigned H264EncoderFilter::copySequenceAndPictureParameterSetsIntoBuffer
 
 void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength )
 {
+  // lock filter so that it can not be reconfigured during a code operation
+  CAutoLock lck(&m_csCodec);
   lOutActualDataLength = 0;
   //make sure we were able to initialise our Codec
   if (m_pCodec)
@@ -610,6 +612,8 @@ STDMETHODIMP H264EncoderFilter::SetParameter( const char* type, const char* valu
   }
   else
   {
+    // lock filter so that it can not be reconfigured during a code operation
+    CAutoLock lck(&m_csCodec);
     // Check if it's a codec parameter
     if (m_pCodec && m_pCodec->SetParameter(type, value))
     {
@@ -642,6 +646,8 @@ STDMETHODIMP H264EncoderFilter::GetParameterSettings( char* szResult, int nSize 
     int nLen = strlen(szResult);
     char szValue[10];
     int nParamLength = 0;
+    // lock filter so that it can not be reconfigured during a code operation
+    CAutoLock lck(&m_csCodec);
     std::string sCodecParams("Codec Parameters:\r\n");
     if( m_pCodec->GetParameter("parameters", &nParamLength, szValue))
     {
@@ -682,5 +688,28 @@ STDMETHODIMP H264EncoderFilter::GetParameterSettings( char* szResult, int nSize 
   {
     return E_FAIL;
   }
+}
+
+STDMETHODIMP H264EncoderFilter::SetFramebitLimit(unsigned uiFrameBitLimit)
+{
+  // lock filter so that it can not be reconfigured during a code operation
+  CAutoLock lck(&m_csCodec);
+
+  if (uiFrameBitLimit == 0)
+  {
+    return E_FAIL;
+  }
+  char frameBitLimit[10];
+  itoa(uiFrameBitLimit, frameBitLimit, 10);
+  HRESULT hr = m_pCodec->SetParameter(FRAME_BIT_LIMIT, frameBitLimit);
+  return hr;
+}
+
+STDMETHODIMP H264EncoderFilter::GenerateIdr()
+{
+  // lock filter so that it can not be reconfigured during a code operation
+  CAutoLock lck(&m_csCodec);
+  m_pCodec->Restart();
+  return S_OK;
 }
 

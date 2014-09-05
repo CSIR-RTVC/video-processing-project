@@ -29,6 +29,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #pragma once
 
 // Meraka includes
+#include <DirectShow/CodecControlInterface.h>
 #include <DirectShow/CustomBaseFilter.h>
 #include <DirectShow/CustomMediaTypes.h>
 #include <DirectShow/NotifyCodes.h>
@@ -46,50 +47,51 @@ static const GUID CLSID_H264Properties =
 { 0x8b7a757c, 0xee7d, 0x4d7a, { 0xa9, 0xe2, 0xb3, 0x18, 0xa9, 0xee, 0xb5, 0x3e } };
 
 class H264EncoderFilter : public CCustomBaseFilter,
-  public ISpecifyPropertyPages
+                          public ISpecifyPropertyPages,
+                          public ICodecControlInterface
 {
 public:
   DECLARE_IUNKNOWN
 
-  /// Constructor
+  /**
+   * @brief Constructor
+   */
   H264EncoderFilter();
-  /// Destructor
+  /**
+   * @brief Destructor
+   */
   ~H264EncoderFilter();
-
-  /// Static object-creation method (for the class factory)
+  /**
+   * @brief Static object-creation method (for the class factory)
+   */
   static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr); 
-
   /**
-  * Overriding this so that we can set whether this is an RGB24 or an RGB32 Filter
-  */
+   * @brief Overriding this so that we can set whether this is an RGB24 or an RGB32 Filter
+   */
   HRESULT SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt);
-
   /**
-  * Used for Media Type Negotiation 
-  * Returns an HRESULT value. Possible values include those shown in the following table.
-  * <table border="0" cols="2"><tr valign="top"><td><b>Value</b></td><td><b>Description</b></td></TR><TR><TD>S_OK</TD><TD>Success</TD></TR><TR><TD>VFW_S_NO_MORE_ITEMS</TD><TD>Index out of range</TD></TR><TR><TD>E_INVALIDARG</TD><TD>Index less than zero</TD></TR></TABLE>
-  * The output pin's CTransformOutputPin::GetMediaType method calls this method. The derived class must implement this method. For more information, see CBasePin::GetMediaType.
-  * To use custom media types, the media type can be manipulated in this method.
-  */
+   * @brief Used for Media Type Negotiation 
+   * Returns an HRESULT value. Possible values include those shown in the following table.
+   * <table border="0" cols="2"><tr valign="top"><td><b>Value</b></td><td><b>Description</b></td></TR><TR><TD>S_OK</TD><TD>Success</TD></TR><TR><TD>VFW_S_NO_MORE_ITEMS</TD><TD>Index out of range</TD></TR><TR><TD>E_INVALIDARG</TD><TD>Index less than zero</TD></TR></TABLE>
+   * The output pin's CTransformOutputPin::GetMediaType method calls this method. The derived class must implement this method. For more information, see CBasePin::GetMediaType.
+   * To use custom media types, the media type can be manipulated in this method.
+   */
   HRESULT GetMediaType(int iPosition, CMediaType *pMediaType);
-
-  /// Buffer Allocation
   /**
-  * The output pin's CTransformOutputPin::DecideBufferSize method calls this method. The derived class must implement this method. For more information, see CBaseOutputPin::DecideBufferSize. 
-  * @param pAlloc Pointer to the IMemAllocator interface on the output pin's allocator.
-  * @param pProp Pointer to an ALLOCATOR_PROPERTIES structure that contains buffer requirements from the downstream input pin.
-  * @return Value: Returns S_OK or another HRESULT value.
-  */
+   * @brief The output pin's CTransformOutputPin::DecideBufferSize method calls this method. The derived class must implement this method. For more information, see CBaseOutputPin::DecideBufferSize. 
+   * @param pAlloc Pointer to the IMemAllocator interface on the output pin's allocator.
+   * @param pProp Pointer to an ALLOCATOR_PROPERTIES structure that contains buffer requirements from the downstream input pin.
+   * @return Value: Returns S_OK or another HRESULT value.
+   */
   HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp);
-
   /**
-  * The CheckTransform method checks whether an input media type is compatible with an output media type.
-  * <table border="0" cols="2"> <tr valign="top"> <td  width="50%"><b>Value</b></td> <td width="50%"><b>Description</b></td> </tr> <tr valign="top"> <td width="50%">S_OK</td> <td width="50%">The media types are compatible.</td> </tr> <tr valign="top"> <td width="50%">VFW_E_TYPE_NOT_ACCEPTED</td> <td width="50%">The media types are not compatible.</td> </tr> </table>
-  */
+   * The CheckTransform method checks whether an input media type is compatible with an output media type.
+   * <table border="0" cols="2"> <tr valign="top"> <td  width="50%"><b>Value</b></td> <td width="50%"><b>Description</b></td> </tr> <tr valign="top"> <td width="50%">S_OK</td> <td width="50%">The media types are compatible.</td> </tr> <tr valign="top"> <td width="50%">VFW_E_TYPE_NOT_ACCEPTED</td> <td width="50%">The media types are not compatible.</td> </tr> </table>
+   */
   HRESULT CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut);
-
-  /// Interface methods
-  ///Overridden from CSettingsInterface
+  /**
+   * @brief Overridden from CSettingsInterface
+   */
   virtual void initParameters()
   {
     addParameter(FRAME_BIT_LIMIT, &m_nFrameBitLimit, 0);
@@ -99,15 +101,29 @@ public:
     addParameter(PPS, &m_sPicParamSet, "", true); // read-only
     addParameter(H264_TYPE, &m_nH264Type, H264_VPP);
   }
-
-  /// Overridden from CSettingsInterface
+  /**
+   * @brief Overridden from CSettingsInterface
+   */
   STDMETHODIMP GetParameter( const char* szParamName, int nBufferSize, char* szValue, int* pLength );
-  /// Overridden from CSettingsInterface
+  /**
+   * @brief Overridden from CSettingsInterface
+   */
   STDMETHODIMP SetParameter( const char* type, const char* value);
-  /// Overridden from CSettingsInterface
+  /**
+   * @brief Overridden from CSettingsInterface
+   */
   STDMETHODIMP GetParameterSettings( char* szResult, int nSize );
-
-  /// Property pages
+  /**
+   * @brief Overridden from ICodecControlInterface
+   */
+  STDMETHODIMP SetFramebitLimit(unsigned uiFrameBitLimit);
+  /**
+   * @brief Overridden from ICodecControlInterface
+   */
+  STDMETHODIMP GenerateIdr();
+  /**
+   * @brief Property pages
+   */
   STDMETHODIMP GetPages(CAUUID *pPages)
   {
     if (pPages == NULL) return E_POINTER;
@@ -120,12 +136,18 @@ public:
     pPages->pElems[0] = CLSID_H264Properties;
     return S_OK;
   }
-
+  /**
+   * @brief query interface
+   */
   STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv)
   {
     if (riid == IID_ISpecifyPropertyPages)
     {
       return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+    }
+    else if (riid == IID_ICodecControlInterface)
+    {
+      return GetInterface(static_cast<ICodecControlInterface*>(this), ppv);
     }
     else
     {
@@ -133,32 +155,35 @@ public:
       return CCustomBaseFilter::NonDelegatingQueryInterface(riid, ppv);
     }
   }
-
-  /// Overridden from CCustomBaseFilter
+  /**
+   * @brief Overridden from CCustomBaseFilter
+   */
   virtual void InitialiseInputTypes();
 
 private:
   /**
-  This method copies the h.264 sequence and picture parameter sets into the passed in buffer
-  and returns the total length including start codes
-  */
+   * @brief This method copies the h.264 sequence and picture parameter sets into the passed in buffer
+   * and returns the total length including start codes
+   */
   unsigned copySequenceAndPictureParameterSetsIntoBuffer(BYTE* pBuffer);
   unsigned getParameterSetLength() const;
 
   /**
-  * This method encodes the frame to H.264
-  * @param[in] pBufferIn The source buffer
-  * @param[in] lInBufferSize The size of the in buffer
-  * @param[in] lActualDataLength The size of the actual frame inside the in buffer
-  * @param[in,out] pBufferOut The destination buffer
-  * @param[in] lOutBufferSize The size of the destination buffer
-  * @param[in,out] lOutActualDataLength The size of the data encoded into the destination buffer
-  */
+   * @brief This method encodes the frame to H.264
+   * @param[in] pBufferIn The source buffer
+   * @param[in] lInBufferSize The size of the in buffer
+   * @param[in] lActualDataLength The size of the actual frame inside the in buffer
+   * @param[in,out] pBufferOut The destination buffer
+   * @param[in] lOutBufferSize The size of the destination buffer
+   * @param[in,out] lOutActualDataLength The size of the data encoded into the destination buffer
+   */
   virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
   
   int m_nH264Type;
 
-  ICodecv2* m_pCodec; 
+  ICodecv2* m_pCodec;
+  /// Receive Lock
+  CCritSec m_csCodec;
   int m_nFrameBitLimit;
   bool m_bNotifyOnIFrame;
   unsigned char* m_pSeqParamSet;
