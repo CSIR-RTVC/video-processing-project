@@ -5,6 +5,7 @@ ${vppIncludes}
 ${vppCodecIncludes}
 ${vppUtilIncludes}
 $ENV{LIVE_MEDIA_EXT_ROOT}/include
+$ENV{LIVE_MEDIA_EXT_ROOT}/src/libs
 $ENV{LIVE_MEDIA_EXT_ROOT}/externals/glog/src/windows
 $ENV{LIVE_MEDIA_EXT_ROOT}/externals/cpp-util/include
 )
