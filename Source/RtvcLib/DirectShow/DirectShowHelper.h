@@ -8,7 +8,7 @@ DESCRIPTION			: DirectShow helper methods based on SDK examples
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -41,8 +41,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <vector>
 #include <string>
-
-using namespace std;
 
 /*! \var typedef unsigned int UINT32
 \brief A type definition for a .
@@ -112,4 +110,30 @@ public:
 	static void RemoveGraphFromRot(DWORD pdwRegister);
 
 	static HRESULT Render(IGraphBuilder *pGraph, IBaseFilter *pFilter);
+  /**
+   * @brief Get the first upstream or downstream filter
+   * @param[in] pFilter Pointer to the starting filter
+   * @param[in] Dir Direction to search (upstream or downstream)
+   * @param[out] ppNext Receives a pointer to the next filter
+   */
+  static HRESULT GetNextFilter(IBaseFilter *pFilter, PIN_DIRECTION Dir, IBaseFilter **ppNext);
+  /**
+   * @brief Gets the first upstream or downstream filter that implements the specified COM interface.
+   * The calling code must release the interface.
+   * and gets a pointer to the interface.
+   * @param[in] pFilter Pointer to the starting filter
+   * @param[in] Dir Direction to search (upstream or downstream)
+   * @param[in] riid The interface to search for
+   * @param[out] ppUnk Receives a pointer to the interface if the method is successful
+   */
+  static HRESULT FindFirstInterface(IBaseFilter *pFilter, PIN_DIRECTION Dir, REFIID riid, void **ppUnk);
+  /**
+   * @brief Gets the first upstream or downstream filter that implements the specified COM interface 
+   * The calling code must release the filter if the method is successful.
+   * @param[in] pFilter Pointer to the starting filter
+   * @param[in] Dir Direction to search (upstream or downstream)
+   * @param[in] riid The interface to search for
+   * @param[out] pResult Receives a pointer to the first filter that implements the specified interface if the method is successful
+   */
+  static HRESULT FindFirstFilterWithInterface(IBaseFilter *pFilter, PIN_DIRECTION Dir, REFIID riid, IBaseFilter** pResult);
 };

@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -34,7 +34,6 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "stdafx.h"
 #include "DirectShowHelper.h"
 #include <Shared/StringUtil.h>
-
 
 CDirectShowHelper::CDirectShowHelper()
 {;}
@@ -355,10 +354,7 @@ HRESULT CDirectShowHelper::AddFilterByCategoryAndName( IGraphBuilder *pGraph, co
 	{
 		hr = pGraph->AddFilter(*ppF, wszName);
 	}
-	else
-	{
-		return hr;
-	}
+  return hr;
 }
 
 HRESULT CDirectShowHelper::AddFilterByCategoryAndName( IGraphBuilder *pGraph, const GUID& category, std::string sName, IBaseFilter **ppF )
@@ -458,4 +454,103 @@ HRESULT CDirectShowHelper::Render( IGraphBuilder *pGraph, IBaseFilter *pFilter )
 	{
 		return hr;
 	}
+}
+
+HRESULT CDirectShowHelper::GetNextFilter(IBaseFilter *pFilter, PIN_DIRECTION Dir, IBaseFilter **ppNext)
+{
+  if (!pFilter || !ppNext) return E_POINTER;
+
+  IEnumPins *pEnum = 0;
+  IPin *pPin = 0;
+  HRESULT hr = pFilter->EnumPins(&pEnum);
+  if (FAILED(hr)) return hr;
+  while (S_OK == pEnum->Next(1, &pPin, 0))
+  {
+    // See if this pin matches the specified direction.
+    PIN_DIRECTION ThisPinDir;
+    hr = pPin->QueryDirection(&ThisPinDir);
+    if (FAILED(hr))
+    {
+      // Something strange happened.
+      hr = E_UNEXPECTED;
+      pPin->Release();
+      break;
+    }
+    if (ThisPinDir == Dir)
+    {
+      // Check if the pin is connected to another pin.
+      IPin *pPinNext = 0;
+      hr = pPin->ConnectedTo(&pPinNext);
+      if (SUCCEEDED(hr))
+      {
+        // Get the filter that owns that pin.
+        PIN_INFO PinInfo;
+        hr = pPinNext->QueryPinInfo(&PinInfo);
+        pPinNext->Release();
+        pPin->Release();
+        pEnum->Release();
+        if (FAILED(hr) || (PinInfo.pFilter == NULL))
+        {
+          // Something strange happened.
+          return E_UNEXPECTED;
+        }
+        // This is the filter we're looking for.
+        *ppNext = PinInfo.pFilter; // Client must release.
+        return S_OK;
+      }
+    }
+    pPin->Release();
+  }
+  pEnum->Release();
+  // Did not find a matching filter.
+  return E_FAIL;
+}
+
+HRESULT CDirectShowHelper::FindFirstInterface(IBaseFilter *pFilter, PIN_DIRECTION Dir, REFIID iid, void **ppUnk)
+{
+  if (!ppUnk) return E_POINTER;
+  IBaseFilter* pNext = NULL;
+  HRESULT hr = CDirectShowHelper::GetNextFilter(pFilter, Dir, &pNext);
+  while (SUCCEEDED(hr))
+  {
+    hr = pNext->QueryInterface(iid, ppUnk);
+    if (SUCCEEDED(hr))
+    {
+      pNext->Release();
+      return S_OK;
+    }
+
+    IBaseFilter* pNextFilter = pNext;
+    pNext = NULL;
+    hr = CDirectShowHelper::GetNextFilter(pNextFilter, Dir, &pNext);
+    // now release 'previous' next
+    pNextFilter->Release();
+  }
+  return E_FAIL;
+}
+
+HRESULT CDirectShowHelper::FindFirstFilterWithInterface(IBaseFilter *pFilter, PIN_DIRECTION Dir, REFIID iid, IBaseFilter** pResult)
+{
+  IBaseFilter* pNext = NULL;
+  HRESULT hr = CDirectShowHelper::GetNextFilter(pFilter, Dir, &pNext);
+  void **ppUnk = NULL;
+  while (SUCCEEDED(hr))
+  {
+    hr = pNext->QueryInterface(iid, ppUnk);
+    if (SUCCEEDED(hr))
+    {
+      // TODO: can we release the COM interface like this?!?
+      IUnknown* pUnknown = (IUnknown*)*ppUnk;
+      pUnknown->Release();
+      *pResult = pNext;
+      return S_OK;
+    }
+
+    IBaseFilter* pNextFilter = pNext;
+    pNext = NULL;
+    hr = CDirectShowHelper::GetNextFilter(pNextFilter, Dir, &pNext);
+    // now release 'previous' next
+    pNextFilter->Release();
+  }
+  return E_FAIL;
 }
