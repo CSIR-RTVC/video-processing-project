@@ -20,14 +20,14 @@ class RtspSinkFilter : public CBaseFilter,				  /* Source Filter */
                        public CSettingsInterface,	  /* Rtvc Settings Interface */
                        public CStatusInterface	    /* Rtvc Status Interface */
 {
-	///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
-	DECLARE_IUNKNOWN;
-
 	/// Give the pin friend access
 	friend class RtspSinkInputPin;
 
 public:
-	/// DLL factory method
+  ///this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
+  DECLARE_IUNKNOWN;
+
+  /// DLL factory method
 	static CUnknown *WINAPI CreateInstance(IUnknown* pUnk, HRESULT* phr);
 
 	/// override this to publicize our interfaces
@@ -85,6 +85,8 @@ private:
   lme::SingleChannelManager m_channelManager;
   /// DS codec control
   INetworkCodecControlInterface* m_pDsNetworkControlInterface;
+  /// Rate control factory
+  lme::IRateAdaptationFactory* m_pFactory;
   /// Rate control
   lme::IRateController* m_pRateController;
   /// RTSP service
