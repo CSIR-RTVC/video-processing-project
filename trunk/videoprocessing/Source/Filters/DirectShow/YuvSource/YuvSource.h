@@ -36,21 +36,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <fstream>
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
+#include <Filters/DirectShow/FilterParameters.h>
 
-
-// UNITS = 10 ^ 7  
-// UNITS / 30 = 30 fps;
-// UNITS / 20 = 20 fps, etc
-const REFERENCE_TIME FPS_30 = UNITS / 30;
-const REFERENCE_TIME FPS_20 = UNITS / 20;
-const REFERENCE_TIME FPS_10 = UNITS / 10;
-const REFERENCE_TIME FPS_5  = UNITS / 5;
-const REFERENCE_TIME FPS_4  = UNITS / 4;
-const REFERENCE_TIME FPS_3  = UNITS / 3;
-const REFERENCE_TIME FPS_2  = UNITS / 2;
-const REFERENCE_TIME FPS_1  = UNITS / 1;
-
-const REFERENCE_TIME rtDefaultFrameLength = FPS_10;
 
 // {DAC3AA2A-5AB3-4705-963B-FFAF9C0D08D8}
 DEFINE_GUID(CLSID_YUVSource, 
@@ -60,50 +47,12 @@ DEFINE_GUID(CLSID_YUVSource,
 DEFINE_GUID(CLSID_YUVProperties, 
   0xb044f35e, 0xa7bd, 0x464a, 0xad, 0x9f, 0x9a, 0x1b, 0xef, 0xbd, 0x95, 0xed);
 
-
 // Filter name strings
 #define g_wszYuvSource     L"CSIR VPP YUV Source"
 
-#define SOURCE_DIMENSIONS	"sourcedimensions"
-#define SOURCE_FPS			  "fps"
-
-/**********************************************
-*
-*  Class declarations
-*
-**********************************************/
-
-class YuvOutputPin : public CSourceStream
-{
-  friend class YuvSourceFilter;
-
-public:
-  YuvOutputPin(HRESULT *phr, YuvSourceFilter *pFilter);
-  ~YuvOutputPin();
-
-  // Override the version that offers exactly one media type
-  HRESULT GetMediaType(CMediaType *pMediaType);
-  HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest);
-  HRESULT FillBuffer(IMediaSample *pSample);
-
-  // Quality control
-  // Not implemented because we aren't going in real time.
-  // If the file-writing filter slows the graph down, we just do nothing, which means
-  // wait until we're unblocked. No frames are ever dropped.
-  STDMETHODIMP Notify(IBaseFilter *pSelf, Quality q)
-  {
-    return E_FAIL;
-  }
-
-protected:
-  YuvSourceFilter* m_pYuvFilter;
-
-  int m_iCurrentFrame;
-  REFERENCE_TIME m_rtFrameLength;
-
-  CCritSec m_cSharedState;            // Protects our internal state
-};
-
+/**
+ * @brief YUV source filter that currently supports reading YUV420P and YUV444 interlaced packet.
+ */
 class YuvSourceFilter : public CSource,
   public CSettingsInterface,  /* Rtvc Settings Interface */
   public CStatusInterface,    /* Rtvc Status Interface */
@@ -127,7 +76,8 @@ public:
   /// From CSettingsInterface
   virtual void initParameters()
   {
-    addParameter( SOURCE_DIMENSIONS, &m_sDimensions, "352x288"); 
+    addParameter( YUV_FORMAT, &m_nYuvFormat, YUV420P);
+    addParameter( SOURCE_DIMENSIONS, &m_sDimensions, "352x288");
     addParameter( SOURCE_FPS, &m_iFramesPerSecond, 30);
   }
   STDMETHODIMP SetParameter( const char* type, const char* value );
@@ -156,21 +106,31 @@ private:
   ~YuvSourceFilter();
 
   bool setDimensions(const std::string& sDimensions);
-  bool setDimensions(int iWidth, int iHeight);
+  bool updatePictureBuffer(int iWidth, int iHeight, double dBytesPerPixel);
 
   void recalculate();
   bool readFrame();
-  void guessDimensions();
+  /**
+   * @brief Creates the buffer to store YUV frames in. It tries to determine the dimensions 
+   * of the YUV image based on the file name. Also tries to determine the YUV format of the 
+   * YUV image based on the file name. This defaults to YUV420P.
+   */
+  void createYuvFrameBuffer();
+  /**
+   * @brief 
+   */
+  void guessFormat();
 
   YuvOutputPin *m_pPin;
 
+  int m_nYuvFormat;
   int m_iWidth;
   int m_iHeight;
   std::string m_sDimensions;
   int m_iFramesPerSecond;
   int m_iNoFrames;
   int m_iFrameSize;
-  double m_dBitsPerPixel;
+  double m_dBytesPerPixel;
 
   std::string m_sFile;
 

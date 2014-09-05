@@ -34,12 +34,13 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma once
 
 #include <DirectShow/FilterPropertiesBase.h>
+#include <Shared/Conversion.h>
 
 #include "resource.h"
 
 #define BUFFER_SIZE 256
 
-const int RADIO_BUTTON_IDS[] = {IDC_YUV_420_PLANAR};
+const int RADIO_BUTTON_IDS[] = {IDC_YUV_420_PLANAR, IDC_YUV_444};
 
 /**
 * \ingroup DirectShowFilters
@@ -70,7 +71,24 @@ public:
 
     initialiseControls();
 
-    HRESULT hr = m_pSettingsInterface->GetParameter(SOURCE_DIMENSIONS, sizeof(szBuffer), szBuffer, &nLength);
+    HRESULT hr = m_pSettingsInterface->GetParameter(YUV_FORMAT, sizeof(szBuffer), szBuffer, &nLength);
+    if (SUCCEEDED(hr))
+    {
+      int nYuvFormat = atoi(szBuffer);
+      int nRadioID = RADIO_BUTTON_IDS[nYuvFormat];
+      long lResult = SendMessage(				// returns LRESULT in lResult
+        GetDlgItem(m_Dlg, nRadioID),		// handle to destination control
+        (UINT)BM_SETCHECK,					// message ID
+        (WPARAM)1,							// = 0; not used, must be zero
+        (LPARAM)0							// = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
+        );
+    }
+    else
+    {
+      return E_FAIL;
+    }
+
+    hr = m_pSettingsInterface->GetParameter(SOURCE_DIMENSIONS, sizeof(szBuffer), szBuffer, &nLength);
     if (SUCCEEDED(hr))
       SendMessage(GetDlgItem(m_Dlg, IDC_CMB_DIMENSIONS), CB_SELECTSTRING,  0, (LPARAM)szBuffer);
     else
@@ -89,6 +107,19 @@ public:
     int nLength = 0;
     char szBuffer[BUFFER_SIZE];
 
+    for (int i = 0; i < 2; ++i)
+    {
+      int nRadioID = RADIO_BUTTON_IDS[i];
+      int iCheck = SendMessage(GetDlgItem(m_Dlg, nRadioID), (UINT)BM_GETCHECK, 0, 0);
+      if (iCheck != 0)
+      {
+        std::string sID = toString(i);
+        HRESULT hr = m_pSettingsInterface->SetParameter(YUV_FORMAT, sID.c_str());
+        ASSERT(SUCCEEDED(hr));
+        break;
+      }
+    }
+
     nLength = GetDlgItemText(m_Dlg, IDC_CMB_DIMENSIONS, szBuffer, BUFFER_SIZE);
     HRESULT hr = m_pSettingsInterface->SetParameter(SOURCE_DIMENSIONS, szBuffer);
 
@@ -98,7 +129,6 @@ public:
     int iFps = atoi(szBuffer);
     hr = m_pSettingsInterface->SetParameter(SOURCE_FPS, szBuffer);
     return hr;
-    return S_OK;
   } 
 
 private:

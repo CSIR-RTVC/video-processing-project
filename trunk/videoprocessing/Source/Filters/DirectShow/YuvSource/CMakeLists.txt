@@ -12,14 +12,18 @@ ${vppLink}
 )
 
 SET(FLT_HDRS
+resource.h
+YuvOutputPin.h
 YuvProperties.h
 YuvSource.h
 )
 
 SET(FLT_SRCS 
 DLLSetup.cpp
+YuvOutputPin.cpp
 YuvSource.cpp
 YuvSource.def
+YuvSource.rc
 )
 
 ADD_LIBRARY(

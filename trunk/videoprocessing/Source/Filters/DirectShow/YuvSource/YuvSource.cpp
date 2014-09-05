@@ -37,6 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sstream>
 
 #include "YuvSource.h"
+#include "YuvOutputPin.h"
 
 #include <Shared/Conversion.h>
 #include <Shared/StringUtil.h>
@@ -47,226 +48,6 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
   &MEDIASUBTYPE_NULL      // Minor type
 };
 
-DEFINE_GUID(MEDIASUBTYPE_I420, 0x30323449, 0x0000, 0x0010, 0x80, 0x00,
-  0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71); 
-
-/**********************************************
-*
-*  YuvOutputPin Class
-*  
-*
-**********************************************/
-
-YuvOutputPin::YuvOutputPin(HRESULT *phr, YuvSourceFilter* pFilter)
-  : CSourceStream(NAME("CSIR VPP YUV Source"), phr, pFilter, L"Out"),
-  m_pYuvFilter(pFilter),
-  m_iCurrentFrame(0),
-  m_rtFrameLength(FPS_30) // Display 5 bitmap frames per second: TODO_ move to property page
-{
-}
-
-YuvOutputPin::~YuvOutputPin()
-{   
-}
-
-// GetMediaType: This method tells the downstream pin what types we support.
-HRESULT YuvOutputPin::GetMediaType(CMediaType *pMediaType)
-{
-  CAutoLock cAutoLock(m_pFilter->pStateLock());
-
-  CheckPointer(pMediaType, E_POINTER);
-
-  // Allocate enough room for the VIDEOINFOHEADER
-  VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*)pMediaType->AllocFormatBuffer( sizeof(VIDEOINFOHEADER) );
-  if (pvi == 0) 
-    return(E_OUTOFMEMORY);
-
-  ZeroMemory(pvi, pMediaType->cbFormat);   
-  pvi->AvgTimePerFrame = m_rtFrameLength;
-  pvi->dwBitRate = ((int)(m_pYuvFilter->m_iFramesPerSecond * m_pYuvFilter->m_iFrameSize * m_pYuvFilter->m_dBitsPerPixel)) << 3;
-
-  pvi->bmiHeader.biBitCount = 12;
-
-  // For some reason IYUV requires a color converter before the renderer and I420 does not even though 
-  // these media types are the same
-  pvi->bmiHeader.biCompression = MAKEFOURCC('I', '4', '2', '0');
-  // Works too but DS inserts color space converter before renderer
-  //pvi->bmiHeader.biCompression = MAKEFOURCC('I', 'Y', 'U', 'V');
-  
-  pvi->bmiHeader.biClrImportant = 0;
-  pvi->bmiHeader.biClrUsed = 0;
-  pvi->bmiHeader.biPlanes = 1;
-  pvi->bmiHeader.biXPelsPerMeter = 0;
-  pvi->bmiHeader.biYPelsPerMeter = 0;
-  pvi->bmiHeader.biWidth = m_pYuvFilter->m_iWidth;
-  pvi->bmiHeader.biHeight = m_pYuvFilter->m_iHeight;
-  // should the sign of height is ignored for YUV DIB types?
-  // http://msdn.microsoft.com/en-us/library/windows/desktop/dd407212(v=vs.85).aspx
-  pvi->bmiHeader.biSizeImage = m_pYuvFilter->m_iFrameSize;
-  pvi->bmiHeader.biSize = 40;
-
-  // Clear source and target rectangles
-  SetRectEmpty(&(pvi->rcSource)); // we want the whole image area rendered
-  SetRectEmpty(&(pvi->rcTarget)); // no particular destination rectangle
-
-  pMediaType->SetType(&MEDIATYPE_Video);
-  pMediaType->SetFormatType(&FORMAT_VideoInfo);
-  pMediaType->SetTemporalCompression(FALSE);
-
-  // Both of these work
-  pMediaType->SetSubtype(&MEDIASUBTYPE_I420);
-
-  // Tried other media types MEDIASUBTYPE_IMC3, MEDIASUBTYPE_IMC2, MEDIASUBTYPE_IMC4, etc
-  // These have no effect on the connection
-  // The most important thing seems to be the bmiHeader.biCompression being set correctly
-  // pMediaType->SetSubtype(&MEDIASUBTYPE_IMC3);
-
-  pMediaType->SetSampleSize( m_pYuvFilter->m_iFrameSize );
-  return S_OK;
-}
-
-
-HRESULT YuvOutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pRequest)
-{
-  HRESULT hr;
-  CAutoLock cAutoLock(m_pFilter->pStateLock());
-
-  CheckPointer(pAlloc, E_POINTER);
-  CheckPointer(pRequest, E_POINTER);
-
-  VIDEOINFOHEADER *pvi = (VIDEOINFOHEADER*) m_mt.Format();
-
-  // Ensure a minimum number of buffers
-  if (pRequest->cBuffers == 0)
-  {
-    pRequest->cBuffers = 1;
-  }
-  pRequest->cbBuffer = pvi->bmiHeader.biSizeImage;
-
-  ALLOCATOR_PROPERTIES Actual;
-  hr = pAlloc->SetProperties(pRequest, &Actual);
-  if (FAILED(hr)) 
-  {
-    return hr;
-  }
-
-  // Is this allocator unsuitable?
-  if (Actual.cbBuffer < pRequest->cbBuffer) 
-  {
-    return E_FAIL;
-  }
-
-  return S_OK;
-}
-
-
-// This is where we insert the YUV frames into the video stream.
-// FillBuffer is called once for every sample in the stream.
-HRESULT YuvOutputPin::FillBuffer(IMediaSample *pSample)
-{
-  BYTE *pData;
-  long cbData;
-
-  CheckPointer(pSample, E_POINTER);
-
-  CAutoLock cAutoLockShared(&m_cSharedState);
-
-  if ( m_iCurrentFrame < m_pYuvFilter->m_iNoFrames )
-  {
-    if (!m_pYuvFilter->readFrame())
-      return S_FALSE;
-
-    // Access the sample's data buffer
-    pSample->GetPointer(&pData);
-    cbData = pSample->GetSize();
-
-    // Check that we're still using video
-    ASSERT(m_mt.formattype == FORMAT_VideoInfo);
-
-    VIDEOINFOHEADER *pVih = (VIDEOINFOHEADER*)m_mt.pbFormat;
-
-    memcpy( pData, m_pYuvFilter->m_pYuvBuffer, m_pYuvFilter->m_iFrameSize );
-    
-    // debug top-bottom
-    // The following code was used to determine the orientation of the image in the raw YUV file:
-    // The raw YUV used in the test sequences is top-down: http://msdn.microsoft.com/en-us/library/windows/desktop/dd407212(v=vs.85).aspx
-
-#if 0
-    // set luminance for 1st row to zero
-    int iW = m_pYuvFilter->m_iWidth;
-    int iWUV = m_pYuvFilter->m_iWidth >> 1;
-    int iH = m_pYuvFilter->m_iHeight;
-    int iHUV = m_pYuvFilter->m_iHeight >> 1;
-    int iSY = m_pYuvFilter->m_iWidth * m_pYuvFilter->m_iHeight;
-    int iSUV = iSY >> 2;
-    
-    // YUV is stored top down
-    //Luminance
-    // 10 white lines
-    //memset( pData, 255, iW * 10);
-    //memset( pData + ((iH/2 - 10) * iW), 255, iW * 10);
-    //memset( pData + ((iH - 10) * iW), 255, iW * 10);
-    // Single white lines
-    //memset( pData, 255, iW);
-    //memset( pData + ((iH/2) * iW), 255, iW);
-    //memset( pData + ((iH - 1) * iW), 255, iW);
-    
-    // Chrominance
-    // change to grey scale
-    memset( pData + iSY, 128, iSUV*2 );
-#if 0
-    // blue componenent
-    memset( pData + iSY,            255, iWUV);
-    memset( pData + iSY + iWUV,     255, iWUV);
-    memset( pData + iSY + 2 * iWUV, 255, iWUV);
-    memset( pData + iSY + 3 * iWUV, 255, iWUV);
-    memset( pData + iSY + 4 * iWUV, 255, iWUV);
-#else
-    memset( pData + iSY,            0, iWUV);
-    memset( pData + iSY + iWUV,     0, iWUV);
-    memset( pData + iSY + 2 * iWUV, 0, iWUV);
-    memset( pData + iSY + 3 * iWUV, 0, iWUV);
-    memset( pData + iSY + 4 * iWUV, 0, iWUV);
-#endif    
-
-#if 1
-    // red component
-    memset( pData + iSY + iSUV,            255, iWUV);
-    memset( pData + iSY + iSUV + iWUV,     255, iWUV);
-    memset( pData + iSY + iSUV + 2 * iWUV, 255, iWUV);
-    memset( pData + iSY + iSUV + 3 * iWUV, 255, iWUV);
-    memset( pData + iSY + iSUV + 4 * iWUV, 255, iWUV);
-#else
-    memset( pData + iSY + iSUV,            0, iWUV);
-    memset( pData + iSY + iSUV + iWUV,     0, iWUV);
-    memset( pData + iSY + iSUV + 2 * iWUV, 0, iWUV);
-    memset( pData + iSY + iSUV + 3 * iWUV, 0, iWUV);
-    memset( pData + iSY + iSUV + 4 * iWUV, 0, iWUV);
-#endif
-#endif
-
-    // Set the timestamps that will govern playback frame rate.
-    // If this file is getting written out as an AVI,
-    // then you'll also need to configure the AVI Mux filter to 
-    // set the Average Time Per Frame for the AVI Header.
-    // The current time is the sample's start
-    REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
-    REFERENCE_TIME rtStop  = rtStart + m_rtFrameLength;
-
-    pSample->SetTime( &rtStart, &rtStop );
-
-    // Set TRUE on every sample for uncompressed frames
-    pSample->SetSyncPoint(TRUE);
-
-    m_iCurrentFrame++;
-    return S_OK;
-  }
-  else
-  {
-    // EOF
-    return S_FALSE;
-  }
-}
 
 
 /**********************************************
@@ -295,7 +76,7 @@ YuvSourceFilter::YuvSourceFilter(IUnknown *pUnk, HRESULT *phr)
   m_sDimensions("352x288"),
   m_iFramesPerSecond(30),
   m_iNoFrames(150),		  //TODO: move to property page
-  m_dBitsPerPixel(1.5),	//TODO: move to property page
+  m_dBytesPerPixel(1.5),
   m_pYuvBuffer(NULL),
   m_iFileSize(0),
   m_iRead(0)
@@ -330,18 +111,15 @@ STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE
 {
   // Store the URL
   m_sFile = StringUtil::wideToStl(lpwszFileName);
-
+ 
   m_in1.open(m_sFile.c_str(), std::ifstream::in | std::ifstream::binary);
   if ( m_in1.is_open() )
   {
     m_in1.seekg( 0, std::ios::end );
     m_iFileSize = m_in1.tellg();
-    m_in1.seekg( 0 , std::ios::beg );
-
-    recalculate();
-    m_pYuvBuffer = new unsigned char[m_iFrameSize];
-
-    guessDimensions();
+    // we need the file size to call recalculate
+    createYuvFrameBuffer();
+    m_in1.seekg(0, std::ios::beg);
     return S_OK;
   }
   else
@@ -351,13 +129,25 @@ STDMETHODIMP YuvSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYPE
   }
 }
 
-void YuvSourceFilter::guessDimensions()
+void YuvSourceFilter::createYuvFrameBuffer()
 {
-  // try and guess what the dimensions are based on file name
-  std::string sFile = m_sFile;
-  std::transform(sFile.begin(), sFile.end(), sFile.begin(), ::tolower);
+  std::string sFormatString = m_sFile;
+  size_t pos = sFormatString.find("444");
+  if (pos != std::string::npos)
+  {
+    m_dBytesPerPixel = 4.0;
+    m_nYuvFormat = YUV444I;
+  }
+  else
+  {
+    m_dBytesPerPixel = 1.5;
+    m_nYuvFormat = YUV420P;
+  }
 
-  size_t pos = sFile.find("qcif");
+  // try and guess what the dimensions are based on file name
+  std::transform(sFormatString.begin(), sFormatString.end(), sFormatString.begin(), ::tolower);
+
+  pos = sFormatString.find("qcif");
   if (pos != std::string::npos)
   {
     setDimensions("176x144");
@@ -365,7 +155,7 @@ void YuvSourceFilter::guessDimensions()
   }
 
   // NB search for cif last since 'qcif' and '4cif' contain 'cif'
-  pos = sFile.find("cif");
+  pos = sFormatString.find("cif");
   if (pos != std::string::npos)
   {
     setDimensions("352x288");
@@ -373,49 +163,54 @@ void YuvSourceFilter::guessDimensions()
   }
 
   // try searching for x's
-  pos = sFile.find("x");
+  pos = sFormatString.find("x");
   while (pos != std::string::npos)
   {
     std::string sWidth, sHeight;
     // check if there is at least a number before and after the x, else continue
     size_t uiBeforePos = pos - 1;
-    while (isdigit(sFile[uiBeforePos]) && uiBeforePos >= 0)
+    while (isdigit(sFormatString[uiBeforePos]) && uiBeforePos >= 0)
     {
       --uiBeforePos;
     }
     if (uiBeforePos != pos - 1)
     {
       // we found at least one digit
-      sWidth = sFile.substr(uiBeforePos + 1, pos - uiBeforePos - 1);
+      sWidth = sFormatString.substr(uiBeforePos + 1, pos - uiBeforePos - 1);
     }
     else
     {
-      pos = sFile.find("x", pos + 1);
+      pos = sFormatString.find("x", pos + 1);
       continue;
     }
 
     size_t uiAfterPos = pos + 1;
-    while (isdigit(sFile[uiAfterPos]) && uiAfterPos < sFile.length())
+    while (isdigit(sFormatString[uiAfterPos]) && uiAfterPos < sFormatString.length())
     {
       ++uiAfterPos;
     }
     if (uiAfterPos != pos + 1)
     {
       // we found at least one digit
-      sHeight = sFile.substr(pos + 1, uiAfterPos - pos - 1);
+      sHeight = sFormatString.substr(pos + 1, uiAfterPos - pos - 1);
     }
     else
     {
-      pos = sFile.find("x", pos + 1);
+      pos = sFormatString.find("x", pos + 1);
       continue;
     }
 
     // try and convert to int
     int iWidth = convert<int>(sWidth);
     int iHeight = convert<int>(sHeight);
-    setDimensions(iWidth, iHeight);
+    updatePictureBuffer(iWidth, iHeight, m_dBytesPerPixel);
     break;
   }
+
+  // just create picture buffer using default values
+  recalculate();
+  m_pYuvBuffer = new unsigned char[m_iFrameSize];
+
 }
 
 STDMETHODIMP YuvSourceFilter::GetCurFile( LPOLESTR * ppszFileName, AM_MEDIA_TYPE *pmt )
@@ -487,7 +282,7 @@ STDMETHODIMP YuvSourceFilter::SetParameter( const char* type, const char* value 
 
 void YuvSourceFilter::recalculate()
 {
-  m_iFrameSize = m_iWidth*m_iHeight*m_dBitsPerPixel;
+  m_iFrameSize = m_iWidth*m_iHeight*m_dBytesPerPixel;
   m_iNoFrames = m_iFileSize/m_iFrameSize;
   m_pPin->m_rtFrameLength = UNITS/m_iFramesPerSecond;
 }
@@ -512,12 +307,12 @@ bool YuvSourceFilter::setDimensions( const std::string& sDimensions )
     istr >> iWidth;
     std::istringstream istr2( sDimensions.substr( pos + 1) );
     istr2 >> iHeight;
-    return setDimensions(iWidth, iHeight);
+    return updatePictureBuffer(iWidth, iHeight, m_dBytesPerPixel);
   }
   return false;
 }
 
-bool YuvSourceFilter::setDimensions(int iWidth, int iHeight)
+bool YuvSourceFilter::updatePictureBuffer(int iWidth, int iHeight, double dBytesPerPixel)
 {
   if (iWidth > 0 && iHeight > 0)
   {
