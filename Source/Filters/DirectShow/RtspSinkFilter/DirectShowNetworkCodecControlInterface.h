@@ -31,7 +31,7 @@ public:
 
   virtual void setFramebitLimit(unsigned uiFrameBitLimit)
   {
-    VLOG(5) << "setFramebitLimit called: " << uiFrameBitLimit;
+    VLOG(5) << "DirectShowNetworkCodecControlInterface::setFramebitLimit called: " << uiFrameBitLimit;
     // only try once to get the interface
     if (FAILED(m_hrInterfaceAquired))
     {
@@ -60,7 +60,7 @@ public:
 
   virtual void generateIdr()
   {
-    VLOG(5) << "generateIdr called";
+    VLOG(5) << "DirectShowNetworkCodecControlInterface::generateIdr called";
     if (FAILED(m_hrInterfaceAquired)) return;
     if (!m_pCodecInterface)
     {
