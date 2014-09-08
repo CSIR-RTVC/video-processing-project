@@ -10,8 +10,10 @@ ${vppLink}
 )
 
 SET(FLT_HDRS
+resource.h
 stdafx.h
 VideoMixingFilter.h
+VideoMixingProperties.h
 )
 
 SET(FLT_SRCS 
@@ -19,6 +21,7 @@ DLLSetup.cpp
 stdafx.cpp
 VideoMixingFilter.cpp
 VideoMixingFilter.def
+VideoMixingFilter.rc
 )
 
 ADD_LIBRARY(

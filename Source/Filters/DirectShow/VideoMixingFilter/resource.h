@@ -2,11 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by VideoMixingFilter.rc
 //
-#define IDD_DIALOG_SETTINGS             101
-#define IDD_RTSP_DIALOG                 101
 #define IDD_VIDEO_MIXING_DIALOG         101
-#define IDS_PROPERTY_CAPTION            102
-#define IDS_RTSP_CAPTION                102
 #define IDS_VM_CAPTION                  102
 #define IDC_CHECK_TCP                   1001
 #define IDC_HORIZONTAL                  1002
