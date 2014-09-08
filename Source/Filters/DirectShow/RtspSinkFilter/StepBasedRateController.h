@@ -66,7 +66,7 @@ public:
     case lme::SWITCH_UP:
     case lme::SWITCH_UP_MULTIPLE:
     {
-      if (m_uiFrameBitLimitIndex < m_vFrameBitLimits.size())
+      if (m_uiFrameBitLimitIndex < m_vFrameBitLimits.size() - 1)
       {
         ++m_uiFrameBitLimitIndex;
       }
