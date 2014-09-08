@@ -53,6 +53,9 @@ RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
     FALSE,                      // initial state is nonsignaled
     TEXT("LiveMediaInitEvent")  // object name
     );
+
+  m_rtspService.setOnClientSessionPlayCallback(boost::bind(&RtspSinkFilter::onRtspClientSessionPlay, this, _1));
+
 }
 
 RtspSinkFilter::~RtspSinkFilter(void)
@@ -550,4 +553,10 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
   }
   }
   return S_OK;
+}
+
+void RtspSinkFilter::onRtspClientSessionPlay(unsigned uiClientSessionId)
+{
+  // Since a new client has just played the stream, trigger generation of an IDR.
+  m_pDsNetworkControlInterface->generateIdr();
 }
