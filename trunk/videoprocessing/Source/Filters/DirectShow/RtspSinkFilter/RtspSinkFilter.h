@@ -61,6 +61,10 @@ public:
 
   /// starts live555 session
   void startLive555EventLoop();
+  /**
+   * @brief Method that is called when an RTSP client session is played
+   */
+  void onRtspClientSessionPlay(unsigned uiClientSessionId);
 
 private:
   /// Ends the live555 session
