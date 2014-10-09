@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,14 +32,10 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #include "stdafx.h"
-
-// CSIR includes
 #include "VideoMixingFilter.h"
-
 #include <DirectShow/CommonDefs.h>
 #include <Image/PicConcatRGB24Impl.h>
 #include <Image/PicConcatRGB32Impl.h>
-
 
 VideoMixingFilter::VideoMixingFilter()
 	:VideoMixingBase(NAME("CSIR VPP Video Mixer"), 0, CLSID_VideoMixingFilter),
@@ -416,7 +412,7 @@ HRESULT VideoMixingFilter::CreateVideoMixer( const CMediaType *pMediaType, int n
 	return S_OK;
 }
 
-HRESULT VideoMixingFilter::SetOutputDimensions( BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2 )
+HRESULT VideoMixingFilter::SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2, int& nOutputWidth, int& nOutputHeight, int& nOutputSize)
 {
 	if (pBmih1 && pBmih2)
 	{
@@ -427,27 +423,27 @@ HRESULT VideoMixingFilter::SetOutputDimensions( BITMAPINFOHEADER* pBmih1, BITMAP
 			{
 				// Height must be the same
 				if (pBmih1->biHeight != pBmih2->biHeight) return E_FAIL;
-				m_nOutputWidth = pBmih1->biWidth + pBmih2->biWidth;
-				m_nOutputHeight = pBmih1->biHeight;
+				nOutputWidth = pBmih1->biWidth + pBmih2->biWidth;
+				nOutputHeight = pBmih1->biHeight;
 				break;
 			}
 		case 1: 
 			{
 				// Width must be the same
 				if (pBmih1->biWidth!= pBmih2->biWidth) return E_FAIL; 
-				m_nOutputWidth = pBmih1->biWidth;
-				m_nOutputHeight = pBmih1->biHeight + pBmih2->biHeight;
+				nOutputWidth = pBmih1->biWidth;
+				nOutputHeight = pBmih1->biHeight + pBmih2->biHeight;
 				break;
 			}
 		}
-		m_nOutputSize =  m_nSampleSizes[0] + m_nSampleSizes[1];
+		nOutputSize =  m_nSampleSizes[0] + m_nSampleSizes[1];
 
 		// Setup the picture concatenator
 		if (m_pPicConcat)
 		{
 			m_pPicConcat->Set1stDimensions(pBmih1->biWidth, pBmih1->biHeight);
 			m_pPicConcat->Set2ndDimensions(pBmih2->biWidth, pBmih2->biHeight);
-			m_pPicConcat->SetOutDimensions(m_nOutputWidth, m_nOutputHeight);
+			m_pPicConcat->SetOutDimensions(nOutputWidth, nOutputHeight);
 		}
 	}
 	else
