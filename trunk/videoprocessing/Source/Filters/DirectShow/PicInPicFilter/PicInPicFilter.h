@@ -56,9 +56,13 @@ typedef signed char yuvType ;
 class PicInPicBase;
 class PicScalerBase;
 
+/**
+ * @brief PicInPicFilter that accepts two RGB24 inputs.
+ * The filter should only be confgured after the inputs have been connected.
+ */
 class PicInPicFilter	:	public VideoMixingBase,
-							public CSettingsInterface,
-							public ISpecifyPropertyPages
+							          public CSettingsInterface,
+							          public ISpecifyPropertyPages
 {
 public:
 	DECLARE_IUNKNOWN;
@@ -81,7 +85,7 @@ public:
 	/// Overridden from VideoMixingBase 
 	virtual HRESULT CreateVideoMixer(const CMediaType *pMediaType, int nIndex);
 	/// Overridden from VideoMixingBase 
-	virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2);
+  virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2, int& nOutputWidth, int& nOutputHeight, int& nOutputSize);
 
 	HRESULT GenerateOutputSample(IMediaSample *pSample, int nIndex);
 
@@ -135,11 +139,8 @@ private:
 	void reconfigure();
 	/// Pointers to our last received Media Sample
 	BYTE* m_pSampleBuffers[2];
-	// Sizes
+	/// Sizes
 	int m_nSampleSizes[2];
-
-	/// 0 = horizontal, 1 = vertical
-	//int m_nOrientation;
 
 	enum SUB_PIC_POSITION
 	{
@@ -150,24 +151,28 @@ private:
 		SUB_PIC_POSITION_CUSTOM = 4
 	};
 
-	// Position where subvideo is inserted
-	int m_nPosition;
-	// Target dimensions 
+	/// Position where subvideo is inserted
+	//int m_nPosition;
+	/// target width: if zero the width of the primary picture is used
 	int m_nTargetWidth;
-	int m_nTargetHeight;
-	// Target dimensions of sub pic
+  /// target height: if zero the height of the primary picture is used
+  int m_nTargetHeight;
+	/// target width of sub pic: if zero the width of the secondary picture is used
 	int m_nSubPictureWidth;
-	int m_nSubPictureHeight;
-	// Position-dependent offset from nearest corner when position = SUB_PIC_POSITION_1 to SUB_PIC_POSITION_4
-	// Custom offset from bottom left corner used when position = SUB_PIC_POSITION_CUSTOM
-	int m_nCustomOffsetX;
-	int m_nCustomOffsetY;
-
-	// Picture in pic class
+  /// target height of sub pic: if zero the width of the secondary picture is used
+  int m_nSubPictureHeight;
+	/// custom X offset from bottom left corner used when position = SUB_PIC_POSITION_CUSTOM
+  int m_nCustomOffsetX;
+  /// custom Y offset from bottom left corner used when position = SUB_PIC_POSITION_CUSTOM
+  int m_nCustomOffsetY;
+	/// picture in pic class
 	PicInPicBase* m_pPicInPic;
-	PicScalerBase* m_pTargetPicScaler;
-	PicScalerBase* m_pSubPicScaler;
-
+	/// target picture scaler used if primary picture output dimensions != input picture dimensions
+  PicScalerBase* m_pTargetPicScaler;
+  /// target picture scaler used if secondary picture output dimensions != input picture dimensions
+  PicScalerBase* m_pSubPicScaler;
 	/// Stores bytes per needed to store pixel according to media type
 	double m_nBytesPerPixel;
+  /// buffer to scale secondary image into if required
+  BYTE* m_pBufferForScaledSecondaryImage;
 };

@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,10 +32,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #include "stdafx.h"
-
-// CSIR includes
 #include "PicInPicFilter.h"
-
 #include <DirectShow/CommonDefs.h>
 #include <Image/PicInPicRGB24Impl.h>
 #include <Image/PicInPicRGB32Impl.h>
@@ -45,7 +42,8 @@ PicInPicFilter::PicInPicFilter()
 	:VideoMixingBase(NAME("CSIR VPP Picture in Picture Filter"), 0, CLSID_PicInPicFilter),
 	m_pPicInPic(NULL),
 	m_pTargetPicScaler(NULL),
-	m_pSubPicScaler(NULL)
+	m_pSubPicScaler(NULL),
+  m_pBufferForScaledSecondaryImage(NULL)
 {
 	m_pSampleBuffers[0] = NULL;
 	m_pSampleBuffers[1] = NULL;
@@ -64,16 +62,21 @@ PicInPicFilter::~PicInPicFilter()
 		delete m_pPicInPic;
 		m_pPicInPic = NULL;
 	}
-
 	if (m_pTargetPicScaler)
 	{
 		delete m_pTargetPicScaler;
+    m_pTargetPicScaler = NULL;
 	}
-
 	if (m_pSubPicScaler)
 	{
 		delete m_pSubPicScaler;
+    m_pSubPicScaler = NULL;
 	}
+  if (m_pBufferForScaledSecondaryImage)
+  {
+    delete[]m_pBufferForScaledSecondaryImage;
+    m_pBufferForScaledSecondaryImage = NULL;
+  }
 
 	for (int i = 0; i < 2; i++)
 	{
@@ -93,13 +96,21 @@ CUnknown * WINAPI PicInPicFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
 
 void PicInPicFilter::initParameters()
 {
-	addParameter(SUB_PICTURE_POSITION, &m_nPosition, (int)SUB_PIC_POSITION_1);
+  // currently unused: supposed to be one of the standard positions to insert 
+  // the picture i.e. top left or top right corner.
+	// addParameter(SUB_PICTURE_POSITION, &m_nPosition, (int)SUB_PIC_POSITION_1);
+  // width output picture is scaled to
 	addParameter(TARGET_WIDTH, &m_nTargetWidth, 0);
-	addParameter(TARGET_HEIGHT, &m_nTargetHeight, 0);
-	addParameter(SUB_PIC_WIDTH, &m_nSubPictureWidth, 0);
-	addParameter(SUB_PIC_HEIGHT, &m_nSubPictureHeight, 0);
-	addParameter(OFFSET_X, &m_nCustomOffsetX, 0);
-	addParameter(OFFSET_Y, &m_nCustomOffsetY, 0);
+  // height output picture is scaled to
+  addParameter(TARGET_HEIGHT, &m_nTargetHeight, 0);
+  // width inner picture is scaled to
+  addParameter(SUB_PIC_WIDTH, &m_nSubPictureWidth, 0);
+  // height inner picture is scaled to
+  addParameter(SUB_PIC_HEIGHT, &m_nSubPictureHeight, 0);
+  // x offset from bottom left corner
+  addParameter(OFFSET_X, &m_nCustomOffsetX, 0);
+  // y offset from bottom left corner
+  addParameter(OFFSET_Y, &m_nCustomOffsetY, 0);
 }
 
 HRESULT PicInPicFilter::GenerateOutputSample(IMediaSample *pSample, int nIndex)
@@ -129,80 +140,57 @@ HRESULT PicInPicFilter::GenerateOutputSample(IMediaSample *pSample, int nIndex)
 	// do pic in pic transform
  	if (m_pSampleBuffers[0] && m_pSampleBuffers[1])
 	{
-		// if the input dimensions of the primary picture don't match the target dimensions
-		// Scale the primary image into the out buffer
-		// TODO
-		// For now just copy the primary image
+		// the target scaler is only created if the input dimensions of the primary picture don't match the target dimensions
 		if ( m_pTargetPicScaler )
 		{
-			m_pTargetPicScaler->Scale((void*)pBufferOut, (void*)m_pSampleBuffers[0]);
+      // scale the primary image into the out buffer
+      m_pTargetPicScaler->Scale((void*)pBufferOut, (void*)m_pSampleBuffers[0]);
 		}
 		else
 		{
-			int nWidth = m_pPicInPic->GetWidth();
-			int nHeight = m_pPicInPic->GetHeight();
-			memcpy(pBufferOut, m_pSampleBuffers[0], nWidth * nHeight* m_nBytesPerPixel);
+      // copy the primary image
+      memcpy(pBufferOut, m_pSampleBuffers[0], m_pPicInPic->GetWidth() * m_pPicInPic->GetHeight() * (size_t)m_nBytesPerPixel);
 		}
-
-		// Now scale the secondary image into the sub picture dimensions
-		// TODO: make dynamic: for now using hard coded aspect ration of (1: 4/10, 1:4/10)
-		// int iSubWidth = nWidth * 0.4;
-		// int iSubHeight = nHeight * 0.4;
-		BYTE* pScaledSecondaryImage = new BYTE[m_pPicInPic->GetSubWidth() * m_pPicInPic->GetSubHeight() * m_nBytesPerPixel];
-
-		int iWidth2 = m_VideoInHeader[1].bmiHeader.biWidth;
-		int iHeight2 = m_VideoInHeader[1].bmiHeader.biHeight;
-
-		// TODO: replace with in dimensions of secondary image
-		m_pSubPicScaler->SetInDimensions(iWidth2, iHeight2);
-		m_pSubPicScaler->SetOutDimensions(m_pPicInPic->GetSubWidth(), m_pPicInPic->GetSubHeight());
-		m_pSubPicScaler->Scale((void*)pScaledSecondaryImage, (void*)m_pSampleBuffers[1]);
-
-		m_pPicInPic->Insert((void*)pScaledSecondaryImage, pBufferOut);
-
-		delete[] pScaledSecondaryImage;
+    
+    if (m_pSubPicScaler)
+    {
+      m_pSubPicScaler->Scale((void*)m_pBufferForScaledSecondaryImage, (void*)m_pSampleBuffers[1]);
+      m_pPicInPic->Insert((void*)m_pBufferForScaledSecondaryImage, pBufferOut);
+    }
+    else
+    {
+      // copy direct from buffer
+      m_pPicInPic->Insert((void*)m_pSampleBuffers[1], pBufferOut);
+    }
 	}
  	else if (m_pSampleBuffers[0])
  	{
 		if ( m_pTargetPicScaler )
 		{
-			m_pSubPicScaler->Scale((void*)pBufferOut, (void*)m_pSampleBuffers[0]);
+      m_pTargetPicScaler->Scale((void*)pBufferOut, (void*)m_pSampleBuffers[0]);
 		}
 		else
 		{
-			int nWidth = m_pPicInPic->GetWidth();
-			int nHeight = m_pPicInPic->GetHeight();
-	 		memcpy(pBufferOut, m_pSampleBuffers[0], nWidth * nHeight* m_nBytesPerPixel );
+      memcpy(pBufferOut, m_pSampleBuffers[0], m_pPicInPic->GetWidth() * m_pPicInPic->GetHeight() * (size_t)m_nBytesPerPixel);
 		}
  	}
  	else
  	{
-		int iWidth2 = m_VideoInHeader[1].bmiHeader.biWidth;
-		int iHeight2 = m_VideoInHeader[1].bmiHeader.biHeight;
-
-// 		int nWidth = m_pPicInPic->GetWidth();
-// 		int nHeight = m_pPicInPic->GetHeight();
-		int nWidth = m_nOutputWidth;
-		int nHeight = m_nOutputHeight;
-
+    int nWidth = m_nOutputWidth;
+    int nHeight = m_nOutputHeight;
 		// TODO: is zeros the right filler
 		memset(pBufferOut, 0, nWidth * nHeight* m_nBytesPerPixel);
 
-// 		int iSubWidth = nWidth * 0.4;
-// 		int iSubHeight = nHeight * 0.4;
-		int iSubWidth = m_nSubPictureWidth;
-		int iSubHeight = m_nSubPictureHeight;
-
-		BYTE* pScaledSecondaryImage = new BYTE[iSubWidth * iSubHeight * m_nBytesPerPixel];
-
-		// TODO: replace with in dimensions of secondary image
-		m_pSubPicScaler->SetInDimensions(iWidth2, iHeight2);
-		m_pSubPicScaler->SetOutDimensions(iSubWidth, iSubHeight);
-		m_pSubPicScaler->Scale((void*)pScaledSecondaryImage, (void*)m_pSampleBuffers[1]);
-
-		m_pPicInPic->Insert((void*)pScaledSecondaryImage, pBufferOut);
-
-		delete[] pScaledSecondaryImage;
+    if (m_pSubPicScaler)
+    {
+      m_pSubPicScaler->Scale((void*)m_pBufferForScaledSecondaryImage, (void*)m_pSampleBuffers[1]);
+      m_pPicInPic->Insert((void*)m_pBufferForScaledSecondaryImage, pBufferOut);
+    }
+    else
+    {
+      // copy direct from buffer
+      m_pPicInPic->Insert((void*)m_pSampleBuffers[1], pBufferOut);
+    }
  	}
 
 	pOutSample->SetActualDataLength(m_nOutputSize);
@@ -303,134 +291,37 @@ HRESULT PicInPicFilter::CreateVideoMixer( const CMediaType *pMediaType, int nInd
 	}
 	m_pSampleBuffers[nIndex] = new BYTE[m_nSampleSizes[nIndex]];
 
-
 	// Create appropriate picture concatenator
 	if (!m_pPicInPic)
 	{
-		if (pMediaType->subtype == MEDIASUBTYPE_RGB24)
-		{
-			m_pPicInPic = new PicInPicRGB24Impl();
-			m_nBytesPerPixel = BYTES_PER_PIXEL_RGB24;
-		}
-		// TODO: cater for RGB32
-		else if (pMediaType->subtype == MEDIASUBTYPE_RGB32)
-		{
-			m_pPicInPic = new PicInPicRGB32Impl();
-			m_nBytesPerPixel = BYTES_PER_PIXEL_RGB32;
-		}
-	}
-
-	// Configure 2nd input scaler
-	switch( nIndex )
-	{
-	case 1:
-		{
-			if ( !m_pSubPicScaler )
-			{
-				if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24)
-				{
-					m_pSubPicScaler = new PicScalerRGB24Impl();
-				}
-				// TODO: cater for RGB32
-// 				else if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB32)
-// 				{
-// 					m_pSubPicScaler = new PicScalerRGB32Impl();
-// 				}
-			}
-		}
+    ASSERT(pMediaType->subtype == MEDIASUBTYPE_RGB24);
+    m_pPicInPic = new PicInPicRGB24Impl();
+    m_nBytesPerPixel = BYTES_PER_PIXEL_RGB24;
 	}
 
 	return S_OK;
 }
 
-HRESULT PicInPicFilter::SetOutputDimensions( BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2 )
+HRESULT PicInPicFilter::SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2, int& nOutputWidth, int& nOutputHeight, int& nOutputSize)
 {
-	// Check if target width and height have been set and use those dimensions
-	if ( m_nTargetWidth > 0 && m_nTargetHeight > 0 )
-	{
-		m_nOutputWidth = m_nTargetWidth;
-		m_nOutputHeight = m_nTargetHeight;
-		m_nOutputSize = m_nOutputWidth * m_nOutputHeight;
+  // target picture scaler
+  if (m_nTargetWidth > 0 && m_nTargetHeight > 0)
+  {
+    // if target width and height have been set use those dimensions
+    nOutputWidth = m_nTargetWidth;
+    nOutputHeight = m_nTargetHeight;
+    nOutputSize = m_nOutputWidth * m_nOutputHeight * m_nBytesPerPixel;
+  }
+  else
+  {
+    ASSERT(pBmih1);
+    // Use size of first input
+    nOutputSize = m_nSampleSizes[0];
+    nOutputWidth = pBmih1->biWidth;
+    nOutputHeight = pBmih1->biHeight;
+  }
 
-		if ( !m_pTargetPicScaler )
-		{
-			m_pTargetPicScaler = new PicScalerRGB24Impl();
-		}
-	}
-	else
-	{
-		// Use size of first input
-		m_nOutputSize =  m_nSampleSizes[0];
-		m_nOutputWidth = pBmih1->biWidth;
-		m_nOutputHeight = pBmih1->biHeight;
-
-		if ( m_pTargetPicScaler )
-		{
-			delete m_pTargetPicScaler;
-			m_pTargetPicScaler = NULL;
-		}
-	}
-
-	// Check sub picture dimensions.
-	// Only use these if valid
-	int iSubWidth = 0;
-	int iSubHeight = 0;
-	if ( (m_nSubPictureWidth > 0 && m_nSubPictureWidth < m_nOutputWidth) && ( m_nSubPictureHeight > 0 && m_nSubPictureHeight < m_nOutputHeight) )
-	{
-		iSubWidth = m_nSubPictureWidth;
-		iSubHeight = m_nSubPictureHeight;
-	}
-	else
-	{
-		iSubWidth = m_nOutputWidth * 0.4;
-		iSubHeight = m_nOutputHeight * 0.4;
-	}
-
-	// Check sub picture position.
-	// Only use these if valid
-	int iSubPosX = 0;
-	int iSubPosY = 0;
-	// TODO: make these relative to the current picture position
-	if ( (m_nCustomOffsetX + m_nSubPictureWidth < m_nOutputWidth ) &&
-		 (m_nCustomOffsetY + m_nSubPictureHeight < m_nOutputHeight))
-	{
-		iSubPosX = m_nCustomOffsetX;
-		iSubPosY = m_nCustomOffsetY;
-	}
-	else
-	{
-		iSubPosX = m_nOutputWidth * 0.1;
-		iSubPosY = m_nOutputHeight * 0.1;
-	}
-
-	if (pBmih1 && pBmih2)
-	{
-		if ( m_pTargetPicScaler )
-		{
-			m_pTargetPicScaler->SetInDimensions( pBmih1->biWidth, pBmih1->biHeight );
-			m_pTargetPicScaler->SetOutDimensions( m_nOutputWidth, m_nOutputHeight );
-		}
-
-		// Setup the picture in picture
-		if ( m_pPicInPic )
-		{
-			m_pPicInPic->SetDimensions(m_nOutputWidth, m_nOutputHeight);
-			m_pPicInPic->SetSubDimensions(iSubWidth, iSubHeight);
-			m_pPicInPic->SetPos(iSubPosX, iSubPosY);
-		}
-	}
-	else
-	{
-		if (pBmih1)
-		{
-			m_pPicInPic->SetDimensions(m_nOutputWidth, m_nOutputHeight);
-		}
-		else if (pBmih2)
-		{
-			m_pPicInPic->SetSubDimensions(iSubWidth, iSubHeight);
-		}
-	}
-
+  reconfigure();
 	return S_OK;
 }
 
@@ -443,14 +334,6 @@ HRESULT PicInPicFilter::CheckOutputType( const CMediaType* pMediaType )
 			return S_OK;
 		}
 	}
-	// TODO: add RGB32
-	//else if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB32)
-	//{
-	//	if (*(pMediaType->Subtype()) == MEDIASUBTYPE_RGB32)
-	//	{
-	//		return S_OK;
-	//	}
-	//}
 	return S_FALSE;
 }
 
@@ -458,20 +341,15 @@ HRESULT PicInPicFilter::CheckOutputType( const CMediaType* pMediaType )
 STDMETHODIMP PicInPicFilter::SetParameter( const char* type, const char* value )
 {
 	// For now, one cannot set any parameters once the output has been connected -> this will affect the buffersize
-	if (m_vOutputPins[0])
+  if (m_vOutputPins[0] && m_vOutputPins[0]->IsConnected())
 	{
-		if (m_vOutputPins[0]->IsConnected())
-		{
-			if ( parameterChangeAffectsOutput( type ) )
-				return E_FAIL;
-		}
+  	if ( parameterChangeAffectsOutput( type ) )
+  		return E_FAIL;
 	}
 
-	// TODO: get rid of enum or get rid of string!!!!
 	if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
 	{
 		reconfigure();
-		//m_nOutPixels = m_nOutWidth * m_nOutHeight;
 		return S_OK;
 	}
 	else
@@ -493,5 +371,90 @@ bool PicInPicFilter::parameterChangeAffectsOutput( const char* szParam )
 
 void PicInPicFilter::reconfigure()
 {
-	//m_pTargetPicScaler->SetOutDimensions( m_nOutputWidth, m_nOutputHeight );
+  BITMAPINFOHEADER* pBmih1 = &m_VideoInHeader[0].bmiHeader;
+  BITMAPINFOHEADER* pBmih2 = &m_VideoInHeader[1].bmiHeader;
+  // target picture scaler
+  if (m_nTargetWidth > 0 && m_nTargetHeight > 0)
+  {
+    if (!m_pTargetPicScaler)
+    {
+      m_pTargetPicScaler = new PicScalerRGB24Impl();
+    }
+    m_pTargetPicScaler->SetInDimensions(pBmih1->biWidth, pBmih1->biHeight);
+    m_pTargetPicScaler->SetOutDimensions(m_nTargetWidth, m_nTargetHeight);
+  }
+  else
+  {
+    if (m_pTargetPicScaler)
+    {
+      delete m_pTargetPicScaler;
+      m_pTargetPicScaler = NULL;
+    }
+  }
+
+  // Check sub picture dimensions.
+  int iSecondaryWidth = pBmih2->biWidth;
+  int iSecondaryHeight = pBmih2->biHeight;
+  int iSubWidth = 0;
+  int iSubHeight = 0;
+  if (!((m_nSubPictureWidth > 0 && m_nSubPictureWidth < getOutputWidth()) &&
+       (m_nSubPictureHeight > 0 && m_nSubPictureHeight < getOutputHeight()))
+    )
+  {
+    m_nSubPictureWidth = iSecondaryWidth;
+    m_nSubPictureHeight = iSecondaryHeight;
+    // if the inner picture is bigger than half the target picture, scale it by a factor of 0.4
+    // TODO: do we need to scale to multiples of 4?
+    if (m_nSubPictureWidth > getOutputWidth() / 2)
+      m_nSubPictureWidth = m_nSubPictureWidth * 0.4;
+    if (m_nSubPictureHeight > getOutputHeight() / 2)
+      m_nSubPictureHeight = m_nSubPictureHeight * 0.4;
+  }
+
+  if (iSecondaryWidth != m_nSubPictureWidth || iSecondaryHeight != m_nSubPictureHeight)
+  {
+    ASSERT(m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24);
+    if (!m_pSubPicScaler)
+    {
+      m_pSubPicScaler = new PicScalerRGB24Impl();
+    }
+    m_pSubPicScaler->SetInDimensions(iSecondaryWidth, iSecondaryHeight);
+    m_pSubPicScaler->SetOutDimensions(m_nSubPictureWidth, m_nSubPictureHeight);
+
+    // recreate picture buffer
+    
+    if (m_pBufferForScaledSecondaryImage)
+    {
+      delete m_pBufferForScaledSecondaryImage;
+      m_pBufferForScaledSecondaryImage = NULL;
+    }
+    m_pBufferForScaledSecondaryImage = new BYTE[m_nSubPictureWidth * m_nSubPictureHeight * m_nBytesPerPixel];
+  }
+  else
+  {
+    if (m_pSubPicScaler)
+    {
+      delete m_pSubPicScaler;
+      m_pSubPicScaler = NULL;
+    }
+    if (m_pBufferForScaledSecondaryImage)
+    {
+      delete[]m_pBufferForScaledSecondaryImage;
+      m_pBufferForScaledSecondaryImage = NULL;
+    }
+  }
+
+  // Check validity of sub picture position else use default value
+  if (!((m_nCustomOffsetX + m_nSubPictureWidth < getOutputWidth()) &&
+    (m_nCustomOffsetY + m_nSubPictureHeight < getOutputHeight())))
+  {
+    // otherwise just use 10 pixels
+    m_nCustomOffsetX = 10;
+    m_nCustomOffsetY = 10;
+  }
+
+  // Setup the picture in picture
+  m_pPicInPic->SetDimensions(getOutputWidth(), getOutputHeight());
+  m_pPicInPic->SetSubDimensions(m_nSubPictureWidth, m_nSubPictureHeight);
+  m_pPicInPic->SetPos(m_nCustomOffsetX, m_nCustomOffsetY);
 }
