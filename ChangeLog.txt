@@ -1,3 +1,16 @@
+2014/10/09
+- Fixed bugs in PicInPicFilter. Can now be configured properly via property page. 
+  Sub-picture dimension and position can be configured while playing.
+   Output dimension can not be configured while output pin is connected.
+
+2014/09/05 Version 1.2
+- Added YUV444ToRGBFilter contributed by Thomas Houtekier. Thanks for the contribution Thomas!
+- Added YUV444 support to YUV source filter.
+- Added RtspSinkFilter to stream live capture video using LiveMediaExt library.
+- Frameskipping filter can now skip x out of every y frames to achieve desired frame rates.
+- Build system has been changed to CMake. Existing VS projects are deprecated and will no longer be maintained.
+- Updated RtspSourceFilter to use latest live555 (2014.07.25). Updated RTSP client to use new async interface provided by live555.
+
 2013/10/23 - Version 1.1.0
 - Added Stereo2Mono filter
 - Updated H.264 codec to include many bug-fixes and compatibility changes
