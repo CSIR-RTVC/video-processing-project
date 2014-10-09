@@ -46,6 +46,15 @@ public:
 	/// Destructor
 	~VideoMixingBase();
 
+  /**
+   * @brief Getter for output width
+   */
+  int getOutputWidth() const { return m_nOutputWidth; }
+  /**
+   * @brief Getter for output height
+   */
+  int getOutputHeight() const { return m_nOutputHeight; }
+
 	/// Subclass must override these methods: it is up to the implementer whether the samples should be copied
 	/// to a temporary buffer etc.
 	/// The user must also decide on how the output of the filter is regulated.
@@ -63,7 +72,7 @@ public:
 	/// The values set in this method will be used in GetMediaType and hence in DecideBufferSize
 	/// The Subclass should also reject invalid media types in this method: e.g. a simple concatenation
 	/// filter should return E_FAIL from this method if the image dimensions do not match
-	virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2) = 0;
+  virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2, int& nOutputWidth, int& nOutputHeight, int& nOutputSize) = 0;
 
 	/// Delegates call to virtual ReceiveFirstSample and ReceiveSecondSample methods.
 	virtual HRESULT Receive(IMediaSample *pSample, int nIndex );
@@ -120,7 +129,6 @@ protected:
 	int m_nOutputWidth;
 	int m_nOutputHeight;
 	int m_nOutputSize;
-
 
 	/// Start time of the sample
 	REFERENCE_TIME m_tStartTime1;
