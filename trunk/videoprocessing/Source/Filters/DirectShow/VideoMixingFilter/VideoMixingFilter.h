@@ -8,7 +8,7 @@ DESCRIPTION			: Video Mixing Filter for RGB24 and RGB32 Media
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -83,7 +83,7 @@ public:
 	/// Overridden from VideoMixingBase 
 	virtual HRESULT CreateVideoMixer(const CMediaType *pMediaType, int nIndex);
 	/// Overridden from VideoMixingBase 
-	virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2);
+  virtual HRESULT SetOutputDimensions(BITMAPINFOHEADER* pBmih1, BITMAPINFOHEADER* pBmih2, int& nOutputWidth, int& nOutputHeight, int& nOutputSize);
 
 	HRESULT GenerateOutputSample(IMediaSample *pSample, int nIndex);
 
