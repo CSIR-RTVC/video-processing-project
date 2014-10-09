@@ -62,7 +62,7 @@ HRESULT VideoMixingBase::Receive( IMediaSample *pSample, int nIndex )
 {
 	CAutoLock lck(&m_csReceive);
 	ASSERT(nIndex >= 0);
-	ASSERT (nIndex < m_vInputPins.size());
+	ASSERT (nIndex < (int)m_vInputPins.size());
 	ASSERT(pSample);
 	ASSERT (m_vOutputPins[0] != NULL);
 	
@@ -159,7 +159,7 @@ HRESULT VideoMixingBase::GetMediaType( int iPosition, CMediaType* pMediaType, in
 		if (pOtherPin)
 		{
 			// We need to recalculate the new width and height
-			hr = SetOutputDimensions(&(m_VideoInHeader[0].bmiHeader), &(m_VideoInHeader[1].bmiHeader));
+			hr = SetOutputDimensions(&(m_VideoInHeader[0].bmiHeader), &(m_VideoInHeader[1].bmiHeader), m_nOutputWidth, m_nOutputHeight, m_nOutputSize);
 			VIDEOINFOHEADER* pVih1 = (VIDEOINFOHEADER*)pMediaType->pbFormat;
 			BITMAPINFOHEADER* bmh1 = &(pVih1->bmiHeader);
 
@@ -252,7 +252,7 @@ HRESULT VideoMixingBase::SetMediaType( PIN_DIRECTION direction, const CMediaType
 		}
 
 		// Leave the output dimensions up to the sub class
-		HRESULT hr = SetOutputDimensions(pBmih1, pBmih2);
+		HRESULT hr = SetOutputDimensions(pBmih1, pBmih2, m_nOutputWidth, m_nOutputHeight, m_nOutputSize);
 
 		// Free format blocks
 		if (pBmih1)
