@@ -100,8 +100,6 @@ HRESULT RtspSinkInputPin::CheckMediaType( const CMediaType *pmt )
     else if (pmt->subtype == MEDIASUBTYPE_AAC)
     {
       extractAudioParameters(pmt);
-      // TODO
-      return VFW_E_TYPE_NOT_ACCEPTED;
       m_eType = MT_AUDIO;
       m_eSubtype = MST_AAC;
       return S_OK;
@@ -129,7 +127,7 @@ inline void RtspSinkInputPin::extractAudioParameters(const CMediaType *pMediaTyp
   if (pMediaType->subtype == MEDIASUBTYPE_AMR)
     m_audioDescriptor.Codec = lme::AMR;
   else if (pMediaType->subtype == MEDIASUBTYPE_AAC)
-    m_audioDescriptor.Codec = lme::AMR;
+    m_audioDescriptor.Codec = lme::AAC;
   else
     assert(false);
 

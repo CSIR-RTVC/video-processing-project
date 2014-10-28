@@ -107,11 +107,6 @@ STDMETHODIMP RtspSinkFilter::NonDelegatingQueryInterface( REFIID riid, void **pp
 	{
 		return GetInterface((IStatusInterface*) this, ppv);
 	}
-  /*
-	else if (riid == IID_IFileSinkFilter)
-	{
-		return GetInterface((IFileSinkFilter*) this, ppv);
-	}*/
 	else
 	{
 		return CBaseFilter::NonDelegatingQueryInterface(riid, ppv);
@@ -267,8 +262,8 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
       }
       else if (it->second == MST_AAC)
       {
-        // TODO
-        assert(false);
+        iAudio = it->first;
+        m_channelManager.setAudioSourceId(iAudio);
       }
     }
 
@@ -283,14 +278,16 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
    
       RtspSinkInputPin* pPin2 = m_vInputPins[iAudio];
       lme::AudioChannelDescriptor& audioDescriptor = pPin2->m_audioDescriptor;
-      assert(audioDescriptor.Codec == lme::AMR);
-      assert(audioDescriptor.BitsPerSample > 0);
+      assert(audioDescriptor.Codec == lme::AMR || audioDescriptor.Codec == lme::AAC);
+
+      // AAC can have zero bits per sample?
+      // assert(audioDescriptor.BitsPerSample > 0);
       assert(audioDescriptor.SamplingFrequency > 0);
       assert(audioDescriptor.Channels > 0);
       boost::system::error_code ec = m_rtspService.createChannel(CHANNEL_ID, "live", videoDescriptor, audioDescriptor);
       if (ec)
       {
-        LOG(WARNING) << "Error creating RTSP H264/AMR service channel: " << ec.message();
+        LOG(WARNING) << "Error creating RTSP H264/" << audioDescriptor.Codec << " service channel: " << ec.message();
         return E_FAIL;
       }
     }
@@ -312,14 +309,15 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
     {
       RtspSinkInputPin* pPin = m_vInputPins[iAudio];
       lme::AudioChannelDescriptor& audioDescriptor = pPin->m_audioDescriptor;
-      assert(audioDescriptor.Codec == lme::AMR);
-      assert(audioDescriptor.BitsPerSample > 0);
+      assert(audioDescriptor.Codec == lme::AMR || audioDescriptor.Codec == lme::AAC);
+      // AAC can have zero bits per sample?
+      // assert(audioDescriptor.BitsPerSample > 0);
       assert(audioDescriptor.SamplingFrequency > 0);
       assert(audioDescriptor.Channels > 0);
       boost::system::error_code ec = m_rtspService.createChannel(CHANNEL_ID, "live", audioDescriptor);
       if (ec)
       {
-        LOG(WARNING) << "Error creating RTSP AMR service channel: " << ec.message();
+        LOG(WARNING) << "Error creating RTSP " << audioDescriptor.Codec << " service channel: " << ec.message();
         return E_FAIL;
       }
     }
@@ -532,6 +530,7 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
     break;
   }
   case MST_AMR:
+  case MST_AAC:
   {
 //    VLOG(2) << "RtspSinkFilter::sendMediaSample: AMR";
     std::vector<lme::MediaSample> mediaSamples;
