@@ -8,7 +8,7 @@ DESCRIPTION			: Properties for FrameSkipping filter.
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2011, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -61,9 +61,7 @@ public:
 	}
 
 	FrameSkippingProperties::FrameSkippingProperties(IUnknown *pUnk) : 
-	FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION),
-    m_framenumber(0),
-    m_totalFrames(0)
+	FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION)
 	{;}
 
 	BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
@@ -77,63 +75,27 @@ public:
 		short lower = 0;
 		short upper = SHRT_MAX;
 
-		 //Init UI
-		long lResult = SendMessage(         // returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN1),	    // handle to destination control
-			(UINT) UDM_SETRANGE,              // message ID
-			(WPARAM) 0,                       // = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower) // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			);
-	
-    lResult = SendMessage(          // returns LRESULT in lResult
-      GetDlgItem(m_Dlg, IDC_SPIN2),	    // handle to destination control
-      (UINT)UDM_SETRANGE,              // message ID
-      (WPARAM)0,                       // = 0; not used, must be zero
-      (LPARAM)MAKELONG(upper, lower) // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-      );
+    setSpinBoxRange(IDC_SPIN1, lower, upper);
+    setSpinBoxRange(IDC_SPIN2, lower, upper);
 
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
-		HRESULT hr = m_pSettingsInterface->GetParameter("skipframe", sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-		{
-      m_framenumber = atoi(szBuffer);
-      SetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_NUMBER, szBuffer);		}
-		else
-		{
-			return E_FAIL;
-		}
-
-    hr = m_pSettingsInterface->GetParameter("totalframes", sizeof(szBuffer), szBuffer, &nLength);
-    if (SUCCEEDED(hr))
+    HRESULT hr = setEditTextFromIntFilterParameter("skipframe", IDC_EDIT_SKIP_FRAME_NUMBER);
+    if (FAILED(hr))
     {
-      m_totalFrames = atoi(szBuffer);
-      SetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_TOTAL, szBuffer);
+      return hr;
     }
+
+    hr = setEditTextFromIntFilterParameter("totalframes", IDC_EDIT_SKIP_FRAME_TOTAL);
 
     return hr;
 	}
  
 	HRESULT OnApplyChanges(void)
 	{
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
-		nLength = GetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_NUMBER, szBuffer, BUFFER_SIZE);
-    m_framenumber = atoi(szBuffer);
-    HRESULT hr = m_pSettingsInterface->SetParameter("skipframe", szBuffer);
+    HRESULT hr = setIntFilterParameterFromEditText("skipframe", IDC_EDIT_SKIP_FRAME_NUMBER);
     if (FAILED(hr)) return hr;
 
-    nLength = GetDlgItemText(m_Dlg, IDC_EDIT_SKIP_FRAME_TOTAL, szBuffer, BUFFER_SIZE);
-    m_totalFrames = atoi(szBuffer);
-    hr = m_pSettingsInterface->SetParameter("totalframes", szBuffer);
-
+    hr = setIntFilterParameterFromEditText("totalframes", IDC_EDIT_SKIP_FRAME_TOTAL);
 		return hr;
 	} 
-
-private:
-
-	unsigned m_framenumber; // number of frames to skip
-  unsigned m_totalFrames; // total number of frames
-
 };
 
