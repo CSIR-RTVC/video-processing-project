@@ -8,7 +8,7 @@ DESCRIPTION           : This filter skips a specified number of frames depending
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2011, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Shared/StringUtil.h>
 
 FrameSkippingFilter::FrameSkippingFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-: CTransInPlaceFilter(NAME("CSIR RTVC Frame Skipping Filter"), pUnk, CLSID_RTVC_VPP_FrameSkippingFilter, pHr, false),
+: CTransInPlaceFilter(NAME("CSIR VPP Frame Skipping Filter"), pUnk, CLSID_RTVC_VPP_FrameSkippingFilter, pHr, false),
   m_uiSkipFrameNumber(0),
   m_uiTotalFrames(0),
   m_uiCurrentFrame(0)
@@ -77,6 +77,14 @@ STDMETHODIMP FrameSkippingFilter::NonDelegatingQueryInterface( REFIID riid, void
 
 HRESULT FrameSkippingFilter::Transform(IMediaSample *pSample)
 {
+  /*  Check for other streams and pass them on */
+
+  // don't skip control info
+  AM_SAMPLE2_PROPERTIES * const pProps = m_pInput->SampleProps();
+  if (pProps->dwStreamId != AM_STREAM_MEDIA) {
+    return S_OK;
+  }
+
   if (m_vFramesToBeSkipped.empty())
     return S_OK;
 
