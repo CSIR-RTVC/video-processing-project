@@ -295,9 +295,21 @@ void CCropFilter::RecalculateFilterParameters()
 	m_nOutWidth = m_nInWidth - m_nLeftCrop - m_nRightCrop;
 	m_nOutHeight = m_nInHeight - m_nTopCrop - m_nBottomCrop;
 	m_nOutPixels = m_nOutWidth * m_nOutHeight;
-	m_nStride =  (m_nOutWidth * (m_nBitCount / 8) + 3) & ~3;
-	m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
-
+#if 0
+  if (m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24)
+  {
+    m_nStride = (m_nOutWidth * (m_nBitCount / 8) + 3) & ~3;
+    m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
+  }
+  else
+  {
+    m_nStride = 0;
+    m_nPadding = 0;
+  }
+#else
+  m_nStride = ((((m_nOutWidth * 8 * m_nBitCount) + 31) & ~31) >> 3);
+  m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
+#endif
 }
 
 HRESULT CCropFilter::SetCropIfValid( int nTotalDimensionImage, int nNewCrop, int& nOldCrop, int nOppositeCrop  )

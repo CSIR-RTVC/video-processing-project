@@ -6,7 +6,7 @@ ${vppUtilIncludes}
 )
 
 # Adds a library called Shared (libRtvcCodecUtils.a under Linux)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BUILD_FOR_SHORT")
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BUILD_FOR_SHORT")
 
 SET(CODEC_UTIL_HDRS
 BitStreamBase.h

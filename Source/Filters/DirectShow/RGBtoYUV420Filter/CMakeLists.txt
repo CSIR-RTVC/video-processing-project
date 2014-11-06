@@ -1,6 +1,6 @@
 # CMakeLists.txt for <RGBtoYUV420Filter> 
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BUILD_FOR_SHORT")
+# SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BUILD_FOR_SHORT")
 
 INCLUDE_DIRECTORIES(
 ${vppIncludes}
@@ -12,6 +12,8 @@ ${vppLink}
 )
 
 SET(FLT_HDRS
+resource.h
+RGB2YUVProperties.h
 RGBtoYUV420Filter.h
 stdafx.h
 )
@@ -20,6 +22,7 @@ SET(FLT_SRCS
 DLLSetup.cpp
 RGBtoYUV420Filter.cpp
 RGBtoYUV420Filter.def
+RGBtoYUV420Filter.rc
 stdafx.cpp
 )
 
