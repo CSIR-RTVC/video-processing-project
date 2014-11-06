@@ -1,7 +1,5 @@
 # CMakeLists.txt for <H264Source> 
 
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_BUILD_FOR_SHORT")
-
 INCLUDE_DIRECTORIES(
 ${vppIncludes}
 ${vppCodecIncludes}

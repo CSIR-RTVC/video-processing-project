@@ -8,7 +8,7 @@ DESCRIPTION			: H.264 source filter output pin implementation
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2012, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -65,14 +65,21 @@ HRESULT H264OutputPin::GetMediaType(CMediaType *pMediaType)
     pMediaType->SetType(&MEDIATYPE_Video);
     pMediaType->SetSubtype(&MEDIASUBTYPE_H264);
     pMediaType->SetFormatType(&FORMAT_VideoInfo2);
+
+    // Our H.264 codec only supports baseline, we can't extract 
+    // width and height for other .264 sources. In this case
+    // the value will still be 0. Hence just set any value.
+    unsigned uiWidth = (m_pFilter->m_iWidth == 0) ? 352 : m_pFilter->m_iWidth;
+    unsigned uiHeight = (m_pFilter->m_iHeight == 0) ? 288 : m_pFilter->m_iHeight;
+
     VIDEOINFOHEADER2* pvi2 = (VIDEOINFOHEADER2*)pMediaType->AllocFormatBuffer(sizeof(VIDEOINFOHEADER2));
     ZeroMemory(pvi2, sizeof(VIDEOINFOHEADER2));
     pvi2->bmiHeader.biBitCount = 24;
     pvi2->bmiHeader.biSize = 40;
     pvi2->bmiHeader.biPlanes = 1;
-    pvi2->bmiHeader.biWidth = m_pFilter->m_iWidth;
-    pvi2->bmiHeader.biHeight = m_pFilter->m_iHeight;
-    pvi2->bmiHeader.biSize = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
+    pvi2->bmiHeader.biWidth = uiWidth;
+    pvi2->bmiHeader.biHeight = uiHeight;
+    pvi2->bmiHeader.biSize = uiWidth * uiHeight * 3;
     pvi2->bmiHeader.biSizeImage = DIBSIZE(pvi2->bmiHeader);
     pvi2->bmiHeader.biCompression = DWORD('1cva');
     //pvi2->AvgTimePerFrame = m_tFrame;
@@ -80,11 +87,10 @@ HRESULT H264OutputPin::GetMediaType(CMediaType *pMediaType)
     const REFERENCE_TIME FPS_25 = UNITS / 25;
     pvi2->AvgTimePerFrame = FPS_25;
     //SetRect(&pvi2->rcSource, 0, 0, m_cx, m_cy);
-    SetRect(&pvi2->rcSource, 0, 0, m_pFilter->m_iWidth, m_pFilter->m_iHeight);
+    SetRect(&pvi2->rcSource, 0, 0, uiWidth, uiHeight);
     pvi2->rcTarget = pvi2->rcSource;
-
-    pvi2->dwPictAspectRatioX = m_pFilter->m_iWidth;
-    pvi2->dwPictAspectRatioY = m_pFilter->m_iHeight;
+    pvi2->dwPictAspectRatioX = uiWidth;
+    pvi2->dwPictAspectRatioY = uiHeight;
   }
   else
   {
@@ -171,9 +177,10 @@ HRESULT H264OutputPin::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERT
   {
     pRequest->cBuffers = 1;
   }
-  //pRequest->cbBuffer = pvi->bmiHeader.biSizeImage;
-  // TODO: hard-coding for now
-  pRequest->cbBuffer = m_pFilter->m_iWidth * m_pFilter->m_iHeight * 3;
+
+  unsigned uiWidth = (m_pFilter->m_iWidth == 0) ? 352 : m_pFilter->m_iWidth;
+  unsigned uiHeight = (m_pFilter->m_iHeight == 0) ? 288 : m_pFilter->m_iHeight;
+  pRequest->cbBuffer = uiWidth * uiHeight * 3;
 
   ALLOCATOR_PROPERTIES Actual;
   hr = pAlloc->SetProperties(pRequest, &Actual);
@@ -216,8 +223,9 @@ HRESULT H264OutputPin::FillBuffer(IMediaSample *pSample)
   ASSERT(m_pFilter->m_uiCurrentNalUnitSize > 0);
   memcpy( pData, m_pFilter->m_pBuffer, m_pFilter->m_uiCurrentNalUnitSize );
 
-#if 1
-  if (!m_pFilter->isParameterSet(m_pFilter->m_pBuffer[4]))
+#if 0
+  // BUG: we need to parse the NAL units to find out if we have to increment the timestamp
+  if (!m_pFilter->isParameterSet(m_pFilter->m_pBuffer[m_pFilter->m_uiCurrentStartCodeSize]))
   {
     // TODO: non VLC NAL units should not increment the timestamp
     REFERENCE_TIME rtStart = m_iCurrentFrame * m_rtFrameLength;
