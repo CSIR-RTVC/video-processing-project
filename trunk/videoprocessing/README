@@ -29,7 +29,7 @@ DirectShow filters:
 - Pic in pic filter
 - RGB to YUV420 Planar color converter
 - Rotate filter
-- RTSP/RTP source filter (8/16 bit PCM, AMR, MP3, AAC, MP4A-LATM, H264)
+- RTSP source filter (8/16 bit PCM, AMR, MP3, AAC, MP4A-LATM, H264)
 - RTSP sink filter
 - Scale filter
 - Skewing filter
@@ -37,15 +37,22 @@ DirectShow filters:
 - Tee
 - Timestamp logger
 - Video mixing filter
+- Virtual Mic
 - YUV420 Planar to RGB color converter
+- YUV444 Planar to RGB color converter (Contributed by Thomas Houtekier)
 - YUV source
 
-Installation:
+Installation (NEW):
+There is no more msi file as the VS Express Edition is now used to compile the project.
+Instead the download consists of a zip file with batch files that register the DirectShow filters.
+
+Installation (OLD):
 Use Setup.msi to install all filters. In GraphEdit/GraphStudio the filters will appear under the "CSIR VPP" prefix.
+
 You can also download the filters individually. In that case you'll have to register them with regsvr32. If you experience
-registration problems, it is likely that you need the Visual C runtimes for VS2010. This should not be an issue if you use the 
-installer. Currently the redistributable is available at http://www.microsoft.com/download/en/details.aspx?id=8328.
-If this changes, you can search for "Microsoft Visual C++ 2010 SP1 Redistributable Package (x86)". 
+registration problems, it is likely that you need the Visual C runtimes for VS2013. This should not be an issue if you use the 
+installer. Currently the redistributable is available at http://www.microsoft.com/en-US/download/details.aspx?id=40784.
+If this changes, you can search for "Microsoft Visual C++ 2013 Redistributable Package (x86)". 
 
 Filter configuration: 
 - Use the property pages to configure the crop, scale or RTSP source filter from graph edit.
