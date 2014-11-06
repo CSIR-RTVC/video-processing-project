@@ -22,6 +22,7 @@ SET(FLT_SRCS
 DLLSetup.cpp
 RotateFilter.cpp
 RotateFilter.def
+RotateFilter.rc
 stdafx.cpp
 )
 

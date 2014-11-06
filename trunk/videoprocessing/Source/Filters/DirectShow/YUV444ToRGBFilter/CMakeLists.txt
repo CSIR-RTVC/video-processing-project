@@ -12,8 +12,10 @@ ${vppLink}
 )
 
 SET(FLT_HDRS
+resource.h
 stdafx.h
 YUV444ToRGBFilter.h
+YUY2RGBProperties.h
 )
 
 SET(FLT_SRCS 
@@ -21,6 +23,7 @@ DLLSetup.cpp
 stdafx.cpp
 YUV444ToRGBFilter.cpp
 YUV444ToRGBFilter.def
+YUV444ToRGBFilter.rc
 )
 
 ADD_LIBRARY(
