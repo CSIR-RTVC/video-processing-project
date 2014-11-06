@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,12 +32,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #include "RGBtoYUV420Filter.h"
-
-// Media Type
 #include <DirectShow/CommonDefs.h>
 #include <DirectShow/CustomMediaTypes.h>
-
-// Color converters
 #include <Image/RealRGB24toYUV420Converter.h>
 #include <Image/RealRGB32toYUV420Converter.h>
 
@@ -208,38 +204,23 @@ HRESULT RGBtoYUV420Filter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
 	return S_OK;
 }
 
-void RGBtoYUV420Filter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT RGBtoYUV420Filter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
-	int nTotalSize = 0;
-	//make sure we were able to initialise our converter
-	if (m_pConverter)
-	{
-		//Map everything into yuvType pointers
-		yuvType* pYUV = NULL;
-		pYUV = (yuvType*)pBufferOut;
-		if (pYUV)
-		{
-			nTotalSize = (m_nInPixels + (2*m_nSizeYUV))*sizeof(yuvType);
-			//Set pointer offsets into YUV array
-			yuvType* pY = pYUV;
-			yuvType* pU = pYUV + m_nInPixels;
-			yuvType* pV = pU + m_nSizeYUV;
-			//Convert to YUV
-			m_pConverter->Convert((void*)pBufferIn, (void*)pY, (void*)pU, (void*)pV);
-			DbgLog((LOG_TRACE, 0, TEXT("Converted to YUV directly")));
-		}
-		else
-		{
-			DbgLog((LOG_TRACE, 0, TEXT("YUV array memory not valid")));
-		}
-	}
-	else
-	{
-		// Add some kind of user notification
-		DbgLog((LOG_TRACE, 0, TEXT("RGB to YUV Converter is not initialised - unable to transform")));
-		//m_sLastError = "RGB to YUV Converter is not initialised - unable to transform";
-	}
-	lOutActualDataLength = nTotalSize;
+  ASSERT(m_pConverter);
+  ASSERT(pBufferIn);
+  ASSERT(pBufferOut);
+  
+  //Map everything into yuvType pointers
+  yuvType* pYUV = (yuvType*)pBufferOut;
+  //Set pointer offsets into YUV array
+  yuvType* pY = pYUV;
+  yuvType* pU = pYUV + m_nInPixels;
+  yuvType* pV = pU + m_nSizeYUV;
+  //Convert to YUV
+  m_pConverter->Convert((void*)pBufferIn, (void*)pY, (void*)pU, (void*)pV);
+  DbgLog((LOG_TRACE, 0, TEXT("Converted to YUV directly")));
+  lOutActualDataLength = (m_nInPixels + (2 * m_nSizeYUV))*sizeof(yuvType);;
+  return S_OK;
 }
 
 HRESULT RGBtoYUV420Filter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )

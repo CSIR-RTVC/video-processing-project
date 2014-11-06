@@ -156,12 +156,15 @@ HRESULT CCustomBaseFilter::Transform( IMediaSample *pSource, IMediaSample *pDest
 	}
 	// Process the data.
 
-  ApplyTransform(pBufferIn, lSrcDataLen, lSrcActualLen, pBufferOut, lDestDataLen, lDestActualLen);	
-	KASSERT((long)lDestActualLen <= pDest->GetSize());
+  hr = ApplyTransform(pBufferIn, lSrcDataLen, lSrcActualLen, pBufferOut, lDestDataLen, lDestActualLen);
 
-	pDest->SetActualDataLength(lDestActualLen);
-	pDest->SetSyncPoint(TRUE);
-	return S_OK;
+  if (SUCCEEDED(hr))
+  {
+    KASSERT((long)lDestActualLen <= pDest->GetSize());
+    pDest->SetActualDataLength(lDestActualLen);
+    pDest->SetSyncPoint(TRUE);
+  }
+	return hr;
 }
 
 STDMETHODIMP CCustomBaseFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )

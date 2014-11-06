@@ -8,7 +8,7 @@ DESCRIPTION			: This Filter converts the YUV420 Planar media back into RGB24 med
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -147,7 +147,7 @@ private:
   * @param pSource The source buffer
   * @param pDest The destination buffer
   */
-  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
+  virtual HRESULT ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
   /// Pointer to our RGB24 | 32 to YUV420 converter
   YUV420toRGBConverter* m_pConverter;

@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -33,9 +33,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 
 #include "RotateFilter.h"
-
 #include <DirectShow/CommonDefs.h>
-
 #include <Image/PicRotateRGB24Impl.h>
 #include <Image/PicRotateRGB32Impl.h>
 
@@ -302,7 +300,7 @@ STDMETHODIMP RotateFilter::SetParameter( const char* type, const char* value )
 	}
 }
 
-void RotateFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT RotateFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialise our converter
@@ -354,6 +352,7 @@ void RotateFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lAct
 		DbgLog((LOG_TRACE, 0, TEXT("Rotator is not initialised - unable to rotate")));
 	}
 	lOutActualDataLength = nTotalSize;
+  return S_OK;
 }
 
 void RotateFilter::RecalculateFilterParameters()

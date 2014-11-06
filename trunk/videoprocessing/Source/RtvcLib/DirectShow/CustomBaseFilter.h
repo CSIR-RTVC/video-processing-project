@@ -49,8 +49,8 @@ typedef std::vector<GUID*> GUIDList_t;
  */
 class CCustomBaseFilter : public CTransformFilter, public CSettingsInterface, public CStatusInterface
 {
-  /////this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
-  //DECLARE_IUNKNOWN;
+  //this needs to be declared for the extra interface (adds the COM AddRef, etc methods)
+  DECLARE_IUNKNOWN;
 
 public:
   /// Constructor
@@ -93,7 +93,7 @@ protected:
    * This method must be overridden in the sub class to apply the filter specific transformation
    * It must return the size of the resulting transformed output buffer
    */
-  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength) PURE;
+  virtual HRESULT ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength) PURE;
 
   /// Video header of input
   VIDEOINFOHEADER m_videoInHeader;

@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -253,7 +253,7 @@ STDMETHODIMP ScaleFilter::SetParameter( const char* type, const char* value )
 	}
 }
 
-void ScaleFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT ScaleFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialize our converter
@@ -270,6 +270,7 @@ void ScaleFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActu
 		DbgLog((LOG_TRACE, 0, TEXT("Scaler is not initialised - unable to transform")));
 	}
 	lOutActualDataLength = nTotalSize;
+  return S_OK;
 }
 
 
