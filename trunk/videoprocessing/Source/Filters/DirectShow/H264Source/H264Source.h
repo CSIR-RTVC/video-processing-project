@@ -207,7 +207,7 @@ private:
   void recalculate();
   void reset();
   bool readNalUnit();
-  int findIndexOfNextStartCode(unsigned uiStartingPos);
+  int findIndexOfNextStartCode(unsigned uiStartingPos, unsigned& uiLengthOfStartCode);
 
   H264OutputPin *m_pPin;
   bool m_bUseRtvcH264;
@@ -230,6 +230,7 @@ private:
   unsigned m_uiBytesInBuffer;
   unsigned m_uiCurrentNalUnitSize;
   unsigned m_uiCurrentNalUnitStartPos;
+  unsigned m_uiCurrentStartCodeSize;
 
   int m_iFileSize;
   int m_iRead;

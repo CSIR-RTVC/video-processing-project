@@ -8,7 +8,7 @@ DESCRIPTION			: H264 source filter implementation
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2012, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -50,7 +50,7 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 #define DEFAULT_WIDTH 176
 #define DEFAULT_HEIGHT 144
 
-const unsigned char g_startCode[] = { 0, 0, 0, 1};
+const unsigned char g_startCode_3[] = { 0, 0, 1};
 
 // HACK for backwards compatibility with pre-CMake projects
 #ifndef VPP_CMAKE_BUILD
@@ -89,6 +89,7 @@ H264SourceFilter::H264SourceFilter(IUnknown *pUnk, HRESULT *phr)
   m_uiSeqParamSetLen(0),
   m_pPicParamSet(0),
   m_uiPicParamSetLen(0),
+  m_uiCurrentStartCodeSize(0),
   m_iFileSize(0),
   m_iRead(0),
   m_bAnalyseOnLoad(true)
@@ -222,15 +223,15 @@ STDMETHODIMP H264SourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
     // parse sequence parameter set
     // Only fail if using the RTVC decoder
     // The MS one might be more forgiving
-    if (!parseParameterSets() /*&& m_bUseRtvcH264*/)
+    if (!parseParameterSets() && m_bUseRtvcH264)
     {
+      // don't fail if m_bUseRtvcH264 == false
       SetLastError("Failed to parse parameter required for RTVC codec sets in: " + m_sFile, true);
       return E_FAIL;
     }
 
     // reset file pointer
     reset();
-
     return S_OK;
   }
   else
@@ -364,12 +365,16 @@ void H264SourceFilter::recalculate()
   m_pPin->m_rtFrameLength = UNITS/m_iFramesPerSecond;
 }
 
-int H264SourceFilter::findIndexOfNextStartCode(unsigned uiStartingPos)
+int H264SourceFilter::findIndexOfNextStartCode(unsigned uiStartingPos, unsigned& uiLengthOfStartCode)
 {
   for (size_t i = uiStartingPos; i < m_uiBytesInBuffer - 4; ++i)
   {
-    if (memcmp((char*)&m_pBuffer[i], g_startCode, 4) == 0)
+    if (memcmp((char*)&m_pBuffer[i], g_startCode_3, 3) == 0)
     {
+      if (m_pBuffer[i - 1] == 0)
+        uiLengthOfStartCode = 4;
+      else
+        uiLengthOfStartCode = 3;
       return i;
     }
   }
@@ -387,6 +392,7 @@ bool H264SourceFilter::readNalUnit()
       if (m_uiBytesInBuffer > m_uiCurrentNalUnitSize)
       {
         memmove(m_pBuffer, m_pBuffer + m_uiCurrentNalUnitSize, m_uiBytesInBuffer - m_uiCurrentNalUnitSize);
+        m_uiCurrentStartCodeSize = (memcmp(g_startCode_3, m_pBuffer, 3) == 0) ? 3 : 4;
       }
 
       m_uiBytesInBuffer -= m_uiCurrentNalUnitSize;
@@ -401,17 +407,29 @@ bool H264SourceFilter::readNalUnit()
     if (m_uiBytesInBuffer < 4 ) return false;
 
     // check if we have enough data in the buffer to read the NAL unit
-    if (memcmp(g_startCode, m_pBuffer, 4) == 0)
+    unsigned uiStartCodeLen = 0;
+    if (memcmp(g_startCode_3, m_pBuffer, 3) == 0)
+      uiStartCodeLen = 3;
+
+    if (memcmp(g_startCode_3, m_pBuffer + 1, 3) == 0)
+      uiStartCodeLen = 4;
+
+    if (uiStartCodeLen > 0)
     {
-      unsigned uiStartingPos = 4;
+      unsigned uiStartingPos = uiStartCodeLen;
       while (true)
       {
         // need to find next start code or EOF
-        int iIndex = findIndexOfNextStartCode(uiStartingPos);
+        int iIndex = findIndexOfNextStartCode(uiStartingPos, uiStartCodeLen);
         if (iIndex != -1)
         {
           // found the end of the nal unit
           m_uiCurrentNalUnitSize = iIndex;
+          // compensate for 4 byte start codes
+          if (uiStartCodeLen == 4)
+          {
+            --m_uiCurrentNalUnitSize;
+          }
           return true;
         }
         else
