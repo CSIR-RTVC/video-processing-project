@@ -31,13 +31,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ===========================================================================
 */
-
-
-//#include <strsafe.h>
-
 #include <fstream>
 #include <vector>
-
 #include <DirectShow/CStatusInterface.h>
 #include <DirectShow/CSettingsInterface.h>
 
@@ -242,5 +237,3 @@ private:
   std::vector<unsigned> m_vIdrFrames;
   std::vector<unsigned> m_vFrames;
 };
-
-
