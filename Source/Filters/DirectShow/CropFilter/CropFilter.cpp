@@ -8,7 +8,7 @@ DESCRIPTION			:
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -246,7 +246,7 @@ STDMETHODIMP CCropFilter::SetParameter( const char* type, const char* value )
 	}
 }
 
-void CCropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT CCropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
 	int nTotalSize = 0;
 	//make sure we were able to initialise our converter
@@ -286,6 +286,7 @@ void CCropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActu
 		DbgLog((LOG_TRACE, 0, TEXT("TestCropper: Cropper is not initialised - unable to transform")));
 	}
 	lOutActualDataLength = nTotalSize;
+  return S_OK;
 }
 
 void CCropFilter::RecalculateFilterParameters()

@@ -102,7 +102,7 @@ private:
   * @param[in] lOutBufferSize The size of the destination buffer
   * @param[in,out] lOutActualDataLength The size of the data encoded into the destination buffer
   */
-  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
+  virtual HRESULT ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
   HRESULT initialiseH264Decoder();
   void resizeEncodedPictureBufferIfNecessary(long lActualDataLength);

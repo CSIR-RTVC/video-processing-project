@@ -8,7 +8,7 @@ DESCRIPTION           :  This filter outputs mono output from a stereo input
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2013, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -88,7 +88,7 @@ public:
 private:
   	/// Overridden from CCustomBaseFilter
 	  virtual void InitialiseInputTypes();
-    virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
+    virtual HRESULT ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
   int m_channel;
   int m_nBitsPerSample;

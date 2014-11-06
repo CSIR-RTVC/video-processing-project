@@ -8,7 +8,7 @@ DESCRIPTION           : This filter skips a specified number of frames depending
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2013, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -72,7 +72,7 @@ STDMETHODIMP Stereo2MonoFilter::NonDelegatingQueryInterface( REFIID riid, void *
   }
 }
 
-void Stereo2MonoFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT Stereo2MonoFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
   switch (m_nBitsPerSample)
   {
@@ -130,6 +130,7 @@ void Stereo2MonoFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long
     }
   }
   lOutActualDataLength = lActualDataLength/2;
+  return S_OK;
 }
 
 void Stereo2MonoFilter::InitialiseInputTypes()

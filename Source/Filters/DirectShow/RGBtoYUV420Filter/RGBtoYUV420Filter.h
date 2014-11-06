@@ -8,7 +8,7 @@ DESCRIPTION			: DirectShow Filter that converts RGB24 or RGB32 media to our cust
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -32,16 +32,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ===========================================================================
 */
 #pragma once
-
 // CSIR includes
 #include <DirectShow/CustomBaseFilter.h>
-
-// GUID
 
 // {BB0980EB-97F6-439a-847E-B94C2F5EFCD7}
 static const GUID CLSID_RGBtoYUV420ColorConverter = 
 { 0xbb0980eb, 0x97f6, 0x439a, { 0x84, 0x7e, 0xb9, 0x4c, 0x2f, 0x5e, 0xfc, 0xd7 } };
-
 // {353FCF3B-910A-4e47-9D2B-C410D21B1792}
 static const GUID CLSID_RGBtoYUV420Properties = 
 { 0x353fcf3b, 0x910a, 0x4e47, { 0x9d, 0x2b, 0xc4, 0x10, 0xd2, 0x1b, 0x17, 0x92 } };
@@ -54,56 +50,58 @@ static const GUID CLSID_RGBtoYUV420Properties =
 class RGBtoYUV420Converter;
 
 /**
-* \ingroup DirectShowFilters
-* DirectShow Filter that converts RGB24 or RGB32 media to I420 format.
-*/
+ * \ingroup DirectShowFilters
+ * DirectShow Filter that converts RGB24 or RGB32 media to I420 format.
+ */
 class RGBtoYUV420Filter : public CCustomBaseFilter,
                           public ISpecifyPropertyPages
 {
 public:
   DECLARE_IUNKNOWN
 
-  /// Constructor
+  /**
+   * @brief Constructor
+   */
   RGBtoYUV420Filter();
-  /// Destructor
+  /**
+   * @brief Destructor
+   */
   ~RGBtoYUV420Filter();
-
-  /// Static object-creation method (for the class factory)
+  /**
+   * @brief Static object-creation method (for the class factory)
+   */
   static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr); 
-
   /**
-  * Overriding this so that we can set whether this is an RGB24 or an RGB32 Filter
-  */
+   * Overriding this so that we can set whether this is an RGB24 or an RGB32 Filter
+   */
   HRESULT SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt);
-
   /**
-  * Used for Media Type Negotiation 
-  * Returns an HRESULT value. Possible values include those shown in the following table.
-  * <table border="0" cols="2"><tr valign="top"><td><b>Value</b></td><td><b>Description</b></td></TR><TR><TD>S_OK</TD><TD>Success</TD></TR><TR><TD>VFW_S_NO_MORE_ITEMS</TD><TD>Index out of range</TD></TR><TR><TD>E_INVALIDARG</TD><TD>Index less than zero</TD></TR></TABLE>
-  * The output pin's CTransformOutputPin::GetMediaType method calls this method. The derived class must implement this method. For more information, see CBasePin::GetMediaType.
-  * To use custom media types, the media type can be manipulated in this method.
-  */
+   * Used for Media Type Negotiation 
+   * Returns an HRESULT value. Possible values include those shown in the following table.
+   * <table border="0" cols="2"><tr valign="top"><td><b>Value</b></td><td><b>Description</b></td></TR><TR><TD>S_OK</TD><TD>Success</TD></TR><TR><TD>VFW_S_NO_MORE_ITEMS</TD><TD>Index out of range</TD></TR><TR><TD>E_INVALIDARG</TD><TD>Index less than zero</TD></TR></TABLE>
+   * The output pin's CTransformOutputPin::GetMediaType method calls this method. The derived class must implement this method. For more information, see CBasePin::GetMediaType.
+   * To use custom media types, the media type can be manipulated in this method.
+   */
   HRESULT GetMediaType(int iPosition, CMediaType *pMediaType);
-
-  /// Buffer Allocation
   /**
-  * The output pin's CTransformOutputPin::DecideBufferSize method calls this method. The derived class must implement this method. For more information, see CBaseOutputPin::DecideBufferSize. 
-  * @param pAlloc Pointer to the IMemAllocator interface on the output pin's allocator.
-  * @param pProp Pointer to an ALLOCATOR_PROPERTIES structure that contains buffer requirements from the downstream input pin.
-  * @return Value: Returns S_OK or another HRESULT value.
-  */
+   * The output pin's CTransformOutputPin::DecideBufferSize method calls this method. The derived class must implement this method. For more information, see CBaseOutputPin::DecideBufferSize. 
+   * @param pAlloc Pointer to the IMemAllocator interface on the output pin's allocator.
+   * @param pProp Pointer to an ALLOCATOR_PROPERTIES structure that contains buffer requirements from the downstream input pin.
+   * @return Value: Returns S_OK or another HRESULT value.
+   */
   HRESULT DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp);
-
   /**
-  * The CheckTransform method checks whether an input media type is compatible with an output media type.
-  * <table border="0" cols="2"> <tr valign="top"> <td  width="50%"><b>Value</b></td> <td width="50%"><b>Description</b></td> </tr> <tr valign="top"> <td width="50%">S_OK</td> <td width="50%">The media types are compatible.</td> </tr> <tr valign="top"> <td width="50%">VFW_E_TYPE_NOT_ACCEPTED</td> <td width="50%">The media types are not compatible.</td> </tr> </table>
-  */
+   * @brief The CheckTransform method checks whether an input media type is compatible with an output media type.
+   * <table border="0" cols="2"> <tr valign="top"> <td  width="50%"><b>Value</b></td> <td width="50%"><b>Description</b></td> </tr> <tr valign="top"> <td width="50%">S_OK</td> <td width="50%">The media types are compatible.</td> </tr> <tr valign="top"> <td width="50%">VFW_E_TYPE_NOT_ACCEPTED</td> <td width="50%">The media types are not compatible.</td> </tr> </table>
+   */
   HRESULT CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut);
-
-  /// Overridden from CCustomBaseFilter
+  /**
+   * @brief Overridden from CCustomBaseFilter to define allowed input types
+   */
   virtual void InitialiseInputTypes();
-
-  /// Overridden from CSettingsInterface
+  /**
+   * @brief Overridden from CSettingsInterface to intialise filter parameters
+   */
   virtual void initParameters()
   {
     addParameter(CHROMINANCE_OFFSET, &m_nChrominanceOffset, 128);
@@ -113,9 +111,13 @@ public:
     addParameter(INVERT, &m_bInvert, true);
 #endif
   }
-
+  /**
+   * @brief Sets the filter parameters
+   */
   STDMETHODIMP SetParameter( const char* type, const char* value);
-
+  /**
+   * @brief required for property page
+   */
   STDMETHODIMP GetPages(CAUUID *pPages)
   {
     if (pPages == NULL) return E_POINTER;
@@ -128,7 +130,9 @@ public:
     pPages->pElems[0] = CLSID_RGBtoYUV420Properties;
     return S_OK;
   }
-
+  /**
+   * @brief required for COM
+   */
   STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv)
   {
     if (riid == IID_ISpecifyPropertyPages)
@@ -141,24 +145,21 @@ public:
       return CCustomBaseFilter::NonDelegatingQueryInterface(riid, ppv);
     }
   }
-protected:
-
 
 private:
   /**
-  * This method converts the input buffer from RGB24 | 32 to YUV420P
-  * @param pSource The source buffer
-  * @param pDest The destination buffer
-  */
-  virtual void ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
+   * This method converts the input buffer from RGB24 | 32 to YUV420P
+   * @param pSource The source buffer
+   * @param pDest The destination buffer
+   */
+  virtual HRESULT ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength);
 
   /// Pointer to our RGB24 | 32 to YUV420 converter
   RGBtoYUV420Converter* m_pConverter;
-  // Size of YUV image
+  /// Size of YUV image
   int m_nSizeYUV;
-  // Chrominance offset
+  /// Chrominance offset
   int m_nChrominanceOffset;
-
-  // invert image
+  /// invert image
   bool m_bInvert;
 };

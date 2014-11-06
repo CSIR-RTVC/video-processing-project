@@ -8,7 +8,7 @@ DESCRIPTION			:
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 YUV444toRGBFilter::YUV444toRGBFilter()
   : CCustomBaseFilter(NAME("CSIR VPP YUV444I 2 RGB Converter"), 0, CLSID_YUV444toRGBColorConverter),
-  m_pConverter(NULL),
+  m_pConverter(new RealYUV444toRGB24Converter(m_nInWidth, m_nInHeight)),
   m_nSizeUV(0),
   m_bInvert(true)
 {
@@ -47,18 +47,15 @@ YUV444toRGBFilter::YUV444toRGBFilter()
   initParameters();
 
   // init converter
-  m_pConverter = new RealYUV444toRGB24Converter(m_nInWidth, m_nInHeight);
   m_pConverter->SetFlip(m_bInvert);
   m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
 }
 
 YUV444toRGBFilter::~YUV444toRGBFilter()
 {
-  if (m_pConverter)
-  {
-    delete m_pConverter;
-    m_pConverter = NULL;
-  }
+  ASSERT(m_pConverter);
+  delete m_pConverter;
+  m_pConverter = NULL;
 }
 
 CUnknown * WINAPI YUV444toRGBFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
@@ -80,6 +77,8 @@ void YUV444toRGBFilter::InitialiseInputTypes()
 
 HRESULT YUV444toRGBFilter::SetMediaType( PIN_DIRECTION direction, const CMediaType *pmt )
 {
+  ASSERT(m_pConverter);
+
   HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
   if (direction == PINDIR_INPUT)
   {
@@ -222,24 +221,18 @@ HRESULT YUV444toRGBFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
   return S_OK;
 }
 
-void YUV444toRGBFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT YUV444toRGBFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
-  int nRet = 0;
-  if (m_pConverter)
-  {
-    yuvType* pYUV = NULL;
-    pYUV = (yuvType*)pBufferIn;
+  ASSERT(m_pConverter);
+  ASSERT(pBufferIn);
+  ASSERT(pBufferOut);
 
-    if (pYUV)
-    {
-      m_pConverter->Convert((void*)pBufferIn, (void*)pBufferOut);
-      DbgLog((LOG_TRACE, 0, TEXT("Converted from YUV444 to RGB Directly")));
-      //RGB24 stores 3 Bytes per pixel
-      nRet = m_nInPixels * BYTES_PER_PIXEL_RGB24;
-
-    }
-  }
-  lOutActualDataLength = nRet;
+  yuvType* pYUV = (yuvType*)pBufferIn;
+  m_pConverter->Convert((void*)pBufferIn, (void*)pBufferOut);
+  DbgLog((LOG_TRACE, 0, TEXT("Converted from YUV444 to RGB Directly")));
+  //RGB24 stores 3 Bytes per pixel
+  lOutActualDataLength = m_nInPixels * BYTES_PER_PIXEL_RGB24;
+  return S_OK;
 }
 
 HRESULT YUV444toRGBFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )
@@ -313,15 +306,12 @@ HRESULT YUV444toRGBFilter::CheckTransform( const CMediaType *mtIn, const CMediaT
   return S_OK;
 }
 
-STDMETHODIMP YUV444toRGBFilter::SetParameter( const char* type, const char* value )
+STDMETHODIMP YUV444toRGBFilter::SetParameter(const char* type, const char* value)
 {
   if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
   {
-    if (m_pConverter)
-    {
-      m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
-      m_pConverter->SetFlip(m_bInvert);
-    }
+    m_pConverter->SetChrominanceOffset(m_nChrominanceOffset);
+    m_pConverter->SetFlip(m_bInvert);
     return S_OK;
   }
   else

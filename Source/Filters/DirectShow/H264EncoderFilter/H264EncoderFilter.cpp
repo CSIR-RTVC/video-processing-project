@@ -442,7 +442,7 @@ inline unsigned H264EncoderFilter::copySequenceAndPictureParameterSetsIntoBuffer
   return getParameterSetLength();
 }
 
-void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength )
+HRESULT H264EncoderFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
   // lock filter so that it can not be reconfigured during a code operation
   CAutoLock lck(&m_csCodec);
@@ -536,6 +536,7 @@ void H264EncoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, lon
       }
     }
   }
+  return S_OK;
 }
 
 HRESULT H264EncoderFilter::CheckTransform( const CMediaType *mtIn, const CMediaType *mtOut )

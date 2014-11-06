@@ -8,7 +8,7 @@ DESCRIPTION			: H.264 decoder filter implementation
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2014, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -422,7 +422,7 @@ HRESULT H264DecoderFilter::DecideBufferSize( IMemAllocator *pAlloc, ALLOCATOR_PR
   return S_OK;
 }
 
-void H264DecoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength )
+HRESULT H264DecoderFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
   //make sure we were able to initialise our converter
   if (m_pCodec)
@@ -507,6 +507,7 @@ void H264DecoderFilter::ApplyTransform( BYTE* pBufferIn, long lInBufferSize, lon
       }
     }
   }
+  return S_OK;
 }
 
 void H264DecoderFilter::resizeEncodedPictureBufferIfNecessary(long lActualDataLength)
