@@ -57,3 +57,8 @@
 #define H264_VPP 0
 #define H264_H264 1
 #define H264_AVC1 2
+
+#define FRAME_BIT_LIMITS "frame_bit_limits"
+#define STARTING_INDEX "starting_index"
+#define RTSP_PORT "rtsp_port"
+

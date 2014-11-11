@@ -3,16 +3,17 @@
 #include <memory>
 #include <DirectShow/CSettingsInterface.h>
 #include <DirectShow/CStatusInterface.h>
+#include <Filters/DirectShow/FilterParameters.h>
 #include <Media/IRateController.h>
 #include <Media/SingleChannelManager.h>
 #include <Media/RtspService.h>
-
 #include "RtspSinkGuids.h"
 #include "RtspSinkProperties.h"
 
 // Forward
 class RtspSinkInputPin;
 class INetworkCodecControlInterface;
+class StepBasedRateController;
 
 /**
  * @brief This RtspSinkFilter class supports at most two input pins, one for video and one for audio.
@@ -40,6 +41,8 @@ public:
 	{
     // reuse connection of RTSP register
     addParameter(RTSP_PORT, &m_uiRtspPort, 554);
+    addParameter(FRAME_BIT_LIMITS, &m_sFrameBitLimits, "");
+    addParameter(STARTING_INDEX, &m_uiStartingIndex, 0);
   }
 
 	/// CBase Filter methods - Overridden since we don't just have one input and output pin as the standard transform filter does
@@ -109,7 +112,11 @@ private:
   /// Rate control factory
   lme::IRateAdaptationFactory* m_pFactory;
   /// Rate control
-  lme::IRateController* m_pRateController;
+  StepBasedRateController* m_pRateController;
+  /// frame bit limits
+  std::string m_sFrameBitLimits;
+  /// Starting index
+  unsigned m_uiStartingIndex;
   /// RTSP service
   lme::RtspService m_rtspService;
   /// error code for init
