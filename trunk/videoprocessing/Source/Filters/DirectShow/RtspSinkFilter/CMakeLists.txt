@@ -18,9 +18,11 @@ ${vppLink}
 SET(FLT_HDRS
 DirectShowNetworkCodecControlInterface.h
 INetworkCodecControlInterface.h
+Resource.h
 RtspSinkFilter.h
 RtspSinkGuids.h
 RtspSinkInputPin.h
+RtspSinkProperties.h
 stdafx.h
 StepBasedRateController.h
 )
@@ -29,6 +31,7 @@ SET(FLT_SRCS
 DllSetup.cpp
 RtspSinkFilter.cpp
 RtspSinkFilter.def
+RtspSinkFilter.rc
 RtspSinkInputPin.cpp
 stdafx.cpp
 )
