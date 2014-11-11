@@ -10,6 +10,7 @@
 #include <Media/SingleChannelManager.h>
 #include <Media/RtspService.h>
 #include <SimpleRateAdaptation/SimpleRateAdaptationFactory.h>
+#include <cpputil/StringTokenizer.h>
 
 #define CHANNEL_ID 1
 
@@ -240,6 +241,15 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
   // start live555 thread
   if (m_hLiveMediaThreadHandle == NULL)
   {
+    // configure rate controller
+    if (m_sFrameBitLimits != "")
+    {
+      std::vector<unsigned> vFrameBitLimits = StringTokenizer::tokenizeV2<unsigned>(m_sFrameBitLimits, "|", true);
+      if (!vFrameBitLimits.empty())
+      {
+        m_pRateController->configure(vFrameBitLimits, m_uiStartingIndex);
+      }
+    }
     if (m_vInputPins[0]->IsConnected())
     {
       m_mMediaSubtype[0] = m_vInputPins[0]->getRtspMediaSubtype();
@@ -515,6 +525,9 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
 //    VLOG(2) << "RtspSinkFilter::sendMediaSample: H264";
     if (m_bHaveSeenSpsPpsIdr)
     {
+#if 0
+      VLOG(2) << "RtspSinkFilter::sendMediaSample: H264 Start time: " << dStartTime << " Len: " << pSample->GetActualDataLength();
+#endif
       std::vector<lme::MediaSample> mediaSamples;
       lme::MediaSample mediaSample;
       mediaSample.setPresentationTime(dStartTime);
@@ -532,7 +545,11 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
       // TODO: improve! Proper parsing and check for IDR
       if (isSps(pbData[4]))
       {
+#if 1
         VLOG(2) << "SPS/PPS/IDR found";
+#else
+        VLOG(2) << "RtspSinkFilter::sendMediaSample: H264 SPS/PPS/IDR found: Start time: " << dStartTime << " Len: " << pSample->GetActualDataLength();
+#endif
         m_bHaveSeenSpsPpsIdr = true;
         std::vector<lme::MediaSample> mediaSamples;
         lme::MediaSample mediaSample;
@@ -551,7 +568,9 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
   case MST_AMR:
   case MST_AAC:
   {
-//    VLOG(2) << "RtspSinkFilter::sendMediaSample: AMR";
+#if 0
+    VLOG(2) << "RtspSinkFilter::sendMediaSample: AMR Start time: " << dStartTime << " Len: " << pSample->GetActualDataLength();
+#endif
     std::vector<lme::MediaSample> mediaSamples;
     lme::MediaSample mediaSample;
     mediaSample.setPresentationTime(dStartTime);
@@ -578,3 +597,4 @@ void RtspSinkFilter::onRtspClientSessionPlay(unsigned uiClientSessionId)
   // Since a new client has just played the stream, trigger generation of an IDR.
   m_pDsNetworkControlInterface->generateIdr();
 }
+

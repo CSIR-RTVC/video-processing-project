@@ -17,14 +17,15 @@
 
 /**
  * @brief This class stores a set of ordered framebitlimits
- * which the H.264 codec can be configured with.
+ * which the upstream H.264 codec can be configured with.
  *
- * @TODO: make bitrates dynamic (configurable via constructor or setter)
  */
 class StepBasedRateController : public lme::IRateController
 {
 public:
-
+  /**
+   * @brief Constructor
+   */
   StepBasedRateController(INetworkCodecControlInterface* pNetworkControlInterface)
     : m_uiFrameBitLimitIndex(0),
     m_pNetworkControlInterface(pNetworkControlInterface)
@@ -42,14 +43,34 @@ public:
     m_vFrameBitLimits.push_back(FBS_84KBPS_10FPS);
     m_vFrameBitLimits.push_back(FBS_92KBPS_10FPS);
     m_vFrameBitLimits.push_back(FBS_100KBPS_10FPS);
-
-    // TODO: can we set the starting frame bit limit here?
-    // When is this code called in terms of the DS thread of execution?
-    // No: this is in the constructor of the RtspSinkFilter
-    // and the pins are not connected yet.
-    // m_pNetworkControlInterface->setFramebitLimit(m_vFrameBitLimits[m_uiFrameBitLimitIndex]);
   }
-
+  /**
+   * @brief Setter for frame bit limits.
+   * @param vFrameBitLimits A vector storing the frame bit limits to be configured.
+   * The vector may not be empty and may not contain 0 values.
+   * @param uiFrameBitLimitIndex The index to be started off at. This must be in the valid range.
+   * @return true if the configuration is valid, and false otherwise.
+   */
+  bool configure(const std::vector<unsigned>& vFrameBitLimits, unsigned uiFrameBitLimitIndex = 0)
+  {
+    if (vFrameBitLimits.empty() || uiFrameBitLimitIndex >= vFrameBitLimits.size()) return false;
+    // check for zeros
+    for (size_t i = 0; i < vFrameBitLimits.size(); ++i)
+    {
+      if (vFrameBitLimits[i] == 0)
+      {
+        return false;
+      }
+    }
+    m_vFrameBitLimits = vFrameBitLimits;
+    m_uiFrameBitLimitIndex = uiFrameBitLimitIndex;
+    return true;
+  }
+  /**
+   * @brief This method should be triggered by an external rate control.
+   * It is the link between the rate control advise, and the step-based
+   * bit-rate model.
+   */
   virtual void controlBitrate(lme::SwitchDirection eSwitch)
   {
     switch (eSwitch)
@@ -95,3 +116,4 @@ private:
   std::vector<unsigned> m_vFrameBitLimits;
   INetworkCodecControlInterface* m_pNetworkControlInterface;
 };
+
