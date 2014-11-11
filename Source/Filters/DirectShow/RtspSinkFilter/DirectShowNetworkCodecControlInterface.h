@@ -11,10 +11,17 @@
 #include <DirectShow/ComTypeDefs.h>
 #include <DirectShow/DirectShowHelper.h>
 
+/**
+ * @brief DirectShow-based implementation of INetworkCodecControlInterface.\
+ * The interface implements how the upstream codec can sets the current frame bit limit
+ * or trigger the generation of an IDR frame.
+ */
 class DirectShowNetworkCodecControlInterface : public INetworkCodecControlInterface
 {
 public:
-
+  /**
+   * @brief Constructor
+   */
   DirectShowNetworkCodecControlInterface(IBaseFilter* pThisFilter)
     :m_pThisFilter(pThisFilter),
     m_pCodecInterface(NULL),
@@ -22,13 +29,21 @@ public:
   {
 
   }
-  
+  /**
+   * @brief Destructor
+   */
   virtual ~DirectShowNetworkCodecControlInterface()
   {
     m_pThisFilter = NULL;
     m_pCodecInterface = NULL;
   }
-
+  /**
+   * @brief This method sets the current frame bit limit of the upstream codec.
+   *
+   * This should only be called once the graph has been constructed as it has to 
+   * traverse upstream pins and filters until it discovers the IID_ICodecControlInterface 
+   * interface.
+   */
   virtual void setFramebitLimit(unsigned uiFrameBitLimit)
   {
     VLOG(5) << "DirectShowNetworkCodecControlInterface::setFramebitLimit called: " << uiFrameBitLimit;
@@ -57,7 +72,13 @@ public:
       VLOG(5) << "Set frame bit limit to " << uiFrameBitLimit;
     }
   }
-
+  /**
+   * @brief This method triggers the generation of an IDR.
+   *
+   * This should only be called once the graph has been constructed as it has to 
+   * traverse upstream pins and filters until it discovers the IID_ICodecControlInterface 
+   * interface.
+   */
   virtual void generateIdr()
   {
     VLOG(5) << "DirectShowNetworkCodecControlInterface::generateIdr called";
