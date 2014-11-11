@@ -8,6 +8,7 @@
 #include <Media/RtspService.h>
 
 #include "RtspSinkGuids.h"
+#include "RtspSinkProperties.h"
 
 // Forward
 class RtspSinkInputPin;
@@ -16,10 +17,11 @@ class INetworkCodecControlInterface;
 /**
  * @brief This RtspSinkFilter class supports at most two input pins, one for video and one for audio.
  */
-class RtspSinkFilter : public CBaseFilter,				  /* Source Filter */
-                       public CSettingsInterface,	  /* Rtvc Settings Interface */
-                       public CStatusInterface	    /* Rtvc Status Interface */
-{
+class RtspSinkFilter : public CBaseFilter,				   /* Source Filter */
+                       public ISpecifyPropertyPages, /* property pages */
+                       public CSettingsInterface,	   /* Rtvc Settings Interface */
+                       public CStatusInterface	     /* Rtvc Status Interface */
+{   
 	/// Give the pin friend access
 	friend class RtspSinkInputPin;
 
@@ -37,7 +39,7 @@ public:
 	virtual void initParameters()
 	{
     // reuse connection of RTSP register
-    // addParameter("reuse_connection", &m_bReuseConnection, false);
+    addParameter(RTSP_PORT, &m_uiRtspPort, 554);
   }
 
 	/// CBase Filter methods - Overridden since we don't just have one input and output pin as the standard transform filter does
@@ -46,6 +48,21 @@ public:
 	virtual CBasePin * GetPin(int n);
 	/// Method needed to connect pins based on their names
 	virtual STDMETHODIMP FindPin(LPCWSTR Id, IPin **ppPin);
+  /**
+   * @brief ISpecifyPropertyPages
+   */
+  STDMETHODIMP GetPages(CAUUID *pPages)
+  {
+    if (pPages == NULL) return E_POINTER;
+    pPages->cElems = 1;
+    pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+    if (pPages->pElems == NULL)
+    {
+      return E_OUTOFMEMORY;
+    }
+    pPages->pElems[0] = CLSID_RtspSinkProperties;
+    return S_OK;
+  }
 
   /// Connection management
   /// Overridden to create more input pins on connection
@@ -108,4 +125,6 @@ private:
   HANDLE m_hLiveMediaInitEvent;
   /// TO start streaming on an IDR
   bool m_bHaveSeenSpsPpsIdr;
+  /// RTSP port
+  unsigned m_uiRtspPort;
 };

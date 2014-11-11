@@ -10,6 +10,7 @@
 #include <DirectShow/CustomMediaTypes.h>
 #include "RtspSinkFilter.h"
 #include "RtspSinkInputPin.h"
+#include "RtspSinkProperties.h"
 
 static const WCHAR g_wszName[] = L"CSIR VPP RTSP Sink Filter";   /// A name for the filter 
 
@@ -74,6 +75,13 @@ CFactoryTemplate g_Templates[] =
     RtspSinkFilter::CreateInstance, // Method to create an instance of MyComponent
     NULL,                           // Initialization function
     &sudRtspSink                    // Set-up information (for filters)
+    },
+    // This entry is for the property page.
+    {
+      L"CSIR VPP RTSP Sink Properties",
+      &CLSID_RtspSinkProperties,
+      RtspSinkProperties::CreateInstance,
+      NULL, NULL
     }
 };
 

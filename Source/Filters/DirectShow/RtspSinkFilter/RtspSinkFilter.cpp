@@ -23,7 +23,8 @@ RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
   m_hLiveMediaThreadHandle(NULL),
   m_hLiveMediaStopEvent(NULL),
   m_dwThreadID(0),
-  m_bHaveSeenSpsPpsIdr(false)
+  m_bHaveSeenSpsPpsIdr(false),
+  m_uiRtspPort(554)
 {
   VLOG(2) << "RtspSinkFilter()";
 #if 0
@@ -99,7 +100,11 @@ CUnknown *WINAPI RtspSinkFilter::CreateInstance( IUnknown* pUnk, HRESULT* phr )
 
 STDMETHODIMP RtspSinkFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
 {
-  if(riid == (IID_ISettingsInterface))
+  if (riid == IID_ISpecifyPropertyPages)
+  {
+    return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+  }
+  else if(riid == (IID_ISettingsInterface))
 	{
 		return GetInterface((ISettingsInterface*) this, ppv);
 	}
@@ -208,7 +213,7 @@ void RtspSinkFilter::startLive555EventLoop()
   ResetEvent(m_hLiveMediaInitEvent);
   ResetEvent(m_hLiveMediaStopEvent);
   // Blocks until end of liveMedia eventloop
-  m_ecInit = m_rtspService.init();
+  m_ecInit = m_rtspService.init(static_cast<uint16_t>(m_uiRtspPort));
   // The Stop method waits for this event
   VLOG(2) << "Setting m_hLiveMediaInitEvent";
   SetEvent(m_hLiveMediaInitEvent);
@@ -288,7 +293,8 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
       if (ec)
       {
         LOG(WARNING) << "Error creating RTSP H264/" << audioDescriptor.Codec << " service channel: " << ec.message();
-        return E_FAIL;
+        // Don't fail here, this just means that the channels could have been created previously i.e. in a previous play of the graph
+        //return E_FAIL;
       }
     }
     else if (iVideo != -1)
@@ -302,7 +308,8 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
       if (ec)
       {
         LOG(WARNING) << "Error creating RTSP H264 service channel: " << ec.message();
-        return E_FAIL;
+        // Don't fail here, this just means that the channels could have been created previously i.e. in a previous play of the graph
+        //return E_FAIL;
       }
     }
     else if (iAudio != -1)
@@ -318,7 +325,8 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
       if (ec)
       {
         LOG(WARNING) << "Error creating RTSP " << audioDescriptor.Codec << " service channel: " << ec.message();
-        return E_FAIL;
+        // Don't fail here, this just means that the channels could have been created previously i.e. in a previous play of the graph
+        //return E_FAIL;
       }
     }
     m_hLiveMediaThreadHandle = CreateThread(0, 0, LiveMediaThread, (void*)this, 0, &m_dwThreadID);
@@ -354,6 +362,17 @@ void RtspSinkFilter::stopLive555EventLoop()
     DWORD result = WaitForSingleObject(m_hLiveMediaStopEvent, INFINITE);
     CloseHandle(m_hLiveMediaThreadHandle);
     m_hLiveMediaThreadHandle = NULL;
+
+    // Don't need to do this, handling this in RTSP service
+    //// remove channels from service
+    //ec = m_rtspService.removeChannel(CHANNEL_ID);
+    //if (ec)
+    //{
+    //  LOG(WARNING) << "Error removing channel from RTSP service" << ec.message();
+    //  // Don't fail here, this just means that the channels could have been created previously i.e. in a previous play of the graph
+    //  //return E_FAIL;
+    //}
+
   }
 }
 
