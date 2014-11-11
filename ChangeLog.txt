@@ -1,3 +1,19 @@
+2014/11/11
+- RTSP port is configurable in RTSP Sink Filter
+
+2014/11/06
+- Added VirtualMic
+- H264 Source fixes: can now read JM-encoded files
+
+2014/11/05
+- Added Opus decoder
+
+2014/10/30
+- BF in frameskipping filter. Not skipping control samples.
+
+2014/10/28
+- Added AAC support to RtspSinkFilter
+
 2014/10/09
 - Fixed bugs in PicInPicFilter. Can now be configured properly via property page. 
   Sub-picture dimension and position can be configured while playing.
@@ -10,6 +26,9 @@
 - Frameskipping filter can now skip x out of every y frames to achieve desired frame rates.
 - Build system has been changed to CMake. Existing VS projects are deprecated and will no longer be maintained.
 - Updated RtspSourceFilter to use latest live555 (2014.07.25). Updated RTSP client to use new async interface provided by live555.
+
+2014/08/14
+- Changed build system to Cmake
 
 2013/10/23 - Version 1.1.0
 - Added Stereo2Mono filter
