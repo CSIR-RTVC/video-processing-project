@@ -151,6 +151,9 @@ int	OpusCodec::Code(void* pSrc, void* pCmp, int codeParameter)
   // TODO: this must be configured prior to using the encoder
   //int frame_size_20_ms = m_uiSamplesPerSecond / 50;
   //int iFrameSizePerChannel = frame_size_20_ms;
+
+  // TODO: when stopping the graph, the buffer might contain to little data to encode.
+  // Add a check that when this happens, an error message is returned.
   int iCompressedSize = opus_encode(m_pOpusEncoder, (opus_int16 *)pSourceBuffer, iDataPerChannel, pDestBuffer, iMaxCompressedSize);
   if (iCompressedSize <= 0)
   {
