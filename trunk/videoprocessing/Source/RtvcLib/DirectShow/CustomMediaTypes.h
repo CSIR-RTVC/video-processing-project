@@ -47,7 +47,14 @@ static const GUID MEDIASUBTYPE_YUV420P =
 static const GUID MEDIASUBTYPE_VPP_H264 = 
 { 0xbdf25152, 0x46b, 0x4509, { 0x8e, 0x55, 0x6c, 0x73, 0x83, 0x1c, 0x8d, 0xc4 } };
 
+#if 0
 // {B940AE21-195E-4CE6-B324-E703AE733AEC}
 DEFINE_GUID(MEDIASUBTYPE_OPUS,
   0xb940ae21, 0x195e, 0x4ce6, 0xb3, 0x24, 0xe7, 0x3, 0xae, 0x73, 0x3a, 0xec);
+#else
+// from https://code.google.com/p/lavfilters/source/browse/common/includes/moreuuids.h?name=0.54.1
+#define WAVE_FORMAT_OPUS      mmioFOURCC('O','P','U','S')
 
+DEFINE_GUID(MEDIASUBTYPE_OPUS,
+  WAVE_FORMAT_OPUS, 0x000, 0x0010, 0x80, 0x00, 0x00, 0xaa, 0x00, 0x38, 0x9b, 0x71);
+#endif
