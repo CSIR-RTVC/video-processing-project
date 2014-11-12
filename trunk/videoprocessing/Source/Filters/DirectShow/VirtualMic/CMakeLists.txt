@@ -11,12 +11,14 @@ ${vppLink}
 
 SET(FLT_HDRS
 VirtualMic.h
+VirtualMicSourceStream.h
 )
 
 SET(FLT_SRCS 
 DllSetup.cpp
 VirtualMic.cpp
 VirtualMic.def
+VirtualMicSourceStream.cpp
 )
 
 ADD_LIBRARY(
