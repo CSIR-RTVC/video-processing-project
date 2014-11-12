@@ -40,6 +40,9 @@ SET(REGISTER_DS_FILTERS false)
 # RtspSinkFilter relies on LiveMediaExt
 SET(BUILD_RTSP_SINK_FILTER false)
 
+# Opus
+SET(OPUS_SUPPORT false)
+
 IF (BUILD_RTSP_SINK_FILTER)
 message("LiveMediaExt: $ENV{LIVE_MEDIA_EXT_ROOT}")
 # we need glog
@@ -53,6 +56,25 @@ set_target_properties( LiveMediaExt PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LI
 set_target_properties( SimpleRateAdaptation PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Debug/SimpleRateAdaptation.lib )
 set_target_properties( SimpleRateAdaptation PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{LIVE_MEDIA_EXT_ROOT}/lib/Release/SimpleRateAdaptation.lib )
 ENDIF(BUILD_RTSP_SINK_FILTER)
+
+IF (OPUS_SUPPORT)
+message("Opus: $ENV{OPUS_ROOT}")
+add_library( opus UNKNOWN IMPORTED )
+add_library( celt UNKNOWN IMPORTED )
+add_library( silk_common UNKNOWN IMPORTED )
+add_library( silk_fixed UNKNOWN IMPORTED )
+add_library( silk_float UNKNOWN IMPORTED )
+set_target_properties( opus PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{OPUS_ROOT}/lib/Debug/opus.lib )
+set_target_properties( opus PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{OPUS_ROOT}/lib/Release/opus.lib )
+set_target_properties( celt PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{OPUS_ROOT}/lib/Debug/celt.lib )
+set_target_properties( celt PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{OPUS_ROOT}/lib/Release/celt.lib )
+set_target_properties( silk_common PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{OPUS_ROOT}/lib/Debug/silk_common.lib )
+set_target_properties( silk_common PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{OPUS_ROOT}/lib/Release/silk_common.lib )
+set_target_properties( silk_fixed PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{OPUS_ROOT}/lib/Debug/silk_fixed.lib )
+set_target_properties( silk_fixed PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{OPUS_ROOT}/lib/Release/silk_fixed.lib )
+set_target_properties( silk_float PROPERTIES IMPORTED_LOCATION_DEBUG $ENV{OPUS_ROOT}/lib/Debug/silk_float.lib )
+set_target_properties( silk_float PROPERTIES IMPORTED_LOCATION_RELEASE $ENV{OPUS_ROOT}/lib/Release/silk_float.lib )
+ENDIF(OPUS_SUPPORT)
 
 #define 3rd party libs under windows
 # on linux these will have been installed
