@@ -44,6 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <iostream>
 
 // RTVC
+#include <DirectShow/CustomMediaTypes.h>
 #include <Shared/MediaSample.h>
 
 // {726D6173-0000-0010-8000-00AA00389B71}
@@ -382,6 +383,58 @@ void RtspSourceOutputPin::initialiseMediaType( MediaSubsession* pSubsession, con
         pwfx->wBitsPerSample = 16;
         pwfx->nChannels = pSubsession->numChannels();
         pwfx->nSamplesPerSec = 24000;
+      }
+      else if (strcmp(szCodec, "OPUS") == 0)
+      {
+        // prepliminary opus support tested with testOnDemandRTSPServer and testvector01.bit.opus (renamed to test.opus) from http://www.live555.com 
+        // Need to handle sources of sample rates other than 48000.
+        m_pMediaType->SetType(&MEDIATYPE_Audio);
+        m_pMediaType->SetFormatType(&FORMAT_WaveFormatEx);
+        m_pMediaType->SetSubtype(&MEDIASUBTYPE_OPUS);
+        m_pMediaType->bFixedSizeSamples = FALSE;
+        m_pMediaType->bTemporalCompression = FALSE;
+        m_pMediaType->formattype = FORMAT_WaveFormatEx;
+        m_pMediaType->lSampleSize = 0;
+        m_pMediaType->pUnk = NULL;
+
+        // 16-bit audio
+        m_nBitsPerSample = 0;
+        // Get sample rate
+        m_nSamplesPerSecond = pSubsession->rtpTimestampFrequency();
+        // Get channels
+        m_nChannels = pSubsession->numChannels();
+        m_nBytesPerSecond = m_nSamplesPerSecond * (m_nBitsPerSample >> 3) * m_nChannels;
+
+        WAVEFORMATEX *pWavHeader = (WAVEFORMATEX*)m_pMediaType->AllocFormatBuffer(sizeof(WAVEFORMATEX));
+        if (pWavHeader == 0)
+          *phr = (E_OUTOFMEMORY);
+
+        // Initialize the video info header
+        ZeroMemory(pWavHeader, m_mt.cbFormat);
+
+#if 1
+        pWavHeader->wFormatTag = 0;
+        pWavHeader->nChannels = m_nChannels;
+        pWavHeader->nSamplesPerSec = m_nSamplesPerSecond;
+        pWavHeader->wBitsPerSample = 16;
+        // From MSDN: http://msdn.microsoft.com/en-us/library/ms713497(VS.85).aspx
+        // Block alignment, in bytes. The block alignment is the minimum atomic unit of data for the wFormatTag format type. If wFormatTag is WAVE_FORMAT_PCM or WAVE_FORMAT_EXTENSIBLE, nBlockAlign must be equal to the product of nChannels and wBitsPerSample divided by 8 (bits per byte).
+        //OLD pWavHeader->nBlockAlign = 1;
+        pWavHeader->nBlockAlign = m_nChannels * (m_nBitsPerSample >> 3);
+        pWavHeader->nBlockAlign = 1;
+        // From MSDN: Required average data-transfer rate, in bytes per second, for the format tag. If wFormatTag is WAVE_FORMAT_PCM, nAvgBytesPerSec should be equal to the product of nSamplesPerSec and nBlockAlign. For non-PCM formats, this member must be computed according to the manufacturer's specification of the format tag. 
+        // OLD pWavHeader->nAvgBytesPerSec = m_nChannels*m_nSamplesPerSecond;
+        pWavHeader->nAvgBytesPerSec = m_nSamplesPerSecond * pWavHeader->nBlockAlign;
+        pWavHeader->cbSize = 0;
+#else
+        pWavHeader->wFormatTag = WAVE_FORMAT_EXTENSIBLE;
+        pWavHeader->wBitsPerSample = 16;
+        pWavHeader->nChannels = 1;
+        pWavHeader->nSamplesPerSec = 8000;
+        pWavHeader->nBlockAlign = (pWfx->wBitsPerSample * pWfx->nChannels) / 8;
+        pWavHeader->nAvgBytesPerSec = pWfx->nSamplesPerSec * pWfx->nBlockAlign;
+        pWavHeader->cbSize = sizeof(WAVEFORMATEXTENSIBLE) - sizeof(WAVEFORMATEX);
+#endif
       }
       else
       {
