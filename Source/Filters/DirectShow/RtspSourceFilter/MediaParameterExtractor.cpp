@@ -119,6 +119,11 @@ bool MediaParameterExtractor::initialiseParameterExtractionMap( unsigned uiChann
     {
       m_mInitMap[uiChannelId] = true;
     }
+    // OPUS audio
+    else if (strcmp(szCodec, "OPUS") == 0)
+    {
+      m_mInitMap[uiChannelId] = true;
+    }
     else
     {
       // Unsupported audio codec

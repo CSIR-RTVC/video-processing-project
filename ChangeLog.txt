@@ -1,3 +1,6 @@
+2014/11/13
+- Added opus support to RTSP Source Filter. Tested with testOnDemandRTSPServer and testvector01.bit.opus (renamed to test.opus) from http://www.live555.com 
+
 2014/11/11
 - RTSP port is configurable in RTSP Sink Filter
 
