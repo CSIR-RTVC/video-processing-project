@@ -44,6 +44,7 @@ AsyncRtspClientSessionManager::AsyncRtspClientSessionManager(MediaPacketManager&
   :m_eState(RTSP_INIT),
   m_rMediaPacketManager(rMediaPacketManager),
   m_bStreamUsingTcp(true),
+  m_bStreamOverHttp(false),
   m_pScheduler(NULL),
   m_pEnv(NULL),
   m_pRtspClient(NULL),

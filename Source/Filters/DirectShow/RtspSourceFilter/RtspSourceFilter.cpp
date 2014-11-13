@@ -157,13 +157,21 @@ STDMETHODIMP RtspSourceFilter::Load( LPCOLESTR lpwszFileName, const AM_MEDIA_TYP
 
   if (dwResult == WAIT_OBJECT_0)
   {
-    HRESULT hr = createOutputPins();
-    if (FAILED(hr))
+    if (m_rtspSessionManager.setupSuccessful())
     {
-      // stop livemedia event loop
-      m_rtspSessionManager.endLiveMediaEventLoop();
+      HRESULT hr = createOutputPins();
+      if (FAILED(hr))
+      {
+        // stop livemedia event loop
+        m_rtspSessionManager.endLiveMediaEventLoop();
+      }
+      return hr;
     }
-    return hr;
+    else
+    {
+      SetLastError(m_rtspSessionManager.getLastError(), true);
+      return E_FAIL;
+    }
   }
   else
   {
