@@ -8,7 +8,7 @@ DESCRIPTION			: Class to extract media parameters inband
 					  
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2010, CSIR
+Copyright (c) 2014, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -115,6 +115,7 @@ bool MediaParameterExtractor::initialiseParameterExtractionMap( unsigned uiChann
     {
       m_mInitMap[uiChannelId] = true;
     }
+    // LATM audio
     else if ( strcmp(szCodec, "MP4A-LATM")==0 )
     {
       m_mInitMap[uiChannelId] = true;

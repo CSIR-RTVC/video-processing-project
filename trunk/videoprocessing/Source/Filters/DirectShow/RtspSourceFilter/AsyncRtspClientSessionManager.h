@@ -66,7 +66,7 @@ public:
 
   bool setupSuccessful() const
   {
-    return m_eState == RTSP_PLAYING;
+    return m_eState == RTSP_SETUP || m_eState == RTSP_PLAYING;
   }
 
   void startRtspSession(const std::string& sUrl);
