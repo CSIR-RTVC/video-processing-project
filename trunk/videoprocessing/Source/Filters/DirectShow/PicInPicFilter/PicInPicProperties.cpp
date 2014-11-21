@@ -1,16 +1,16 @@
 #include "PicInPicProperties.h"
 
-CUnknown * WINAPI PicInPicProperties::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
+CUnknown * WINAPI PicInPicProperties::CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
 {
-	PicInPicProperties *pNewObject = new PicInPicProperties(pUnk);
-	if (pNewObject == NULL) 
-	{
-		*pHr = E_OUTOFMEMORY;
-	}
-	return pNewObject;
+  PicInPicProperties *pNewObject = new PicInPicProperties(pUnk);
+  if (pNewObject == NULL)
+  {
+    *pHr = E_OUTOFMEMORY;
+  }
+  return pNewObject;
 }
 
-PicInPicProperties::PicInPicProperties( IUnknown *pUnk ) : 
+PicInPicProperties::PicInPicProperties(IUnknown *pUnk) :
 FilterPropertiesBase(NAME("Pic in pic Properties"), pUnk, IDD_PIC_IN_PIC_DIALOG, IDS_PIC_IN_PIC_CAPTION)
 {
 
@@ -18,84 +18,86 @@ FilterPropertiesBase(NAME("Pic in pic Properties"), pUnk, IDD_PIC_IN_PIC_DIALOG,
 
 HRESULT PicInPicProperties::ReadSettings()
 {
-	initialiseControls();
+  initialiseControls();
 
-	int nLength = 0;
-	char szBuffer[BUFFER_SIZE];
-	HRESULT hr = m_pSettingsInterface->GetParameter(TARGET_HEIGHT, sizeof(szBuffer), szBuffer, &nLength);
-	if (SUCCEEDED(hr))
-	{
-		SetDlgItemText(m_Dlg, IDC_EDIT_TARGET_HEIGHT, szBuffer);
-		m_targetHeight = atoi(szBuffer);
-	}
-	else
-	{
-		return E_FAIL;
-	}
-	hr = m_pSettingsInterface->GetParameter(TARGET_WIDTH, sizeof(szBuffer), szBuffer, &nLength);
-	if (SUCCEEDED(hr))
-	{
-		SetDlgItemText(m_Dlg, IDC_EDIT_TARGET_WIDTH, szBuffer);
-		m_targetWidth = atoi(szBuffer);
-	}
-	else
-	{
-		return E_FAIL;
-	}
+  int nLength = 0;
+  char szBuffer[BUFFER_SIZE];
+  HRESULT hr = m_pSettingsInterface->GetParameter(TARGET_HEIGHT, sizeof(szBuffer), szBuffer, &nLength);
+  if (SUCCEEDED(hr))
+  {
+    SetDlgItemText(m_Dlg, IDC_EDIT_TARGET_HEIGHT, szBuffer);
+    m_targetHeight = atoi(szBuffer);
+  }
+  else
+  {
+    return E_FAIL;
+  }
+  hr = m_pSettingsInterface->GetParameter(TARGET_WIDTH, sizeof(szBuffer), szBuffer, &nLength);
+  if (SUCCEEDED(hr))
+  {
+    SetDlgItemText(m_Dlg, IDC_EDIT_TARGET_WIDTH, szBuffer);
+    m_targetWidth = atoi(szBuffer);
+  }
+  else
+  {
+    return E_FAIL;
+  }
 
-	hr = m_pSettingsInterface->GetParameter(SUB_PIC_WIDTH, sizeof(szBuffer), szBuffer, &nLength);
-	if (SUCCEEDED(hr))
-	{
-		SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_WIDTH, szBuffer);
-		m_uiSubpicWidth = atoi(szBuffer);
-	}
-	else
-	{
-		return E_FAIL;
-	}
-	hr = m_pSettingsInterface->GetParameter(SUB_PIC_HEIGHT, sizeof(szBuffer), szBuffer, &nLength);
-	if (SUCCEEDED(hr))
-	{
-		SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_HEIGHT, szBuffer);
-		m_uiSubpicHeight = atoi(szBuffer);
-	}
-	else
-	{
-		return E_FAIL;
-	}
+  hr = m_pSettingsInterface->GetParameter(SUB_PIC_WIDTH, sizeof(szBuffer), szBuffer, &nLength);
+  if (SUCCEEDED(hr))
+  {
+    SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_WIDTH, szBuffer);
+    m_uiSubpicWidth = atoi(szBuffer);
+  }
+  else
+  {
+    return E_FAIL;
+  }
+  hr = m_pSettingsInterface->GetParameter(SUB_PIC_HEIGHT, sizeof(szBuffer), szBuffer, &nLength);
+  if (SUCCEEDED(hr))
+  {
+    SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_HEIGHT, szBuffer);
+    m_uiSubpicHeight = atoi(szBuffer);
+  }
+  else
+  {
+    return E_FAIL;
+  }
 
-	hr = m_pSettingsInterface->GetParameter(OFFSET_X, sizeof(szBuffer), szBuffer, &nLength);
-	if (SUCCEEDED(hr))
-	{
-		SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_OFFSET_X, szBuffer);
-		m_uiOffsetX = atoi(szBuffer);
-	}
-	else
-	{
-		return E_FAIL;
-	}
-	hr = m_pSettingsInterface->GetParameter(OFFSET_Y, sizeof(szBuffer), szBuffer, &nLength);
-	if (SUCCEEDED(hr))
-	{
-		SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_OFFSET_Y, szBuffer);
-		m_uiOffsetY = atoi(szBuffer);
-	}
-	else
-	{
-		return E_FAIL;
-	}
-	return hr;
+  hr = m_pSettingsInterface->GetParameter(OFFSET_X, sizeof(szBuffer), szBuffer, &nLength);
+  if (SUCCEEDED(hr))
+  {
+    SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_OFFSET_X, szBuffer);
+    m_uiOffsetX = atoi(szBuffer);
+  }
+  else
+  {
+    return E_FAIL;
+  }
+  hr = m_pSettingsInterface->GetParameter(OFFSET_Y, sizeof(szBuffer), szBuffer, &nLength);
+  if (SUCCEEDED(hr))
+  {
+    SetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_OFFSET_Y, szBuffer);
+    m_uiOffsetY = atoi(szBuffer);
+  }
+  else
+  {
+    return E_FAIL;
+  }
+
+  hr = setEditTextFromIntFilterParameter(BORDER_WIDTH, IDC_EDIT_BORDER_WIDTH);
+  return hr;
 }
 
-HRESULT PicInPicProperties::OnApplyChanges( void )
+HRESULT PicInPicProperties::OnApplyChanges(void)
 {
-	int nLength = 0;
-	char szBuffer[BUFFER_SIZE];
-	HRESULT hr;
+  int nLength = 0;
+  char szBuffer[BUFFER_SIZE];
+  HRESULT hr;
 
   int nValue;
-	// Target dimensions
-	nLength = GetDlgItemText(m_Dlg, IDC_EDIT_TARGET_WIDTH, szBuffer, BUFFER_SIZE);
+  // Target dimensions
+  nLength = GetDlgItemText(m_Dlg, IDC_EDIT_TARGET_WIDTH, szBuffer, BUFFER_SIZE);
   nValue = atoi(szBuffer);
   if (m_targetWidth != nValue)
   {
@@ -107,7 +109,7 @@ HRESULT PicInPicProperties::OnApplyChanges( void )
     }
     m_targetWidth = nValue;
   }
-	nLength = GetDlgItemText(m_Dlg, IDC_EDIT_TARGET_HEIGHT, szBuffer, BUFFER_SIZE);
+  nLength = GetDlgItemText(m_Dlg, IDC_EDIT_TARGET_HEIGHT, szBuffer, BUFFER_SIZE);
   nValue = atoi(szBuffer);
   if (m_targetHeight != nValue)
   {
@@ -120,8 +122,8 @@ HRESULT PicInPicProperties::OnApplyChanges( void )
     m_targetHeight = nValue;
   }
 
-	// Subpicture dimensions
-	nLength = GetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_WIDTH, szBuffer, BUFFER_SIZE);
+  // Subpicture dimensions
+  nLength = GetDlgItemText(m_Dlg, IDC_EDIT_SUBPICTURE_WIDTH, szBuffer, BUFFER_SIZE);
   nValue = atoi(szBuffer);
   if (m_uiSubpicWidth != nValue)
   {
@@ -169,50 +171,23 @@ HRESULT PicInPicProperties::OnApplyChanges( void )
     }
     m_uiOffsetY = nValue;
   }
-	return S_OK;
+
+  hr = setIntFilterParameterFromEditText(BORDER_WIDTH, IDC_EDIT_BORDER_WIDTH);
+
+  return hr;
 }
 
 void PicInPicProperties::initialiseControls()
 {
-	short lower = 0;
-	short upper = SHRT_MAX;
+  InitCommonControls();
 
-	InitCommonControls();
-
-	long lResult = SendMessage(			// returns LRESULT in lResult
-		GetDlgItem(m_Dlg, IDC_SPIN1),	// handle to destination control
-		(UINT) UDM_SETRANGE,			// message ID
-		(WPARAM) 0,						// = 0; not used, must be zero
-		(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-		);
-	lResult = SendMessage(			// returns LRESULT in lResult
-		GetDlgItem(m_Dlg, IDC_SPIN2),	// handle to destination control
-		(UINT) UDM_SETRANGE,			// message ID
-		(WPARAM) 0,						// = 0; not used, must be zero
-		(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-		);
-	lResult = SendMessage(			// returns LRESULT in lResult
-		GetDlgItem(m_Dlg, IDC_SPIN3),	// handle to destination control
-		(UINT) UDM_SETRANGE,			// message ID
-		(WPARAM) 0,						// = 0; not used, must be zero
-		(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-		);
-	lResult = SendMessage(			// returns LRESULT in lResult
-		GetDlgItem(m_Dlg, IDC_SPIN4),	// handle to destination control
-		(UINT) UDM_SETRANGE,			// message ID
-		(WPARAM) 0,						// = 0; not used, must be zero
-		(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-		);
-	lResult = SendMessage(			// returns LRESULT in lResult
-		GetDlgItem(m_Dlg, IDC_SPIN5),	// handle to destination control
-		(UINT) UDM_SETRANGE,			// message ID
-		(WPARAM) 0,						// = 0; not used, must be zero
-		(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-		);
-	lResult = SendMessage(			// returns LRESULT in lResult
-		GetDlgItem(m_Dlg, IDC_SPIN6),	// handle to destination control
-		(UINT) UDM_SETRANGE,			// message ID
-		(WPARAM) 0,						// = 0; not used, must be zero
-		(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-		);
+  short lower = 0;
+  short upper = (short)USHRT_MAX;
+  setSpinBoxRange(IDC_SPIN1, lower, upper);
+  setSpinBoxRange(IDC_SPIN2, lower, upper);
+  setSpinBoxRange(IDC_SPIN3, lower, upper);
+  setSpinBoxRange(IDC_SPIN4, lower, upper);
+  setSpinBoxRange(IDC_SPIN5, lower, upper);
+  setSpinBoxRange(IDC_SPIN6, lower, upper);
+  setSpinBoxRange(IDC_SPIN7, lower, upper);
 }

@@ -14,9 +14,11 @@
 #define IDC_SPIN4                       1008
 #define IDC_EDIT_SUBPICTURE_OFFSET_X    1009
 #define IDC_SPIN5                       1010
-#define IDC_EDIT_OFFSET_Y               1011
 #define IDC_EDIT_SUBPICTURE_OFFSET_Y    1011
 #define IDC_SPIN6                       1012
+#define IDC_EDIT_BORDER_WIDTH           1013
+#define IDC_SPIN7                       1014
+
 
 // Next default values for new objects
 // 
