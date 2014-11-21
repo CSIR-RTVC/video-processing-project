@@ -61,4 +61,5 @@
 #define FRAME_BIT_LIMITS "frame_bit_limits"
 #define STARTING_INDEX "starting_index"
 #define RTSP_PORT "rtsp_port"
+#define BORDER_WIDTH "border_width"
 
