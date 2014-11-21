@@ -4,8 +4,8 @@ MODULE				: PicInPicProperties
 
 FILE NAME			: PicInPicProperties.h
 
-DESCRIPTION			: 
-					  
+DESCRIPTION			:
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2014, Meraka Institute
@@ -45,22 +45,22 @@ class PicInPicProperties : public FilterPropertiesBase
 {
 public:
 
-	static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr);
+  static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr);
 
-	PicInPicProperties(IUnknown *pUnk);
+  PicInPicProperties(IUnknown *pUnk);
 
-	HRESULT ReadSettings();
+  HRESULT ReadSettings();
 
-	HRESULT OnApplyChanges(void);
+  HRESULT OnApplyChanges(void);
 
 private:
-	void initialiseControls();
+  void initialiseControls();
 
-	unsigned m_targetWidth;
-	unsigned m_targetHeight;
-	unsigned m_uiSubpicWidth;
-	unsigned m_uiSubpicHeight;
-	unsigned m_uiOffsetX;
-	unsigned m_uiOffsetY;
+  unsigned m_targetWidth;
+  unsigned m_targetHeight;
+  unsigned m_uiSubpicWidth;
+  unsigned m_uiSubpicHeight;
+  unsigned m_uiOffsetX;
+  unsigned m_uiOffsetY;
 };
 
