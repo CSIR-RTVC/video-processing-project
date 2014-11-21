@@ -14,7 +14,7 @@ DESCRIPTION				: This class is the base class defining the minimum interface
 										pointers. The insertion method is pure virtual and must be 
 										implemented by derived classes.
 
-COPYRIGHT					: (c)CSIR 2007-2010 all rights resevered
+COPYRIGHT					: (c)CSIR 2007-2014 all rights resevered
 
 LICENSE						: Software License Agreement (BSD License)
 
@@ -62,9 +62,9 @@ class PicInPicBase
 {
 public:
 	// Construction and destruction.
-	PicInPicBase(void) {_width = 0; _height = 0; _subWidth = 0; _subHeight = 0; _xPos = 0; _yPos = 0; _writeWidth = 0; _writeHeight = 0; }
+  PicInPicBase(void) { _width = 0; _height = 0; _subWidth = 0; _subHeight = 0; _xPos = 0; _yPos = 0; _writeWidth = 0; _writeHeight = 0; _borderWidth = 0; }
 	PicInPicBase(int width, int height, int subWidth, int subHeight, int xPos, int yPos) 
-	{	_width = width; _height = height; _subWidth = subWidth; _subHeight = subHeight; _xPos = xPos; _yPos = yPos; SetActualSubDimensions();}
+	{	_width = width; _height = height; _subWidth = subWidth; _subHeight = subHeight; _xPos = xPos; _yPos = yPos; _borderWidth = 0; SetActualSubDimensions();}
 	virtual ~PicInPicBase(void) {}
 
 	// Interface.
@@ -85,21 +85,24 @@ public:
 	int	GetActualSubHeight(void)	{ return(_writeHeight); }
 	int GetXPos(void)							{ return(_xPos); }
 	int GetYPos(void)							{ return(_yPos); }
-    int GetBorderWidth() const { return _borderWidth; }
+  int GetBorderWidth() const    { return _borderWidth; }
   
 	void SetDimensions(int width, int height)						{_width = width; _height = height; SetActualSubDimensions(); }
 	void SetSubDimensions(int subWidth, int subHeight)	{_subWidth = subWidth; _subHeight = subHeight; SetActualSubDimensions(); }
-	void SetPos(int x, int y)														{ _xPos = x; _yPos = y; SetActualSubDimensions(); }
-    void SetBorderWidth(int val) { _borderWidth = val; }
+	void SetPos(int x, int y)														{ _xPos = x; _yPos = y; SetActualSubDimensions(); }    
+  void SetBorderWidth(int val)                        { _borderWidth = val; }
 
 	// Private methods.
 protected:
 	void SetActualSubDimensions(void)
-	{ if((_xPos + _subWidth) > _width) _writeWidth = (_width - _xPos); else _writeWidth = _subWidth;
-		if((_yPos + _subHeight) > _height) _writeHeight = (_height - _yPos); else _writeHeight = _subHeight; }
+	{ 
+    if((_xPos + _subWidth) > _width) _writeWidth = (_width - _xPos); else _writeWidth = _subWidth;
+		if((_yPos + _subHeight) > _height) _writeHeight = (_height - _yPos); else _writeHeight = _subHeight; 
+  }
 
-    virtual void DoInsert(void* pSubImg, void* pImg) = 0;
-    virtual void DoInsertWithBorder(void* pSubImg, void* pImg) = 0;
+  virtual void DoInsert(void* pSubImg, void* pImg) = 0;
+  virtual void DoInsertWithBorder(void* pSubImg, void* pImg) = 0;
+
 protected:
 	// Members.
 	int	_width;				// Of (larger) image that receives the insertion.
@@ -110,7 +113,7 @@ protected:
 	int _yPos;
 	int _writeWidth;	// Actual dim to write that prevents outside edge insertion.
 	int _writeHeight;
-    int _borderWidth;
+  int _borderWidth;
 };//end PicInPicBase.
 
 #endif	// _PICINPICBASE_H
