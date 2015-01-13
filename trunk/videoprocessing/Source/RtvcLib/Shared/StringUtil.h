@@ -154,4 +154,22 @@ public:
     }
     return x;
   }
+
+  static std::string GetTimeString(std::string sFormat = "")
+  {
+    const unsigned uiBufferSize = 256;
+    //Get current date and time and format
+    time_t rawtime;
+    struct tm * timeinfo;
+    char buffer[uiBufferSize];
+
+    time(&rawtime);
+    timeinfo = localtime(&rawtime);
+    if (sFormat == "")
+    {
+      sFormat = "%A, %d %B %Y %X";
+    }
+    strftime(buffer, uiBufferSize, sFormat.c_str(), timeinfo);
+    return std::string(buffer);
+  }
 };
