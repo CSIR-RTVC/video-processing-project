@@ -4,11 +4,11 @@ MODULE				: DLLSetup
 
 FILE NAME			: DLLSetup.cpp
 
-DESCRIPTION			: 
-					  
+DESCRIPTION			:
+
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2015, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -47,44 +47,43 @@ static const WCHAR g_wszName[] = L"CSIR VPP Crop Filter";   /// A name for the f
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-	&CLSID_CropFilter, // CLSID
-	g_wszName,							// Name
-	MERIT_DO_NOT_USE,					// Merit
-	0,									// Number of AMOVIESETUP_PIN structs
-	NULL								// Pin registration information.
+  &CLSID_CropFilter,  // CLSID
+  g_wszName,          // Name
+  MERIT_DO_NOT_USE,   // Merit
+  0,                  // Number of AMOVIESETUP_PIN structs
+  NULL                // Pin registration information.
 };
 
-
-CFactoryTemplate g_Templates[] = 
+CFactoryTemplate g_Templates[] =
 {
-	{ 
-		g_wszName,							// Name
-			&CLSID_CropFilter, // CLSID
-			CCropFilter::CreateInstance,	// Method to create an instance of MyComponent
-			NULL,								// Initialization function
-			&FilterInfo							// Set-up information (for filters)
-	},
-	// This entry is for the property page.
-	{ 
-		L"Crop Properties",
-		&CLSID_CropProperties,
-		CropProperties::CreateInstance, 
-		NULL, NULL
-	}
+  {
+    g_wszName,                    // Name
+    &CLSID_CropFilter,            // CLSID
+    CCropFilter::CreateInstance,  // Method to create an instance of MyComponent
+    NULL,                         // Initialization function
+    &FilterInfo                   // Set-up information (for filters)
+  },
+  // This entry is for the property page.
+  {
+    L"Crop Properties",
+    &CLSID_CropProperties,
+    CropProperties::CreateInstance,
+    NULL, NULL
+  }
 };
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 //////////////////////////////////////////////////////////////////////////
 // Functions needed by the DLL, for registration.
 
 STDAPI DllRegisterServer(void)
 {
-	return AMovieDllRegisterServer2(TRUE);
+  return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-	return AMovieDllRegisterServer2(FALSE);
+  return AMovieDllRegisterServer2(FALSE);
 }
 
 //////////////////////////////////////////////////////////////////////////
@@ -92,7 +91,7 @@ STDAPI DllUnregisterServer()
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-	return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
+  return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }
 
 #ifdef _MANAGED
