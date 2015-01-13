@@ -59,7 +59,7 @@ CFactoryTemplate g_Templates[] =
   {
     g_wszName,                    // Name
     &CLSID_CropFilter,            // CLSID
-    CCropFilter::CreateInstance,  // Method to create an instance of MyComponent
+    CropFilter::CreateInstance,   // Method to create an instance of MyComponent
     NULL,                         // Initialization function
     &FilterInfo                   // Set-up information (for filters)
   },

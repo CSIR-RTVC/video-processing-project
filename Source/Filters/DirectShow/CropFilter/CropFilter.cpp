@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicCropperRGB24Impl.h>
 #include <Image/PicCropperRGB32Impl.h>
 
-CCropFilter::CCropFilter()
+CropFilter::CropFilter()
   : CCustomBaseFilter(NAME("CSIR VPP Crop Filter"), 0, CLSID_CropFilter),
   m_pCropper(NULL),
   m_nBytesPerPixel(BYTES_PER_PIXEL_RGB24),
@@ -49,7 +49,7 @@ CCropFilter::CCropFilter()
   initParameters();
 }
 
-CCropFilter::~CCropFilter()
+CropFilter::~CropFilter()
 {
   if (m_pCropper)
   {
@@ -58,9 +58,9 @@ CCropFilter::~CCropFilter()
   }
 }
 
-CUnknown * WINAPI CCropFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
+CUnknown * WINAPI CropFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
 {
-  CCropFilter *pFilter = new CCropFilter();
+  CropFilter *pFilter = new CropFilter();
   if (pFilter == NULL)
   {
     *pHr = E_OUTOFMEMORY;
@@ -69,13 +69,13 @@ CUnknown * WINAPI CCropFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
 }
 
 
-void CCropFilter::InitialiseInputTypes()
+void CropFilter::InitialiseInputTypes()
 {
   AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB24, &FORMAT_VideoInfo);
   AddInputType(&MEDIATYPE_Video, &MEDIASUBTYPE_RGB32, &FORMAT_VideoInfo);
 }
 
-HRESULT CCropFilter::SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt)
+HRESULT CropFilter::SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt)
 {
   HRESULT hr = CCustomBaseFilter::SetMediaType(direction, pmt);
   if (direction == PINDIR_INPUT)
@@ -114,7 +114,7 @@ HRESULT CCropFilter::SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt
   return hr;
 }
 
-HRESULT CCropFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
+HRESULT CropFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
 {
   if (iPosition < 0)
   {
@@ -161,7 +161,7 @@ HRESULT CCropFilter::GetMediaType(int iPosition, CMediaType *pMediaType)
   return VFW_S_NO_MORE_ITEMS;
 }
 
-HRESULT CCropFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp)
+HRESULT CropFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIES *pProp)
 {
   // Adding padding to take stride into account
   pProp->cbBuffer = (m_nOutWidth + m_nPadding) * m_nOutHeight * m_nBytesPerPixel;
@@ -190,7 +190,7 @@ HRESULT CCropFilter::DecideBufferSize(IMemAllocator *pAlloc, ALLOCATOR_PROPERTIE
   return S_OK;
 }
 
-HRESULT CCropFilter::CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut)
+HRESULT CropFilter::CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut)
 {
   //Make sure the input and output types are related
   if (mtOut->majortype != MEDIATYPE_Video)
@@ -221,7 +221,7 @@ HRESULT CCropFilter::CheckTransform(const CMediaType *mtIn, const CMediaType *mt
   return S_OK;
 }
 
-STDMETHODIMP CCropFilter::SetParameter(const char* type, const char* value)
+STDMETHODIMP CropFilter::SetParameter(const char* type, const char* value)
 {
   // For now, one cannot set any parameters once the output has been connected -> this will affect the buffer size
   if (m_pOutput)
@@ -243,7 +243,7 @@ STDMETHODIMP CCropFilter::SetParameter(const char* type, const char* value)
   }
 }
 
-HRESULT CCropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
+HRESULT CropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
   int nTotalSize = 0;
   //make sure we were able to initialise our converter
@@ -286,7 +286,7 @@ HRESULT CCropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lA
   return S_OK;
 }
 
-void CCropFilter::RecalculateFilterParameters()
+void CropFilter::RecalculateFilterParameters()
 {
   //Set defaults and make sure that the target dimensions are valid
   m_nOutWidth = m_nInWidth - m_nLeftCrop - m_nRightCrop;
@@ -309,7 +309,7 @@ void CCropFilter::RecalculateFilterParameters()
 #endif
 }
 
-HRESULT CCropFilter::SetCropIfValid(int nTotalDimensionImage, int nNewCrop, int& nOldCrop, int nOppositeCrop)
+HRESULT CropFilter::SetCropIfValid(int nTotalDimensionImage, int nNewCrop, int& nOldCrop, int nOppositeCrop)
 {
   if (nNewCrop >= 0)
   {
