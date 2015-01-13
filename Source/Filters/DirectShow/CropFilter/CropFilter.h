@@ -67,7 +67,6 @@ public:
    * @brief Static object-creation method (for the class factory)
    */
   static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr);
-
   /**
    * Overriding this so that we can set whether this is an RGB24 or an RGB32 Filter
    */
@@ -93,46 +92,15 @@ public:
    */
   HRESULT CheckTransform(const CMediaType *mtIn, const CMediaType *mtOut);
   /// Overridden from CSettingsInterface
-  virtual void initParameters()
-  {
-    addParameter(TARGET_WIDTH, &m_nOutWidth, -1, true);
-    addParameter(TARGET_HEIGHT, &m_nOutHeight, -1, true);
-    addParameter(LEFT_CROP, &m_nLeftCrop, 0);
-    addParameter(RIGHT_CROP, &m_nRightCrop, 0);
-    addParameter(TOP_CROP, &m_nTopCrop, 0);
-    addParameter(BOTTOM_CROP, &m_nBottomCrop, 0);
-    RecalculateFilterParameters();
-  }
+  virtual void initParameters();
   /// Overridden from CSettingsInterface
   STDMETHODIMP SetParameter(const char* type, const char* value);
   /// Overridden from CCustomBaseFilter
   virtual void InitialiseInputTypes();
   /// Overridden from ISpecifyPropertyPages
-  STDMETHODIMP GetPages(CAUUID *pPages)
-  {
-    if (pPages == NULL) return E_POINTER;
-    pPages->cElems = 1;
-    pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
-    if (pPages->pElems == NULL)
-    {
-      return E_OUTOFMEMORY;
-    }
-    pPages->pElems[0] = CLSID_CropProperties;
-    return S_OK;
-  }
+  STDMETHODIMP GetPages(CAUUID *pPages);
   /// Overridden from COM
-  STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv)
-  {
-    if (riid == IID_ISpecifyPropertyPages)
-    {
-      return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
-    }
-    else
-    {
-      // Call the parent class.
-      return CCustomBaseFilter::NonDelegatingQueryInterface(riid, ppv);
-    }
-  }
+  STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 
 private:
   /**
