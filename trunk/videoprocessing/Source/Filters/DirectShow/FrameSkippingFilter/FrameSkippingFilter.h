@@ -41,7 +41,7 @@ static const GUID CLSID_RTVC_VPP_FrameSkippingFilter =
 { 0xbbf2f0af, 0x9f7f, 0x4406, { 0xae, 0x9c, 0xe5, 0xf, 0x92, 0xc4, 0x63, 0xbb } };
 
 //// {F0A41B88-2311-42f9-8E26-679BE4FFC176}
-static const GUID CLSID_FrameSkippingProperties = 
+static const GUID CLSID_FrameSkippingProperties =
 { 0xf0a41b88, 0x2311, 0x42f9, { 0x8e, 0x26, 0x67, 0x9b, 0xe4, 0xff, 0xc1, 0x76 } };
 
 /**
@@ -49,8 +49,8 @@ static const GUID CLSID_FrameSkippingProperties =
  * TODO: Do input validation by overriding SetParameter
  */
 class FrameSkippingFilter : public CTransInPlaceFilter,
-                            public CSettingsInterface,
-                            public ISpecifyPropertyPages
+  public CSettingsInterface,
+  public ISpecifyPropertyPages
 {
 public:
   DECLARE_IUNKNOWN
@@ -61,36 +61,36 @@ public:
   ~FrameSkippingFilter();
 
   /// Static object-creation method (for the class factory)
-  static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr); 
+  static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr);
 
   /// override this to publicize our interfaces
   STDMETHODIMP NonDelegatingQueryInterface(REFIID riid, void **ppv);
 
   //Overriding various CTransInPlace methods
-  HRESULT Transform(IMediaSample *pSample);/* Overrriding the receive method. 
+  HRESULT Transform(IMediaSample *pSample);/* Overrriding the receive method.
                                            This method receives a media sample, processes it, and delivers it to the downstream filter.*/
 
   HRESULT CheckInputType(const CMediaType* mtIn);
 
   STDMETHODIMP GetPages(CAUUID *pPages) // For the Skipping Property Page
-	{
-		if (pPages == NULL) return E_POINTER;
-		pPages->cElems = 1;
-		pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
-		if (pPages->pElems == NULL) 
-		{
-			return E_OUTOFMEMORY;
-		}
-		pPages->pElems[0] = CLSID_FrameSkippingProperties;
-		return S_OK;
-	}
+  {
+    if (pPages == NULL) return E_POINTER;
+    pPages->cElems = 1;
+    pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+    if (pPages->pElems == NULL)
+    {
+      return E_OUTOFMEMORY;
+    }
+    pPages->pElems[0] = CLSID_FrameSkippingProperties;
+    return S_OK;
+  }
 
-  STDMETHODIMP Run( REFERENCE_TIME tStart );
+  STDMETHODIMP Run(REFERENCE_TIME tStart);
   STDMETHODIMP Stop(void);
 
   /// Overridden from CSettingsInterface
-  virtual void initParameters() 
-  { 
+  virtual void initParameters()
+  {
     addParameter("skipframe", &m_uiSkipFrameNumber, 0);
     addParameter("totalframes", &m_uiTotalFrames, 0);
   }
