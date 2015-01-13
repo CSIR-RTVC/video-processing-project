@@ -37,38 +37,40 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Shared/StringUtil.h>
 
 FrameSkippingFilter::FrameSkippingFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-: CTransInPlaceFilter(NAME("CSIR VPP Frame Skipping Filter"), pUnk, CLSID_RTVC_VPP_FrameSkippingFilter, pHr, false),
+  : CTransInPlaceFilter(NAME("CSIR VPP Frame Skipping Filter"), pUnk, CLSID_RTVC_VPP_FrameSkippingFilter, pHr, false),
   m_uiSkipFrameNumber(0),
   m_uiTotalFrames(0),
   m_uiCurrentFrame(0)
 {
   // Init parameters
-	initParameters();
+  initParameters();
 }
 
 FrameSkippingFilter::~FrameSkippingFilter()
-{;}
+{
+  ;
+}
 
-CUnknown * WINAPI FrameSkippingFilter::CreateInstance( LPUNKNOWN pUnk, HRESULT *pHr )
+CUnknown * WINAPI FrameSkippingFilter::CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
 {
   FrameSkippingFilter *pFilter = new FrameSkippingFilter(pUnk, pHr);
-  if (pFilter== NULL) 
+  if (pFilter == NULL)
   {
     *pHr = E_OUTOFMEMORY;
   }
   return pFilter;
 }
 
-STDMETHODIMP FrameSkippingFilter::NonDelegatingQueryInterface( REFIID riid, void **ppv )
+STDMETHODIMP FrameSkippingFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv)
 {
-  if(riid == (IID_ISettingsInterface))
+  if (riid == (IID_ISettingsInterface))
   {
     return GetInterface((ISettingsInterface*) this, ppv);
   }
   if (riid == (IID_ISpecifyPropertyPages))
-	{
-		return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
-	}
+  {
+    return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+  }
   else
   {
     return CTransInPlaceFilter::NonDelegatingQueryInterface(riid, ppv);
@@ -96,33 +98,33 @@ HRESULT FrameSkippingFilter::Transform(IMediaSample *pSample)
 
   if (iSkip == 1)
   {
-    return S_FALSE; 
-  }        
+    return S_FALSE;
+  }
   return S_OK;
 }
 
 HRESULT FrameSkippingFilter::CheckInputType(const CMediaType* mtIn)
 {
   // Check the major type.
-	if (mtIn->majortype != MEDIATYPE_Video)
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+  if (mtIn->majortype != MEDIATYPE_Video)
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
 
-	// Adding advert media type to this method
-	if ((mtIn->subtype != MEDIASUBTYPE_RGB24) && (mtIn->subtype != MEDIASUBTYPE_RGB32) )
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+  // Adding advert media type to this method
+  if ((mtIn->subtype != MEDIASUBTYPE_RGB24) && (mtIn->subtype != MEDIASUBTYPE_RGB32))
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
 
-	if (mtIn->formattype != FORMAT_VideoInfo)
-	{
-		return VFW_E_TYPE_NOT_ACCEPTED;
-	}
+  if (mtIn->formattype != FORMAT_VideoInfo)
+  {
+    return VFW_E_TYPE_NOT_ACCEPTED;
+  }
   return S_OK;
 }
 
-HRESULT FrameSkippingFilter::Run( REFERENCE_TIME tStart )
+HRESULT FrameSkippingFilter::Run(REFERENCE_TIME tStart)
 {
   m_vFramesToBeSkipped.clear();
   // calculate which frames should be dropped
@@ -166,7 +168,7 @@ HRESULT FrameSkippingFilter::Run( REFERENCE_TIME tStart )
   return CTransInPlaceFilter::Run(tStart);
 }
 
-HRESULT FrameSkippingFilter::Stop( void )
+HRESULT FrameSkippingFilter::Stop(void)
 {
   m_uiCurrentFrame = 0;
   m_vFramesToBeSkipped.clear();

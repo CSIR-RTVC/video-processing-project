@@ -50,30 +50,32 @@ class FrameSkippingProperties : public FilterPropertiesBase
 {
 public:
 
-	static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr) 
-	{
-		FrameSkippingProperties *pNewObject = new FrameSkippingProperties(pUnk);
-		if (pNewObject == NULL) 
-		{
-			*pHr = E_OUTOFMEMORY;
-		}
-		return pNewObject;
-	}
+  static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
+  {
+    FrameSkippingProperties *pNewObject = new FrameSkippingProperties(pUnk);
+    if (pNewObject == NULL)
+    {
+      *pHr = E_OUTOFMEMORY;
+    }
+    return pNewObject;
+  }
 
-	FrameSkippingProperties::FrameSkippingProperties(IUnknown *pUnk) : 
-	FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION)
-	{;}
+  FrameSkippingProperties::FrameSkippingProperties(IUnknown *pUnk) :
+    FilterPropertiesBase(NAME("Frame Skipping Properties"), pUnk, IDD_FRAME_SKIP_DIALOG, IDS_FRAME_SKIP_CAPTION)
+  {
+    ;
+  }
 
-	BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		// Let the parent class handle the message.
-		return FilterPropertiesBase::OnReceiveMessage(hwnd,uMsg,wParam,lParam);
-	}
+  BOOL OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
+  {
+    // Let the parent class handle the message.
+    return FilterPropertiesBase::OnReceiveMessage(hwnd, uMsg, wParam, lParam);
+  }
 
-	HRESULT ReadSettings()
-	{
-		short lower = 0;
-		short upper = SHRT_MAX;
+  HRESULT ReadSettings()
+  {
+    short lower = 0;
+    short upper = SHRT_MAX;
 
     setSpinBoxRange(IDC_SPIN1, lower, upper);
     setSpinBoxRange(IDC_SPIN2, lower, upper);
@@ -87,15 +89,15 @@ public:
     hr = setEditTextFromIntFilterParameter("totalframes", IDC_EDIT_SKIP_FRAME_TOTAL);
 
     return hr;
-	}
- 
-	HRESULT OnApplyChanges(void)
-	{
+  }
+
+  HRESULT OnApplyChanges(void)
+  {
     HRESULT hr = setIntFilterParameterFromEditText("skipframe", IDC_EDIT_SKIP_FRAME_NUMBER);
     if (FAILED(hr)) return hr;
 
     hr = setIntFilterParameterFromEditText("totalframes", IDC_EDIT_SKIP_FRAME_TOTAL);
-		return hr;
-	} 
+    return hr;
+  }
 };
 
