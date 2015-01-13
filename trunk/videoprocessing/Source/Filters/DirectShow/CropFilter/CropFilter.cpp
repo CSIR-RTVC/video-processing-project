@@ -221,6 +221,16 @@ HRESULT CropFilter::CheckTransform(const CMediaType *mtIn, const CMediaType *mtO
   return S_OK;
 }
 
+void CropFilter::initParameters()
+{
+  addParameter(TARGET_WIDTH, &m_nOutWidth, -1, true);
+  addParameter(TARGET_HEIGHT, &m_nOutHeight, -1, true);
+  addParameter(LEFT_CROP, &m_nLeftCrop, 0);
+  addParameter(RIGHT_CROP, &m_nRightCrop, 0);
+  addParameter(TOP_CROP, &m_nTopCrop, 0);
+  addParameter(BOTTOM_CROP, &m_nBottomCrop, 0);
+  RecalculateFilterParameters();
+}
 STDMETHODIMP CropFilter::SetParameter(const char* type, const char* value)
 {
   // For now, one cannot set any parameters once the output has been connected -> this will affect the buffer size
@@ -329,5 +339,31 @@ HRESULT CropFilter::SetCropIfValid(int nTotalDimensionImage, int nNewCrop, int& 
   {
     // negative value
     return E_FAIL;
+  }
+}
+
+HRESULT CropFilter::GetPages(CAUUID *pPages)
+{
+  if (pPages == NULL) return E_POINTER;
+  pPages->cElems = 1;
+  pPages->pElems = (GUID*)CoTaskMemAlloc(sizeof(GUID));
+  if (pPages->pElems == NULL)
+  {
+    return E_OUTOFMEMORY;
+  }
+  pPages->pElems[0] = CLSID_CropProperties;
+  return S_OK;
+}
+
+HRESULT CropFilter::NonDelegatingQueryInterface(REFIID riid, void **ppv)
+{
+  if (riid == IID_ISpecifyPropertyPages)
+  {
+    return GetInterface(static_cast<ISpecifyPropertyPages*>(this), ppv);
+  }
+  else
+  {
+    // Call the parent class.
+    return CCustomBaseFilter::NonDelegatingQueryInterface(riid, ppv);
   }
 }
