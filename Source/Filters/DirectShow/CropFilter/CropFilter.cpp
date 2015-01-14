@@ -39,6 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 CropFilter::CropFilter()
   : CCustomBaseFilter(NAME("CSIR VPP Crop Filter"), 0, CLSID_CropFilter),
   m_pCropper(NULL),
+  m_pCropBuffer(NULL),
   m_nBytesPerPixel(BYTES_PER_PIXEL_RGB24),
   m_nStride(0),
   m_nPadding(0)
@@ -55,6 +56,11 @@ CropFilter::~CropFilter()
   {
     delete m_pCropper;
     m_pCropper = NULL;
+  }
+  if (m_pCropBuffer)
+  {
+    delete m_pCropBuffer;
+    m_pCropBuffer = NULL;
   }
 }
 
@@ -98,15 +104,25 @@ HRESULT CropFilter::SetMediaType(PIN_DIRECTION direction, const CMediaType *pmt)
         delete m_pCropper;
         m_pCropper = NULL;
       }
+      if (m_pCropBuffer)
+      {
+        delete m_pCropBuffer;
+        m_pCropBuffer = NULL;
+      }
       if (pmt->subtype == MEDIASUBTYPE_RGB24)
       {
         m_pCropper = new PicCropperRGB24Impl();
         m_nBytesPerPixel = BYTES_PER_PIXEL_RGB24;
+        // Create temp buffer for crop
+        m_pCropBuffer = new BYTE[m_nOutWidth * m_nOutHeight * m_nBytesPerPixel];
+
       }
       else if (pmt->subtype == MEDIASUBTYPE_RGB32)
       {
         m_pCropper = new PicCropperRGB32Impl();
         m_nBytesPerPixel = BYTES_PER_PIXEL_RGB32;
+        // Create temp buffer for crop
+        m_pCropBuffer = new BYTE[m_nOutWidth * m_nOutHeight * m_nBytesPerPixel];
       }
     }
     RecalculateFilterParameters();
@@ -255,44 +271,32 @@ STDMETHODIMP CropFilter::SetParameter(const char* type, const char* value)
 
 HRESULT CropFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
-  int nTotalSize = 0;
-  //make sure we were able to initialise our converter
-  if (m_pCropper)
+  //make sure we were able to initialise our cropper
+  ASSERT(m_pCropper);
+  // TODO: Add stride parameter for crop class to avoid this extra mem alloc
+  //Call cropping conversion code
+  m_pCropper->SetInDimensions(m_nInWidth, m_nInHeight);
+  m_pCropper->SetOutDimensions(m_nOutWidth, m_nOutHeight);
+  m_pCropper->SetCrop(m_nLeftCrop, m_nRightCrop, m_nTopCrop, m_nBottomCrop);
+  int res = m_pCropper->Crop((void*)pBufferIn, (void*)m_pCropBuffer);
+  ASSERT(res == 1);
+  // Copy the cropped image with stride padding
+  BYTE* pFrom = m_pCropBuffer;
+  BYTE* pTo = pBufferOut;
+
+  int nBytesPerLine = m_nOutWidth * m_nBytesPerPixel;
+  for (size_t i = 0; i < (size_t)m_nOutHeight; i++)
   {
-    // Create temp buffer for crop
-    // TODO: Add stride parameter for crop class to avoid this extra mem alloc
-    BYTE* pBuffer = new BYTE[m_nOutWidth * m_nOutHeight * m_nBytesPerPixel];
-
-    //Call cropping conversion code
-    m_pCropper->SetInDimensions(m_nInWidth, m_nInHeight);
-    m_pCropper->SetOutDimensions(m_nOutWidth, m_nOutHeight);
-    m_pCropper->SetCrop(m_nLeftCrop, m_nRightCrop, m_nTopCrop, m_nBottomCrop);
-    m_pCropper->Crop((void*)pBufferIn, (void*)pBuffer);
-
-    // Copy the cropped image with stride padding
-    BYTE* pFrom = pBuffer;
-    BYTE* pTo = pBufferOut;
-
-    int nBytesPerLine = m_nOutWidth * m_nBytesPerPixel;
-    for (size_t i = 0; i < (size_t)m_nOutHeight; i++)
+    memcpy(pTo, pFrom, nBytesPerLine);
+    pFrom += nBytesPerLine;
+    pTo += nBytesPerLine;
+    for (size_t j = 0; j < (size_t)m_nPadding; j++)
     {
-      memcpy(pTo, pFrom, nBytesPerLine);
-      pFrom += nBytesPerLine;
-      pTo += nBytesPerLine;
-      for (size_t j = 0; j < (size_t)m_nPadding; j++)
-      {
-        *pTo = 0;
-        pTo++;
-      }
+      *pTo = 0;
+      pTo++;
     }
-    nTotalSize = (m_nOutWidth + m_nPadding) * m_nOutHeight * m_nBytesPerPixel;
-    delete[] pBuffer;
   }
-  else
-  {
-    DbgLog((LOG_TRACE, 0, TEXT("TestCropper: Cropper is not initialised - unable to transform")));
-  }
-  lOutActualDataLength = nTotalSize;
+  lOutActualDataLength = (m_nOutWidth + m_nPadding) * m_nOutHeight * m_nBytesPerPixel;
   return S_OK;
 }
 
