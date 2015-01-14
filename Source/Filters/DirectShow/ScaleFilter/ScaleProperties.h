@@ -8,7 +8,7 @@ DESCRIPTION			: Properties for scale filter.
 
 LICENSE: Software License Agreement (BSD License)
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2015, CSIR
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
@@ -48,107 +48,44 @@ class ScaleProperties : public FilterPropertiesBase
 {
 public:
 
-	static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr) 
-	{
-		ScaleProperties *pNewObject = new ScaleProperties(pUnk);
-		if (pNewObject == NULL) 
-		{
-			*pHr = E_OUTOFMEMORY;
-		}
-		return pNewObject;
-	}
+  static CUnknown * WINAPI CreateInstance(LPUNKNOWN pUnk, HRESULT *pHr)
+  {
+    ScaleProperties *pNewObject = new ScaleProperties(pUnk);
+    if (pNewObject == NULL)
+    {
+      *pHr = E_OUTOFMEMORY;
+    }
+    return pNewObject;
+  }
 
-	ScaleProperties::ScaleProperties(IUnknown *pUnk) : 
-	FilterPropertiesBase(NAME("Scale Properties"), pUnk, IDD_SCALE_DIALOG, IDS_SCALE_CAPTION)
-	{;}
+  ScaleProperties::ScaleProperties(IUnknown *pUnk) :
+    FilterPropertiesBase(NAME("Scale Properties"), pUnk, IDD_SCALE_DIALOG, IDS_SCALE_CAPTION)
+  {
+    ;
+  }
 
-	INT_PTR OnReceiveMessage(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
-	{
-		/*switch (uMsg)
-		{
-		case WM_NOTIFY:
-			short q = UDN_DELTAPOS;
+  HRESULT ReadSettings()
+  {
+    setSpinBoxRange(IDC_SPIN1, 0, SHRT_MAX);
+    setSpinBoxRange(IDC_SPIN2, 0, SHRT_MAX);
+    // width
+    HRESULT hr = setEditTextFromIntFilterParameter(TARGET_HEIGHT, IDC_EDIT_TARGET_HEIGHT);
+    if (FAILED(hr)) return hr;
+    // height
+    hr = setEditTextFromIntFilterParameter(TARGET_WIDTH, IDC_EDIT_TARGET_WIDTH);
+    if (FAILED(hr)) return hr;
+    return hr;
+  }
 
-			unsigned short s = LOWORD(lParam);
-			short s1 = LOWORD(lParam);
-			short s2 = HIWORD(lParam);
-			if (s == UDN_DELTAPOS)
-			{
-				SetDirty();
-				return (LRESULT) 1;
-			}
-			if (lParam == UDN_DELTAPOS)
-			{
-				SetDirty();
-				return (LRESULT) 1;
-			}
-
-			break;
-		}*/
-		// Let the parent class handle the message.
-		return FilterPropertiesBase::OnReceiveMessage(hwnd,uMsg,wParam,lParam);
-	}
-
-	HRESULT ReadSettings()
-	{
-		short lower = 0;
-		short upper = SHRT_MAX;
-
-		// Init UI
-		long lResult = SendMessage(			// returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN1),	// handle to destination control
-			(UINT) UDM_SETRANGE,			// message ID
-			(WPARAM) 0,						// = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			);
-		lResult = SendMessage(			// returns LRESULT in lResult
-			GetDlgItem(m_Dlg, IDC_SPIN2),	// handle to destination control
-			(UINT) UDM_SETRANGE,			// message ID
-			(WPARAM) 0,						// = 0; not used, must be zero
-			(LPARAM) MAKELONG ( upper, lower)      // = (LPARAM) MAKELONG ((short) nUpper, (short) nLower)
-			);
-
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
-		HRESULT hr = m_pSettingsInterface->GetParameter(TARGET_HEIGHT, sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-		{
-			SetDlgItemText(m_Dlg, IDC_EDIT_TARGET_HEIGHT, szBuffer);
-			m_targetHeight = atoi(szBuffer);
-		}
-		else
-		{
-			return E_FAIL;
-		}
-		hr = m_pSettingsInterface->GetParameter(TARGET_WIDTH, sizeof(szBuffer), szBuffer, &nLength);
-		if (SUCCEEDED(hr))
-		{
-			SetDlgItemText(m_Dlg, IDC_EDIT_TARGET_WIDTH, szBuffer);
-			m_targetWidth = atoi(szBuffer);
-		}
-		else
-		{
-			return E_FAIL;
-		}
-		return hr;
-	}
- 
-	HRESULT OnApplyChanges(void)
-	{
-		int nLength = 0;
-		char szBuffer[BUFFER_SIZE];
-		nLength = GetDlgItemText(m_Dlg, IDC_EDIT_TARGET_WIDTH, szBuffer, BUFFER_SIZE);
-		m_targetWidth = atoi(szBuffer);
-		m_pSettingsInterface->SetParameter(TARGET_WIDTH, szBuffer);
-		nLength = GetDlgItemText(m_Dlg, IDC_EDIT_TARGET_HEIGHT, szBuffer, BUFFER_SIZE);
-		m_targetHeight = atoi(szBuffer);
-		m_pSettingsInterface->SetParameter(TARGET_HEIGHT, szBuffer);
-		return S_OK;
-	} 
-
-private:
-
-	unsigned m_targetWidth;
-	unsigned m_targetHeight;
+  HRESULT OnApplyChanges(void)
+  {
+    // width
+    HRESULT hr = setIntFilterParameterFromEditText(TARGET_WIDTH, IDC_EDIT_TARGET_WIDTH);
+    if (FAILED(hr)) return hr;
+    // height
+    hr = setIntFilterParameterFromEditText(TARGET_HEIGHT, IDC_EDIT_TARGET_HEIGHT);
+    if (FAILED(hr)) return hr;
+    return S_OK;
+  }
 };
 
