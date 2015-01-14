@@ -244,7 +244,7 @@ STDMETHODIMP ScaleFilter::SetParameter(const char* type, const char* value)
   // TODO: get rid of enum or get rid of string!!!!
   if (SUCCEEDED(CSettingsInterface::SetParameter(type, value)))
   {
-    m_nOutPixels = m_nOutWidth * m_nOutHeight;
+    RecalculateFilterParameters();
     return S_OK;
   }
   else
@@ -255,21 +255,14 @@ STDMETHODIMP ScaleFilter::SetParameter(const char* type, const char* value)
 
 HRESULT ScaleFilter::ApplyTransform(BYTE* pBufferIn, long lInBufferSize, long lActualDataLength, BYTE* pBufferOut, long lOutBufferSize, long& lOutActualDataLength)
 {
-  int nTotalSize = 0;
   //make sure we were able to initialize our converter
-  if (m_pScaler)
-  {
-    //Call scaling conversion code
-    m_pScaler->SetInDimensions(m_nInWidth, m_nInHeight);
-    m_pScaler->SetOutDimensions(m_nOutWidth, m_nOutHeight);
-    m_pScaler->Scale((void*)pBufferOut, (void*)pBufferIn);
-    nTotalSize = m_nOutWidth * m_nOutHeight * m_nBytesPerPixel;
-  }
-  else
-  {
-    DbgLog((LOG_TRACE, 0, TEXT("Scaler is not initialised - unable to transform")));
-  }
-  lOutActualDataLength = nTotalSize;
+  ASSERT(m_pScaler);
+  //Call scaling conversion code
+  m_pScaler->SetInDimensions(m_nInWidth, m_nInHeight);
+  m_pScaler->SetOutDimensions(m_nOutWidth, m_nOutHeight);
+  int res = m_pScaler->Scale((void*)pBufferOut, (void*)pBufferIn);
+  ASSERT(res == 1);
+  lOutActualDataLength = m_nOutWidth * m_nOutHeight * m_nBytesPerPixel;
   return S_OK;
 }
 
