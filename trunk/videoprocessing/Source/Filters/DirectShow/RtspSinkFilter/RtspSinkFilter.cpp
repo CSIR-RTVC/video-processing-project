@@ -270,6 +270,11 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
         iVideo = it->first;
         m_channelManager.setVideoSourceId(iVideo);
       }
+      else if (it->second == MST_MMF)
+      {
+        iVideo = it->first;
+        m_channelManager.setVideoSourceId(iVideo);
+      }
       else if (it->second == MST_AMR)
       {
         iAudio = it->first;
@@ -287,7 +292,7 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
     {
       RtspSinkInputPin* pPin = m_vInputPins[iVideo];
       lme::VideoChannelDescriptor& videoDescriptor = pPin->m_videoDescriptor;
-      assert(videoDescriptor.Codec == lme::H264);
+      assert(videoDescriptor.Codec == lme::H264 || videoDescriptor.Codec == lme::MMF);
       assert(videoDescriptor.Width > 0);
       assert(videoDescriptor.Height > 0);
    
@@ -311,7 +316,7 @@ STDMETHODIMP RtspSinkFilter::Run( REFERENCE_TIME tStart )
     {
       RtspSinkInputPin* pPin = m_vInputPins[iVideo];
       lme::VideoChannelDescriptor& videoDescriptor = pPin->m_videoDescriptor;
-      assert(videoDescriptor.Codec == lme::H264);
+      assert(videoDescriptor.Codec == lme::H264 || videoDescriptor.Codec == lme::MMF);
       assert(videoDescriptor.Width > 0);
       assert(videoDescriptor.Height > 0);
       boost::system::error_code ec = m_rtspService.createChannel(CHANNEL_ID, "live", videoDescriptor);
@@ -563,6 +568,21 @@ HRESULT RtspSinkFilter::sendMediaSample( unsigned uiId, IMediaSample* pSample )
       }
     }
 #endif
+    break;
+  }
+  case MST_MMF:
+  {
+    std::vector<lme::MediaSample> mediaSamples;
+    lme::MediaSample mediaSample;
+    mediaSample.setPresentationTime(dStartTime);
+    uint32_t uiLen = pSample->GetActualDataLength();
+    BYTE* pData = new BYTE[uiLen];
+    memcpy(pData, pbData, uiLen);
+    mediaSample.setData(pData, pSample->GetActualDataLength());
+    mediaSamples.push_back(mediaSample);
+    //    VLOG(2) << "RtspSinkFilter::sendMediaSample: Adding to packet manager";
+    packetManager.addVideoMediaSamples(mediaSamples);
+    //    VLOG(2) << "RtspSinkFilter::sendMediaSample: Added to packet manager";
     break;
   }
   case MST_AMR:
