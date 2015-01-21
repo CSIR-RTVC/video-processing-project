@@ -1,3 +1,5 @@
+----------------------------- 2014/12/17 - RELEASE v1.2.1 -------------------------------------------------------------------------------------------------
+
 2014/11/13
 - Added opus support to RTSP Source Filter. Tested with testOnDemandRTSPServer and testvector01.bit.opus (renamed to test.opus) from http://www.live555.com 
 
