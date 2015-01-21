@@ -87,6 +87,15 @@ HRESULT RtspSinkInputPin::CheckMediaType( const CMediaType *pmt )
       m_eSubtype = MST_H264;
       return S_OK;
     }
+    else if (pmt->subtype == MEDIASUBTYPE_MMF)
+    {
+      extractVideoParameters(pmt);
+      // TODO: not sure if this is necessary?
+      // extractH264Parameters(pmt);
+      m_eType = MT_VIDEO;
+      m_eSubtype = MST_MMF;
+      return S_OK;
+    }
   }
   else if (pmt->majortype == MEDIATYPE_Audio)
   {
@@ -114,6 +123,69 @@ inline void RtspSinkInputPin::extractVideoParameters(const CMediaType *pMediaTyp
   assert(pMediaType->formattype == FORMAT_VideoInfo);
   if (pMediaType->subtype == MEDIASUBTYPE_VPP_H264)
     m_videoDescriptor.Codec = lme::H264;
+
+  if (pMediaType->subtype == MEDIASUBTYPE_MMF)
+  {
+    m_videoDescriptor.Codec = lme::MMF;
+    // The following code reads the information stored in the MMF format buffer
+    // extract frame bit limits and initial channel
+    // Extract width and height of video -> this is assuming that all multiplexed videos have the same dimension!!!!!!!		
+    // Add the number of streams parameter to the subsession
+    BYTE* pFormat = pMediaType->pbFormat;
+    // Get size of entire format header: this is our custom header for media type MM1
+    int nSize = pMediaType->cbFormat;
+    unsigned uiAdditionalHeaderSize(0);
+    std::string sSps, sPps;
+    // Channel start
+    unsigned uiChannelStart = 0, uiChannelCount = 0;
+    std::vector<int> vFramebitLimits;
+
+    // The last byte stores the additional header size
+    memcpy(&uiAdditionalHeaderSize, pFormat + nSize - sizeof(int), sizeof(int));
+    // skip the standard DS info
+    BYTE* pPos = &pFormat[nSize - uiAdditionalHeaderSize];
+
+    char buffer[256];
+    // SPS
+    unsigned uiSpsLen = 0;
+    memcpy(&uiSpsLen, pPos, sizeof(unsigned));
+    pPos += sizeof(unsigned);
+    memcpy(buffer, pPos + 4, uiSpsLen - 4); // omit start code
+    sSps = std::string(buffer, uiSpsLen - 4);
+    pPos += uiSpsLen;
+
+    // PPS
+    unsigned uiPpsLen = 0;
+    memcpy(&uiPpsLen, pPos, sizeof(unsigned));
+    pPos += sizeof(unsigned);
+    memcpy(buffer, pPos, uiPpsLen - 4); // omit start code
+    sPps = std::string(buffer, uiPpsLen - 4);
+    pPos += uiPpsLen;
+
+    // Channel start
+    memcpy(&uiChannelStart, pPos, sizeof(unsigned));
+    pPos += sizeof(unsigned);
+
+    // Channel count
+    memcpy(&uiChannelCount, pPos, sizeof(unsigned));
+    pPos += sizeof(unsigned);
+
+    for (size_t i = 0; i < uiChannelCount; ++i)
+    {
+      int val = 0;
+      memcpy(&val, pPos, sizeof(int));
+      m_videoDescriptor.FrameBitLimits.push_back(val);
+      pPos += sizeof(int);
+    }
+
+    m_videoDescriptor.InitialChannel = uiChannelStart;
+    char* szSps = base64Encode(sSps.c_str(), sSps.length());
+    char* szPps = base64Encode(sPps.c_str(), sPps.length());
+    m_videoDescriptor.Sps = std::string(szSps);
+    m_videoDescriptor.Pps = std::string(szPps);
+    delete[] szSps;
+    delete[] szPps;
+  }
 
   VIDEOINFOHEADER* pVih = (VIDEOINFOHEADER*)pMediaType->pbFormat;
   int nWidth = pVih->bmiHeader.biWidth;

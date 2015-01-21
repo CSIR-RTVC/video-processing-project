@@ -44,5 +44,6 @@ enum RTSP_MediaSubtype
   MST_NOT_SET,
   MST_H264,
   MST_AMR,
-  MST_AAC
+  MST_AAC,
+  MST_MMF
 };
