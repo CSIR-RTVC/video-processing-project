@@ -47,6 +47,11 @@ static const GUID MEDIASUBTYPE_YUV420P =
 static const GUID MEDIASUBTYPE_VPP_H264 = 
 { 0xbdf25152, 0x46b, 0x4509, { 0x8e, 0x55, 0x6c, 0x73, 0x83, 0x1c, 0x8d, 0xc4 } };
 
+/// MMF media: generic multiplexed media format
+// {D89B678F-9AC9-4E2A-9BF8-AA2D6149DDEF}
+static const GUID MEDIASUBTYPE_MMF =
+{ 0xd89b678f, 0x9ac9, 0x4e2a, { 0x9b, 0xf8, 0xaa, 0x2d, 0x61, 0x49, 0xdd, 0xef } };
+
 #if 0
 // {B940AE21-195E-4CE6-B324-E703AE733AEC}
 DEFINE_GUID(MEDIASUBTYPE_OPUS,
