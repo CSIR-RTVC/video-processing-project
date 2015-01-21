@@ -10,6 +10,9 @@ LIVE_MEDIA_EXT_ROOT: e.g. D:\projects\LiveMediaExt
 BOOST_INCLUDE_DIR: e.g. D:\Boost\include\boost-1_56
 BOOST_LIB_DIR: e.g. D:\Boost\lib
 
+To build the Opus decoder
+OPUS_ROOT: e.g .D:\projects\opus-1.1-CMake
+
 #### Building with CMake #########################################################################################
 
 Use CMake to generate the Visual Studio projects
@@ -37,4 +40,11 @@ extends the Live555 library to handle live sources. To build the RtspSinkFilter
 you need to checkout the LiveMediaExt and follow the instructions to build it.
 Once built:
 - the LIVE_MEDIA_EXT_ROOT environmental variable needs to be defined.
-- In videprocessing/Source/CMakeLists.txt line 41 set REGISTER_BUILD_RTSP_SINK_FILTER to true
+- In videoprocessing/Source/CMakeLists.txt line 41 set REGISTER_BUILD_RTSP_SINK_FILTER to true
+
+#### Building the OpusDecoderFilter #################################################################################
+Check out and build https://github.com/miseri/opus-1.1-CMake
+
+- the OPUS_ROOT environmental variable needs to be defined and set to the root of the checked out source.
+- In videoprocessing/Source/CMakeLists.txt line 42 set OPUS_SUPPORT to true
+
