@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicScalerRGB24Impl.h>
 
 PicInPicFilter::PicInPicFilter()
-	:VideoMixingBase(NAME("CSIR VPP Picture in Picture Filter"), 0, CLSID_PicInPicFilter),
+	:VideoMixingBase(NAME("CSIR VPP Picture in Picture Filter"), 0, CLSID_VPP_PicInPicFilter),
 	m_pPicInPic(NULL),
 	m_pTargetPicScaler(NULL),
 	m_pSubPicScaler(NULL),

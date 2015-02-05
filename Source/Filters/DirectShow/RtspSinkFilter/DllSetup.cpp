@@ -17,7 +17,7 @@ static const WCHAR g_wszName[] = L"CSIR VPP RTSP Sink Filter";   /// A name for 
 // Filter setup data
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes[] =
 {
-  { 
+  {
     &MEDIATYPE_Video, &MEDIASUBTYPE_VPP_H264
   },
   {
@@ -28,7 +28,7 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes[] =
   },
 };
 
-const AMOVIESETUP_PIN sudRtspSinkSet = 
+const AMOVIESETUP_PIN sudRtspSinkSet =
 {
   L"Output",        // Obsolete, not used.
   TRUE,             // Is this pin rendered?
@@ -44,17 +44,17 @@ const AMOVIESETUP_PIN sudRtspSinkSet =
 #if 1
 const AMOVIESETUP_FILTER sudRtspSink =
 {
-  &CLSID_CSIR_VPP_RtspSinkFilter,  // Filter CLSID
-  g_wszName,                       // String name
-  MERIT_DO_NOT_USE,                // Filter merit
-  0,                               // Number pins
-  NULL                             // Pin details
+  &CLSID_VPP_RtspSinkFilter,  // Filter CLSID
+  g_wszName,                  // String name
+  MERIT_DO_NOT_USE,           // Filter merit
+  0,                          // Number pins
+  NULL                        // Pin details
 };
 
 #else
 const AMOVIESETUP_FILTER sudRtspSink=
 {
-  &CLSID_CSIR_VPP_RtspSinkFilter,  // Filter CLSID
+  &CLSID_VPP_RtspSinkFilter,  // Filter CLSID
   g_wszName,                       // String name
   MERIT_DO_NOT_USE,                // Filter merit
   1,                               // Number pins
@@ -67,25 +67,25 @@ const AMOVIESETUP_FILTER sudRtspSink=
 // being created. The class factory will call the static CreateInstance.
 // We provide a set of filters in this one DLL.
 
-CFactoryTemplate g_Templates[] = 
+CFactoryTemplate g_Templates[] =
 {
-  { 
+  {
     g_wszName,                      // Name
-    &CLSID_CSIR_VPP_RtspSinkFilter, // CLSID
+    &CLSID_VPP_RtspSinkFilter,      // CLSID
     RtspSinkFilter::CreateInstance, // Method to create an instance of MyComponent
     NULL,                           // Initialization function
     &sudRtspSink                    // Set-up information (for filters)
-    },
-    // This entry is for the property page.
-    {
-      L"CSIR VPP RTSP Sink Properties",
-      &CLSID_RtspSinkProperties,
-      RtspSinkProperties::CreateInstance,
-      NULL, NULL
-    }
+  },
+  // This entry is for the property page.
+  {
+    L"CSIR VPP RTSP Sink Properties",
+    &CLSID_RtspSinkProperties,
+    RtspSinkProperties::CreateInstance,
+    NULL, NULL
+  }
 };
 
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 
 
@@ -98,12 +98,12 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 STDAPI DllRegisterServer()
 {
-  return AMovieDllRegisterServer2( TRUE );
+  return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-  return AMovieDllRegisterServer2( FALSE );
+  return AMovieDllRegisterServer2(FALSE);
 }
 
 //
@@ -111,9 +111,9 @@ STDAPI DllUnregisterServer()
 //
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
-BOOL APIENTRY DllMain(HANDLE hModule, 
-                      DWORD  dwReason, 
-                      LPVOID lpReserved)
+BOOL APIENTRY DllMain(HANDLE hModule,
+  DWORD  dwReason,
+  LPVOID lpReserved)
 {
   return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }

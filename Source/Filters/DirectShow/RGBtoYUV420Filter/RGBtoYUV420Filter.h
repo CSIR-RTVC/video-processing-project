@@ -36,7 +36,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CustomBaseFilter.h>
 
 // {BB0980EB-97F6-439a-847E-B94C2F5EFCD7}
-static const GUID CLSID_RGBtoYUV420ColorConverter = 
+static const GUID CLSID_VPP_RGBtoYUV420ColorConverter = 
 { 0xbb0980eb, 0x97f6, 0x439a, { 0x84, 0x7e, 0xb9, 0x4c, 0x2f, 0x5e, 0xfc, 0xd7 } };
 // {353FCF3B-910A-4e47-9D2B-C410D21B1792}
 static const GUID CLSID_RGBtoYUV420Properties = 

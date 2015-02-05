@@ -44,7 +44,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 
 TimestampLoggerFilter::TimestampLoggerFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-: CTransInPlaceFilter(NAME("CSIR VPP Timestamp Logger"), pUnk, CLSID_RTVCTimeStampLoggerFilter, pHr, false)
+: CTransInPlaceFilter(NAME("CSIR VPP Timestamp Logger"), pUnk, CLSID_VPP_TimeStampLoggerFilter, pHr, false)
 {;}
 
 TimestampLoggerFilter::~TimestampLoggerFilter()

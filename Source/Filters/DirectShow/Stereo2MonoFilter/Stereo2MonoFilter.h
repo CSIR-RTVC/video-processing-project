@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CustomBaseFilter.h>
 
 // {E0734A05-F25B-4F42-9CBF-7F1F610266C6}
-static const GUID CLSID_RTVCStereo2MonoFilter = 
+static const GUID CLSID_VPP_Stereo2MonoFilter = 
 { 0xe0734a05, 0xf25b, 0x4f42, { 0x9c, 0xbf, 0x7f, 0x1f, 0x61, 0x2, 0x66, 0xc6 } };
 
 // {740C164C-B778-4604-A97E-DABDEED47861}

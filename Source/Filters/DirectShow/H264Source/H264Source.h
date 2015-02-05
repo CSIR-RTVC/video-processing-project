@@ -54,7 +54,7 @@ const REFERENCE_TIME FPS_1  = UNITS / 1;
 const REFERENCE_TIME rtDefaultFrameLength = FPS_10;
 
 // {C2E56BB0-A497-439B-A9BA-79D73D8D1549}
-static const GUID CLSID_H264Source = 
+static const GUID CLSID_VPP_H264Source = 
 { 0xc2e56bb0, 0xa497, 0x439b, { 0xa9, 0xba, 0x79, 0xd7, 0x3d, 0x8d, 0x15, 0x49 } };
 
 // {E6A2AE5B-F41A-4595-84DB-D997242B4587}

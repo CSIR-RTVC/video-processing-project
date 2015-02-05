@@ -41,18 +41,18 @@ static const WCHAR g_wszName[] = L"CSIR VPP Scale Filter";   /// A name for the 
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-  &CLSID_ScaleFilter, // CLSID
-  g_wszName,          // Name
-  MERIT_DO_NOT_USE,   // Merit
-  0,                  // Number of AMOVIESETUP_PIN structs
-  NULL                // Pin registration information.
+  &CLSID_VPP_ScaleFilter, // CLSID
+  g_wszName,              // Name
+  MERIT_DO_NOT_USE,       // Merit
+  0,                      // Number of AMOVIESETUP_PIN structs
+  NULL                    // Pin registration information.
 };
 
 CFactoryTemplate g_Templates[] =
 {
   {
     g_wszName,                    // Name
-    &CLSID_ScaleFilter,           // CLSID
+    &CLSID_VPP_ScaleFilter,       // CLSID
     ScaleFilter::CreateInstance,  // Method to create an instance of MyComponent
     NULL,                         // Initialization function
     &FilterInfo                   // Set-up information (for filters)

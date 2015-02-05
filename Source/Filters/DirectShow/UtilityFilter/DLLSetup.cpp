@@ -4,7 +4,7 @@ MODULE				: DLLSetup
 
 FILE NAME			: DLLSetup.cpp
 
-DESCRIPTION			: 
+DESCRIPTION			:
 
 LICENSE: Software License Agreement (BSD License)
 
@@ -36,12 +36,12 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "UtilityProperties.h"
 //////////////////////////////////////////////////////////////////////////
 //###############################  Standard Filter DLL Code ###############################
-static const WCHAR g_wszName[] = L"CSIR VPP Utility Filter"; 
+static const WCHAR g_wszName[] = L"CSIR VPP Utility Filter";
 
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-  &CLSID_RTVC_UtilityFilter,  // CLSID
+  &CLSID_VPP_UtilityFilter,  // CLSID
   g_wszName,                  // Name
   MERIT_DO_NOT_USE,           // Merit
   0,                          // Number of AMOVIESETUP_PIN structs
@@ -49,24 +49,24 @@ AMOVIESETUP_FILTER FilterInfo =
 };
 
 
-CFactoryTemplate g_Templates[] = 
+CFactoryTemplate g_Templates[] =
 {
-  { 
-    g_wszName,                        // Name
-      &CLSID_RTVC_UtilityFilter,      // CLSID
-      UtilityFilter::CreateInstance,  // Method to create an instance of MyComponent
-      NULL,                           // Initialization function
-      &FilterInfo                     // Set-up information (for filters)
+  {
+    g_wszName,                      // Name
+    &CLSID_VPP_UtilityFilter,       // CLSID
+    UtilityFilter::CreateInstance,  // Method to create an instance of MyComponent
+    NULL,                           // Initialization function
+    &FilterInfo                     // Set-up information (for filters)
   },
   // This entry is for the property page.
-	{ 
-		L"Utility Properties",
-		&CLSID_UtilityProperties,
-		UtilityProperties::CreateInstance, 
-		NULL, NULL
-	}
+  {
+    L"Utility Properties",
+    &CLSID_UtilityProperties,
+    UtilityProperties::CreateInstance,
+    NULL, NULL
+  }
 };
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 //////////////////////////////////////////////////////////////////////////
 // Functions needed by the DLL, for registration.

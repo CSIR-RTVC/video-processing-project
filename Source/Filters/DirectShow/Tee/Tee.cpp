@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "Tee.h"
 
 RtvcTee::RtvcTee() 
-	:CMultiIOBaseFilter(NAME("CSIR VPP Tee Filter"), 0, CLSID_RtvcTee)
+	:CMultiIOBaseFilter(NAME("CSIR VPP Tee Filter"), 0, CLSID_VPP_Tee)
 {
 	//Hack virtual method of subclass can't be called from base class contructor, hence must be called in child contructor
 	Initialise();

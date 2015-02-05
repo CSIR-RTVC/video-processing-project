@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CSettingsInterface.h>
 
 // {01A5D2B0-E1F5-4fbf-97A7-2025FC13FB63}
-static const GUID CLSID_RTVCSkewingFilter = 
+static const GUID CLSID_VPP_SkewingFilter = 
 { 0x1a5d2b0, 0xe1f5, 0x4fbf, { 0x97, 0xa7, 0x20, 0x25, 0xfc, 0x13, 0xfb, 0x63 } };
 
 // {3B0BEFCE-7127-4484-B908-FE35FC2F96B8}

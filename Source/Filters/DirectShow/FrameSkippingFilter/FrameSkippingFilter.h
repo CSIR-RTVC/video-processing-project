@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/CSettingsInterface.h>
 
 // {8E974B99-BC09-4041-98F4-1103BAA1B0EA}
-static const GUID CLSID_RTVC_VPP_FrameSkippingFilter =
+static const GUID CLSID_VPP_FrameSkippingFilter =
 { 0xbbf2f0af, 0x9f7f, 0x4406, { 0xae, 0x9c, 0xe5, 0xf, 0x92, 0xc4, 0x63, 0xbb } };
 
 //// {F0A41B88-2311-42f9-8E26-679BE4FFC176}

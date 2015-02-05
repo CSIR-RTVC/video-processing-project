@@ -42,7 +42,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/IFileInfoSourceInterface.h>
 
 // {5E0F5204-F598-46F7-9D05-D0CCD195E545}
-static const GUID CLSID_RTVC_UtilityFilter =
+static const GUID CLSID_VPP_UtilityFilter =
 { 0x5e0f5204, 0xf598, 0x46f7, { 0x9d, 0x5, 0xd0, 0xcc, 0xd1, 0x95, 0xe5, 0x45 } };
 
 _COM_SMARTPTR_TYPEDEF(IFilterInfoSourceInterface, IID_IFilterInfoSourceInterface);

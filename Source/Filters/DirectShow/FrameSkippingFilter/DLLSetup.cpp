@@ -41,18 +41,18 @@ static const WCHAR g_wszName[] = L"CSIR VPP Frame Skipping Filter";   /// A name
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-  &CLSID_RTVC_VPP_FrameSkippingFilter,  // CLSID
-  g_wszName,                            // Name
-  MERIT_DO_NOT_USE,                     // Merit
-  0,                                    // Number of AMOVIESETUP_PIN structs
-  NULL                                  // Pin registration information.
+  &CLSID_VPP_FrameSkippingFilter, // CLSID
+  g_wszName,                      // Name
+  MERIT_DO_NOT_USE,               // Merit
+  0,                              // Number of AMOVIESETUP_PIN structs
+  NULL                            // Pin registration information.
 };
 
 CFactoryTemplate g_Templates[] =
 {
   {
     g_wszName,                            // Name
-    &CLSID_RTVC_VPP_FrameSkippingFilter,  // CLSID
+    &CLSID_VPP_FrameSkippingFilter,       // CLSID
     FrameSkippingFilter::CreateInstance,  // Method to create an instance of MyComponent
     NULL,                                 // Initialization function
     &FilterInfo                           // Set-up information (for filters)

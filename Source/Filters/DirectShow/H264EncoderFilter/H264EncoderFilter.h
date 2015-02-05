@@ -39,7 +39,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 class ICodecv2;
 
 // {28D61FDF-2646-422D-834C-EFFF45884A36}
-static const GUID CLSID_RTVC_VPP_H264Encoder = 
+static const GUID CLSID_VPP_H264Encoder = 
 { 0x28d61fdf, 0x2646, 0x422d, { 0x83, 0x4c, 0xef, 0xff, 0x45, 0x88, 0x4a, 0x36 } };
 
 // {8B7A757C-EE7D-4D7A-A9E2-B318A9EEB53E}

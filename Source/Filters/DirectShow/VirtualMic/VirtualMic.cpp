@@ -47,7 +47,7 @@ CUnknown * WINAPI VirtualMicSource::CreateInstance(LPUNKNOWN lpunk, HRESULT *phr
 }
 
 VirtualMicSource::VirtualMicSource(LPUNKNOWN lpunk, HRESULT *phr) :
-CSource(NAME("CSIR VPP Virtual Mic"), lpunk, CLSID_CSIR_VPP_VirtualMic)
+CSource(NAME("CSIR VPP Virtual Mic"), lpunk, CLSID_VPP_VirtualMic)
 {
   ASSERT(phr);
   CAutoLock cAutoLock(&m_cStateLock);

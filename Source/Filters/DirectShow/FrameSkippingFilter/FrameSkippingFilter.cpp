@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Shared/StringUtil.h>
 
 FrameSkippingFilter::FrameSkippingFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-  : CTransInPlaceFilter(NAME("CSIR VPP Frame Skipping Filter"), pUnk, CLSID_RTVC_VPP_FrameSkippingFilter, pHr, false),
+  : CTransInPlaceFilter(NAME("CSIR VPP Frame Skipping Filter"), pUnk, CLSID_VPP_FrameSkippingFilter, pHr, false),
   m_uiSkipFrameNumber(0),
   m_uiTotalFrames(0),
   m_uiCurrentFrame(0)

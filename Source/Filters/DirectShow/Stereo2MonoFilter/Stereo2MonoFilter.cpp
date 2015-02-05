@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Shared/StringUtil.h>
 
 Stereo2MonoFilter::Stereo2MonoFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-  : CCustomBaseFilter(NAME("CSIR RTVC Stereo2Mono Filter"), pUnk, CLSID_RTVCStereo2MonoFilter),
+  : CCustomBaseFilter(NAME("CSIR RTVC Stereo2Mono Filter"), pUnk, CLSID_VPP_Stereo2MonoFilter),
   m_channel(0),
   m_nBitsPerSample(8),
   m_nSamplesPerSecond(0)

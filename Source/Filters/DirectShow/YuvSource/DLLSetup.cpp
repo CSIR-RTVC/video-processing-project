@@ -4,7 +4,7 @@ MODULE				: DLLSetup
 
 FILE NAME			: DLLSetup.cpp
 
-DESCRIPTION			: 
+DESCRIPTION			:
 
 LICENSE: Software License Agreement (BSD License)
 
@@ -56,7 +56,7 @@ const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 };
 
 
-const AMOVIESETUP_PIN sudOutputPinBitmap = 
+const AMOVIESETUP_PIN sudOutputPinBitmap =
 {
   L"Output",      // Obsolete, not used.
   FALSE,          // Is this pin rendered?
@@ -71,11 +71,11 @@ const AMOVIESETUP_PIN sudOutputPinBitmap =
 
 const AMOVIESETUP_FILTER sudPushSourceBitmap =
 {
-  &CLSID_YUVSource,		// Filter CLSID
-  g_wszYuvSource,			// String name
-  MERIT_NORMAL,       // Filter merit
-  1,                      // Number pins
-  &sudOutputPinBitmap     // Pin details
+  &CLSID_VPP_YUVSource, // Filter CLSID
+  g_wszYuvSource,       // String name
+  MERIT_NORMAL,         // Filter merit
+  1,                    // Number pins
+  &sudOutputPinBitmap   // Pin details
 };
 
 
@@ -84,26 +84,26 @@ const AMOVIESETUP_FILTER sudPushSourceBitmap =
 // being created. The class factory will call the static CreateInstance.
 // We provide a set of filters in this one DLL.
 
-CFactoryTemplate g_Templates[] = 
+CFactoryTemplate g_Templates[] =
 {
-  { 
-    g_wszYuvSource,						// Name
-      &CLSID_YUVSource,						// CLSID
-      YuvSourceFilter::CreateInstance,	// Method to create an instance of MyComponent
-      NULL,									// Initialization function
-      &sudPushSourceBitmap				    // Set-up information (for filters)
+  {
+    g_wszYuvSource,                     // Name
+    &CLSID_VPP_YUVSource,             // CLSID
+    YuvSourceFilter::CreateInstance,  // Method to create an instance of MyComponent
+    NULL,                             // Initialization function
+    &sudPushSourceBitmap              // Set-up information (for filters)
   },
   // This entry is for the property page.
-  { 
+  {
     L"YUV Source Filter Properties",
-      &CLSID_YUVProperties,
-      YuvProperties::CreateInstance, 
-      NULL, 
-      NULL
-    }
+    &CLSID_YUVProperties,
+    YuvProperties::CreateInstance,
+    NULL,
+    NULL
+  }
 };
 
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 
 
@@ -116,12 +116,12 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 STDAPI DllRegisterServer()
 {
-  return AMovieDllRegisterServer2( TRUE );
+  return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-  return AMovieDllRegisterServer2( FALSE );
+  return AMovieDllRegisterServer2(FALSE);
 }
 
 //
@@ -129,8 +129,8 @@ STDAPI DllUnregisterServer()
 //
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
-BOOL APIENTRY DllMain(HANDLE hModule, 
-  DWORD  dwReason, 
+BOOL APIENTRY DllMain(HANDLE hModule,
+  DWORD  dwReason,
   LPVOID lpReserved)
 {
   return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);

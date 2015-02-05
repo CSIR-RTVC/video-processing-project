@@ -79,11 +79,11 @@ const AMOVIESETUP_PIN AMSPinVCam =
 
 const AMOVIESETUP_FILTER AMSFilterVCam =
 {
-  &CLSID_VPP_VirtualCam,  // Filter CLSID
-  L"Virtual Cam",         // String name
-  MERIT_DO_NOT_USE,       // Filter merit
-  1,                      // Number pins
-  &AMSPinVCam             // Pin details
+  &CLSID_VPP_VirtualCam,    // Filter CLSID
+  L"CSIR VPP Virtual Cam",  // String name
+  MERIT_DO_NOT_USE,         // Filter merit
+  1,                        // Number pins
+  &AMSPinVCam               // Pin details
 };
 
 CFactoryTemplate g_Templates[] =

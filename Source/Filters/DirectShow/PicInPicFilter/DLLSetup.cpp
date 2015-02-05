@@ -41,29 +41,29 @@ static const WCHAR g_wszName[] = L"CSIR VPP Picture in Picture Filter";   /// A 
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-	&CLSID_PicInPicFilter,			// CLSID
-	g_wszName,							// Name
-	MERIT_DO_NOT_USE,					// Merit
-	0,									// Number of AMOVIESETUP_PIN structs
-	NULL								// Pin registration information.
+  &CLSID_VPP_PicInPicFilter,  // CLSID
+  g_wszName,                  // Name
+  MERIT_DO_NOT_USE,           // Merit
+  0,                          // Number of AMOVIESETUP_PIN structs
+  NULL                        // Pin registration information.
 };
 
 CFactoryTemplate g_Templates[] = 
 {
-	{ 
-		g_wszName,						// Name
-		&CLSID_PicInPicFilter,			// CLSID
-		PicInPicFilter::CreateInstance,	// Method to create an instance of MyComponent
-		NULL,							// Initialization function
-		&FilterInfo						// Set-up information (for filters)
-	},
-	// This entry is for the property page.
-	{ 
-		L"Picture in picture Properties",
-		&CLSID_PicInPicProperties,
-		PicInPicProperties::CreateInstance, 
-		NULL, NULL
-	}
+  { 
+    g_wszName,                      // Name
+    &CLSID_VPP_PicInPicFilter,      // CLSID
+    PicInPicFilter::CreateInstance, // Method to create an instance of MyComponent
+    NULL,                           // Initialization function
+    &FilterInfo                     // Set-up information (for filters)
+  },
+  // This entry is for the property page.
+  { 
+    L"Picture in picture Properties",
+    &CLSID_PicInPicProperties,
+    PicInPicProperties::CreateInstance, 
+    NULL, NULL
+  }
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   

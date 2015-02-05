@@ -38,10 +38,10 @@ SET(REGISTER_DS_FILTERS false)
 
 # NOTE: this has many additional dependencies such as boost, glog, LiveMediaExt, cpp-util
 # RtspSinkFilter relies on LiveMediaExt
-SET(BUILD_RTSP_SINK_FILTER false)
+SET(BUILD_RTSP_SINK_FILTER true)
 
 # Opus
-SET(OPUS_SUPPORT false)
+SET(OPUS_SUPPORT true)
 
 IF (BUILD_RTSP_SINK_FILTER)
 message("LiveMediaExt: $ENV{LIVE_MEDIA_EXT_ROOT}")

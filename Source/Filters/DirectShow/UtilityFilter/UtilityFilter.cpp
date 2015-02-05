@@ -43,7 +43,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using namespace Gdiplus;
 
 UtilityFilter::UtilityFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-  : CTransInPlaceFilter(NAME("CSIR RTVC Utility Filter"), pUnk, CLSID_RTVC_UtilityFilter, pHr, false),
+  : CTransInPlaceFilter(NAME("CSIR RTVC Utility Filter"), pUnk, CLSID_VPP_UtilityFilter, pHr, false),
   //m_bIsAdvertType(false),
   m_dEstimatedFramerate(0.0),
   m_bSeenFirstFrame(false),

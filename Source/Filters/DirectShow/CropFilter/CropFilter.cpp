@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicCropperRGB32Impl.h>
 
 CropFilter::CropFilter()
-  : CCustomBaseFilter(NAME("CSIR VPP Crop Filter"), 0, CLSID_CropFilter),
+  : CCustomBaseFilter(NAME("CSIR VPP Crop Filter"), 0, CLSID_VPP_CropFilter),
   m_pCropper(NULL),
   m_pCropBuffer(NULL),
   m_nBytesPerPixel(BYTES_PER_PIXEL_RGB24),

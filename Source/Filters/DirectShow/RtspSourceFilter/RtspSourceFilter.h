@@ -56,7 +56,7 @@ class MediaSubsession;
 #define STREAM_USING_TCP	"streamusingtcp"
 
 // {CF5878AC-78F0-4544-83B9-A940E20D9690}
-static const GUID CLSID_RTVC_RtspOsSourceFilter = 
+static const GUID CLSID_VPP_RtspSourceFilter = 
 { 0xcf5878ac, 0x78f0, 0x4544, { 0x83, 0xb9, 0xa9, 0x40, 0xe2, 0xd, 0x96, 0x90 } };
 
 // {3955BE86-A1E9-4fa3-8654-623D73DD2F29}
