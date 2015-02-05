@@ -40,7 +40,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #pragma warning(pop)      // restore original warning level
 
 // {D180F1D5-7E2E-4f45-A7C8-CACFD17178CD}
-static const GUID CLSID_CSIR_VPP_VirtualMic =
+static const GUID CLSID_VPP_VirtualMic =
 { 0xd180f1d5, 0x7e2e, 0x4f45, { 0xa7, 0xc8, 0xca, 0xcf, 0xd1, 0x71, 0x78, 0xcd } };
 
 #define DECLARE_PTR(type, ptr, expr) type* ptr = (type*)(expr);

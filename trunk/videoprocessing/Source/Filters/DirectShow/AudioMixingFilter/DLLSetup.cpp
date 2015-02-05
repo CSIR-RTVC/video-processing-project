@@ -41,29 +41,29 @@ static const WCHAR g_wszName[] = L"CSIR VPP Audio Mixer";   /// A name for the f
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-	&CLSID_AudioMixingFilter,			// CLSID
-	g_wszName,							// Name
-	MERIT_DO_NOT_USE,					// Merit
-	0,									// Number of AMOVIESETUP_PIN structs
-	NULL								// Pin registration information.
+  &CLSID_VPP_AudioMixingFilter, // CLSID
+  g_wszName,                    // Name
+  MERIT_DO_NOT_USE,             // Merit
+  0,                            // Number of AMOVIESETUP_PIN structs
+  NULL                          // Pin registration information.
 };
 
 CFactoryTemplate g_Templates[] = 
 {
-	{ 
-		g_wszName,						// Name
-		&CLSID_AudioMixingFilter,		// CLSID
-		AudioMixingFilter::CreateInstance,	// Method to create an instance of MyComponent
-		NULL,							// Initialization function
-		&FilterInfo						// Set-up information (for filters)
-	},
-	// This entry is for the property page.
-	{ 
-		L"Audio Mixing Properties",
-		&CLSID_AudioMixingProperties,
-		AudioMixingProperties::CreateInstance, 
-		NULL, NULL
-	}
+  { 
+    g_wszName,                          // Name
+    &CLSID_VPP_AudioMixingFilter,       // CLSID
+    AudioMixingFilter::CreateInstance,  // Method to create an instance of MyComponent
+    NULL,                               // Initialization function
+    &FilterInfo                         // Set-up information (for filters)
+  },
+  // This entry is for the property page.
+  { 
+    L"Audio Mixing Properties",
+    &CLSID_AudioMixingProperties,
+    AudioMixingProperties::CreateInstance, 
+    NULL, NULL
+  }
 };
 
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   

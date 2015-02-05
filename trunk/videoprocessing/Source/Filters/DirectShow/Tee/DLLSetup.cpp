@@ -4,8 +4,8 @@ MODULE				: DLLSetup
 
 FILE NAME			: DLLSetup.cpp
 
-DESCRIPTION			: 
-					  
+DESCRIPTION			:
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2008 - 2012, CSIR
@@ -41,41 +41,41 @@ static const WCHAR g_wszName[] = L"CSIR VPP Tee Filter";   /// A name for the fi
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-	&CLSID_RtvcTee, // CLSID
-	g_wszName,							// Name
-	MERIT_DO_NOT_USE,					// Merit
-	0,									// Number of AMOVIESETUP_PIN structs
-	NULL								// Pin registration information.
+  &CLSID_VPP_Tee,   // CLSID
+  g_wszName,        // Name
+  MERIT_DO_NOT_USE, // Merit
+  0,                // Number of AMOVIESETUP_PIN structs
+  NULL              // Pin registration information.
 };
 
-CFactoryTemplate g_Templates[1] = 
+CFactoryTemplate g_Templates[1] =
 {
-	{ 
-		g_wszName,						// Name
-		&CLSID_RtvcTee,					// CLSID
-		RtvcTee::CreateInstance,		// Method to create an instance of MyComponent
-		NULL,							// Initialization function
-		&FilterInfo						// Set-up information (for filters)
-	}
+  {
+    g_wszName,                // Name
+    &CLSID_VPP_Tee,           // CLSID
+    RtvcTee::CreateInstance,  // Method to create an instance of MyComponent
+    NULL,                     // Initialization function
+    &FilterInfo               // Set-up information (for filters)
+  }
 };
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 //////////////////////////////////////////////////////////////////////////
 // Functions needed by the DLL, for registration.
 
 STDAPI DllRegisterServer(void)
 {
-	return AMovieDllRegisterServer2(TRUE);
+  return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-	return AMovieDllRegisterServer2(FALSE);
+  return AMovieDllRegisterServer2(FALSE);
 }
 
 //DLL Entry point
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-	return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
+  return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }

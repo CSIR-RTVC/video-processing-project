@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <DirectShow/MultiIOBaseFilter.h>
 
 // {2BA06815-01F7-43fd-B1F3-55354400E849}
-static const GUID CLSID_RtvcTee = 
+static const GUID CLSID_VPP_Tee = 
 { 0x2ba06815, 0x1f7, 0x43fd, { 0xb1, 0xf3, 0x55, 0x35, 0x44, 0x0, 0xe8, 0x49 } };
 
 /**

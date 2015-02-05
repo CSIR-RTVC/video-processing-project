@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Filters/DirectShow/FilterParameters.h>
 
 // {48E4D730-389D-4bdc-BEC1-F178FA6DCDBA}
-static const GUID CLSID_VideoMixingFilter = 
+static const GUID CLSID_VPP_VideoMixingFilter = 
 { 0x48e4d730, 0x389d, 0x4bdc, { 0xbe, 0xc1, 0xf1, 0x78, 0xfa, 0x6d, 0xcd, 0xba } };
 
 // {EECA4B39-B8A9-4d38-A4AD-37D091C47403}

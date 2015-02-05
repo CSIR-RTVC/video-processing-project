@@ -5,7 +5,7 @@ static const GUID CLSID_RtspSinkProperties =
 { 0x2ec610e7, 0x23c4, 0x4e84, { 0xa3, 0xb0, 0xef, 0xa4, 0x0, 0x35, 0x15, 0x18 } };
 
 // {5A70FE90-6D23-40BE-B94D-365DCC0436EA}
-static const GUID CLSID_CSIR_VPP_RtspSinkFilter =
+static const GUID CLSID_VPP_RtspSinkFilter =
 { 0x5a70fe90, 0x6d23, 0x40be, { 0xb9, 0x4d, 0x36, 0x5d, 0xcc, 0x4, 0x36, 0xea } };
 
 // TODO: LJ: copied from amr_types.h ... rather include it somewhere?

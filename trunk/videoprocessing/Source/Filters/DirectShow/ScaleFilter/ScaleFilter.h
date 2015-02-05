@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Filters/DirectShow/FilterParameters.h>
 
 // {60E0821D-9E6C-48f4-8E1C-1B25E67488F8}
-static const GUID CLSID_ScaleFilter =
+static const GUID CLSID_VPP_ScaleFilter =
 { 0x60e0821d, 0x9e6c, 0x48f4, { 0x8e, 0x1c, 0x1b, 0x25, 0xe6, 0x74, 0x88, 0xf8 } };
 
 // {1DE541CE-7FF7-47be-9CE7-055E6C2BD53F}

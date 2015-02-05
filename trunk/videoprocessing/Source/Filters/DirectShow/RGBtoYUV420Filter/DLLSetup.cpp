@@ -4,8 +4,8 @@ MODULE				: DLLSetup
 
 FILE NAME			: DLLSetup.cpp
 
-DESCRIPTION			: 
-					  
+DESCRIPTION			:
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2008 - 2014, CSIR
@@ -42,44 +42,44 @@ static const WCHAR g_wszName[] = L"CSIR VPP RGB 2 YUV420P Converter";   /// A na
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-	&CLSID_RGBtoYUV420ColorConverter, // CLSID
-	g_wszName,                        // Name
-	MERIT_DO_NOT_USE,                 // Merit
-	0,                                // Number of AMOVIESETUP_PIN structs
-	NULL                              // Pin registration information.
+  &CLSID_VPP_RGBtoYUV420ColorConverter, // CLSID
+  g_wszName,                            // Name
+  MERIT_DO_NOT_USE,                     // Merit
+  0,                                    // Number of AMOVIESETUP_PIN structs
+  NULL                                  // Pin registration information.
 };
 
-CFactoryTemplate g_Templates[2] = 
+CFactoryTemplate g_Templates[2] =
 {
-	{ 
-		g_wszName,                          // Name
-		&CLSID_RGBtoYUV420ColorConverter,   // CLSID
-		RGBtoYUV420Filter::CreateInstance,  // Method to create an instance of MyComponent
-		NULL,                               // Initialization function
-		&FilterInfo                         // Set-up information (for filters)
-	},
+  {
+    g_wszName,                              // Name
+    &CLSID_VPP_RGBtoYUV420ColorConverter,   // CLSID
+    RGBtoYUV420Filter::CreateInstance,      // Method to create an instance of MyComponent
+    NULL,                                   // Initialization function
+    &FilterInfo                             // Set-up information (for filters)
+  },
   // This entry is for the property page.
-  { 
+  {
     L"RGB2YUV Properties",
     &CLSID_RGBtoYUV420Properties,
-    RGB2YUVProperties::CreateInstance, 
+    RGB2YUVProperties::CreateInstance,
     NULL, NULL
   }
 };
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 STDAPI DllRegisterServer(void)
 {
-	return AMovieDllRegisterServer2(TRUE);
+  return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-	return AMovieDllRegisterServer2(FALSE);
+  return AMovieDllRegisterServer2(FALSE);
 }
 
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 BOOL APIENTRY DllMain(HANDLE hModule, DWORD dwReason, LPVOID lpReserved)
 {
-	return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
+  return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }

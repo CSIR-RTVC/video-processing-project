@@ -8,7 +8,7 @@ DESCRIPTION			: H.264 decoder filter registration
 
 LICENSE	: GNU Lesser General Public License
 
-Copyright (c) 2008 - 2012, CSIR
+Copyright (c) 2008 - 2015, CSIR
 All rights reserved.
 
 This program is free software: you can redistribute it and/or modify
@@ -76,18 +76,18 @@ const AMOVIESETUP_PIN sudPin[] =
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-  &CLSID_RTVC_VPP_H264Decoder,  // CLSID
-  g_wszName,                    // Name
-  MERIT_NORMAL,                 // Merit
-  2,                            // Number of AMOVIESETUP_PIN structs
-  sudPin                        // Pin registration information.
+  &CLSID_VPP_H264Decoder, // CLSID
+  g_wszName,              // Name
+  MERIT_NORMAL,           // Merit
+  2,                      // Number of AMOVIESETUP_PIN structs
+  sudPin                  // Pin registration information.
 };
 
 CFactoryTemplate g_Templates[1] = 
 {
   { 
     g_wszName,                            // Name
-      &CLSID_RTVC_VPP_H264Decoder,        // CLSID
+      &CLSID_VPP_H264Decoder,             // CLSID
       H264DecoderFilter::CreateInstance,  // Method to create an instance of MyComponent
       NULL,                               // Initialization function
       &FilterInfo                         // Set-up information (for filters)

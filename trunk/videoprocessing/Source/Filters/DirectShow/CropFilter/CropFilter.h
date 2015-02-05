@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Filters/DirectShow/FilterParameters.h>
 
 // {F5E69199-7AB2-40f0-BFC0-6938430F4F19}
-static const GUID CLSID_CropFilter =
+static const GUID CLSID_VPP_CropFilter =
 { 0xf5e69199, 0x7ab2, 0x40f0, { 0xbf, 0xc0, 0x69, 0x38, 0x43, 0xf, 0x4f, 0x19 } };
 
 // {2E164ADE-2F13-4ee9-BA95-28CF9AE23511}

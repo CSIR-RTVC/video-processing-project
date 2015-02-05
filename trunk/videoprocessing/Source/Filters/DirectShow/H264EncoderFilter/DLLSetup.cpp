@@ -77,11 +77,11 @@ const AMOVIESETUP_PIN sudPin[] =
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-  &CLSID_RTVC_VPP_H264Encoder,  // CLSID
-  g_wszName,                    // Name
-  MERIT_DO_NOT_USE,             // Merit
-  0,                            // Number of AMOVIESETUP_PIN structs
-  sudPin                        // Pin registration information.
+  &CLSID_VPP_H264Encoder,  // CLSID
+  g_wszName,               // Name
+  MERIT_DO_NOT_USE,        // Merit
+  0,                       // Number of AMOVIESETUP_PIN structs
+  sudPin                   // Pin registration information.
 };
 
 
@@ -89,7 +89,7 @@ CFactoryTemplate g_Templates[] =
 {
   {
     g_wszName,                            // Name
-      &CLSID_RTVC_VPP_H264Encoder,        // CLSID
+      &CLSID_VPP_H264Encoder,             // CLSID
       H264EncoderFilter::CreateInstance,  // Method to create an instance of MyComponent
       NULL,                               // Initialization function
       &FilterInfo                         // Set-up information (for filters)

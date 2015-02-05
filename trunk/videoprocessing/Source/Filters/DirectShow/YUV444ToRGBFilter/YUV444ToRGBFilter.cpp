@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/RealYUV444toRGB24Converter.h>
 
 YUV444toRGBFilter::YUV444toRGBFilter()
-  : CCustomBaseFilter(NAME("CSIR VPP YUV444I 2 RGB Converter"), 0, CLSID_YUV444toRGBColorConverter),
+  : CCustomBaseFilter(NAME("CSIR VPP YUV444I 2 RGB Converter"), 0, CLSID_VPP_YUV444toRGBColorConverter),
   m_pConverter(new RealYUV444toRGB24Converter(m_nInWidth, m_nInHeight)),
   m_nSizeUV(0),
   m_bInvert(true)

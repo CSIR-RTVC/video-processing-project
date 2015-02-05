@@ -50,7 +50,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #endif
 
 H264EncoderFilter::H264EncoderFilter()
-  :CCustomBaseFilter(NAME("CSIR VPP H264 Encoder"), 0, CLSID_RTVC_VPP_H264Encoder),
+  :CCustomBaseFilter(NAME("CSIR VPP H264 Encoder"), 0, CLSID_VPP_H264Encoder),
   m_pCodec(NULL),
   m_nFrameBitLimit(0),
   m_bNotifyOnIFrame(false),

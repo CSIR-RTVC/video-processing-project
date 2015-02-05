@@ -51,7 +51,7 @@ const DWORD MAX_SUPPORTED_PROFILE = 66;
 const DWORD MAX_SUPPORTED_LEVEL = 20;
 
 H264DecoderFilter::H264DecoderFilter()
-  : CCustomBaseFilter(NAME("CSIR VPP H264 Decoder"), 0, CLSID_RTVC_VPP_H264Decoder),
+  : CCustomBaseFilter(NAME("CSIR VPP H264 Decoder"), 0, CLSID_VPP_H264Decoder),
   m_pCodec(NULL),
   m_pSeqParamSet(NULL),
   m_uiSeqParamSetLen(0),

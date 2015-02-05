@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Image/PicConcatRGB32Impl.h>
 
 VideoMixingFilter::VideoMixingFilter()
-	:VideoMixingBase(NAME("CSIR VPP Video Mixer"), 0, CLSID_VideoMixingFilter),
+	:VideoMixingBase(NAME("CSIR VPP Video Mixer"), 0, CLSID_VPP_VideoMixingFilter),
 	m_pPicConcat(NULL)
 {
 	m_pSampleBuffers[0] = NULL;

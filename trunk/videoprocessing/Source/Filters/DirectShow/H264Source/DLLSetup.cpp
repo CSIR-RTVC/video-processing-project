@@ -69,11 +69,11 @@ const AMOVIESETUP_PIN sudOutputPinBitmap =
 
 const AMOVIESETUP_FILTER sudPushSourceBitmap =
 {
-  &CLSID_H264Source,		// Filter CLSID
-  g_wszH264Source,			// String name
-  MERIT_NORMAL,         // Filter merit
-  1,                    // Number pins
-  &sudOutputPinBitmap   // Pin details
+  &CLSID_VPP_H264Source,  // Filter CLSID
+  g_wszH264Source,        // String name
+  MERIT_NORMAL,           // Filter merit
+  1,                      // Number pins
+  &sudOutputPinBitmap     // Pin details
 };
 
 
@@ -86,8 +86,8 @@ CFactoryTemplate g_Templates[] =
 {
   { 
     g_wszH264Source,                    // Name
-      &CLSID_H264Source,                // CLSID
-      H264SourceFilter::CreateInstance,	// Method to create an instance of MyComponent
+      &CLSID_VPP_H264Source,            // CLSID
+      H264SourceFilter::CreateInstance, // Method to create an instance of MyComponent
       NULL,                             // Initialization function
       &sudPushSourceBitmap              // Set-up information (for filters)
   },

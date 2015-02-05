@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 
 // {DD467633-CFFA-4db7-8213-FE260668CD7F}
-static const GUID CLSID_RTVCTimeStampLoggerFilter = 
+static const GUID CLSID_VPP_TimeStampLoggerFilter = 
 { 0xdd467633, 0xcffa, 0x4db7, { 0x82, 0x13, 0xfe, 0x26, 0x6, 0x68, 0xcd, 0x7f } };
 
 // Forward declarations

@@ -47,21 +47,21 @@ static const WCHAR g_wszName[] = L"CSIR VPP Crop Filter";   /// A name for the f
 // The next bunch of structures define information for the class factory.
 AMOVIESETUP_FILTER FilterInfo =
 {
-  &CLSID_CropFilter,  // CLSID
-  g_wszName,          // Name
-  MERIT_DO_NOT_USE,   // Merit
-  0,                  // Number of AMOVIESETUP_PIN structs
-  NULL                // Pin registration information.
+  &CLSID_VPP_CropFilter,  // CLSID
+  g_wszName,              // Name
+  MERIT_DO_NOT_USE,       // Merit
+  0,                      // Number of AMOVIESETUP_PIN structs
+  NULL                    // Pin registration information.
 };
 
 CFactoryTemplate g_Templates[] =
 {
   {
-    g_wszName,                    // Name
-    &CLSID_CropFilter,            // CLSID
-    CropFilter::CreateInstance,   // Method to create an instance of MyComponent
-    NULL,                         // Initialization function
-    &FilterInfo                   // Set-up information (for filters)
+    g_wszName,                  // Name
+    &CLSID_VPP_CropFilter,      // CLSID
+    CropFilter::CreateInstance, // Method to create an instance of MyComponent
+    NULL,                       // Initialization function
+    &FilterInfo                 // Set-up information (for filters)
   },
   // This entry is for the property page.
   {

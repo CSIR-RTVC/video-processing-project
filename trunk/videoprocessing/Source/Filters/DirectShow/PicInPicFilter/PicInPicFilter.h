@@ -38,7 +38,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Filters/DirectShow/FilterParameters.h>
 
 // {31AD3B24-52E5-4227-B1D7-687AB061C2DE}
-static const GUID CLSID_PicInPicFilter = 
+static const GUID CLSID_VPP_PicInPicFilter = 
 { 0x31ad3b24, 0x52e5, 0x4227, { 0xb1, 0xd7, 0x68, 0x7a, 0xb0, 0x61, 0xc2, 0xde } };
 
 // {AA41A585-1DE0-43bd-8450-F04712130B6F}

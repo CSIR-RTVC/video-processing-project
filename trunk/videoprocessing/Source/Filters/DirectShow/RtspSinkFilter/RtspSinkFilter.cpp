@@ -15,7 +15,7 @@
 #define CHANNEL_ID 1
 
 RtspSinkFilter::RtspSinkFilter( IUnknown* pUnk, HRESULT* phr )
-  : CBaseFilter(NAME("CSIR VPP RTSP Sink Filter"), pUnk, &m_stateLock, CLSID_CSIR_VPP_RtspSinkFilter, phr),
+  : CBaseFilter(NAME("CSIR VPP RTSP Sink Filter"), pUnk, &m_stateLock, CLSID_VPP_RtspSinkFilter, phr),
   m_channelManager(CHANNEL_ID),
   m_pDsNetworkControlInterface(new DirectShowNetworkCodecControlInterface(this)),
   m_pFactory(new lme::SimpleRateAdaptationFactory()),

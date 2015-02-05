@@ -93,13 +93,13 @@ AMOVIESETUP_FILTER FilterInfo =
 
 CFactoryTemplate g_Templates[1] = 
 {
-	{ 
-		g_wszName,							          // Name
-    &CLSID_VPP_OpusDecoder, 			    // CLSID
-		OpusDecoderFilter::CreateInstance,	// Method to create an instance of MyComponent
-		NULL,								              // Initialization function
-		&FilterInfo							          // Set-up information (for filters)
-	}
+  { 
+    g_wszName,                          // Name
+    &CLSID_VPP_OpusDecoder,             // CLSID
+    OpusDecoderFilter::CreateInstance,  // Method to create an instance of MyComponent
+    NULL,                               // Initialization function
+    &FilterInfo                         // Set-up information (for filters)
+  }
 };
 int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);   
 

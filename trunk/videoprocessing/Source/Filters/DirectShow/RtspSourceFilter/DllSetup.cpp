@@ -4,8 +4,8 @@ MODULE				: DllSetup
 
 FILE NAME			: DllSetup.cpp
 
-DESCRIPTION			: 
-					  
+DESCRIPTION			:
+
 LICENSE: Software License Agreement (BSD License)
 
 Copyright (c) 2010, CSIR
@@ -49,30 +49,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // Filter setup data
 const AMOVIESETUP_MEDIATYPE sudOpPinTypes =
 {
-	&MEDIATYPE_Audio,       // Major type
-	&MEDIASUBTYPE_NULL      // Minor type
+  &MEDIATYPE_Audio,       // Major type
+  &MEDIASUBTYPE_NULL      // Minor type
 };
 
-const AMOVIESETUP_PIN sudOutputPinBitmapSet = 
+const AMOVIESETUP_PIN sudOutputPinBitmapSet =
 {
-	L"Output",      // Obsolete, not used.
-	FALSE,          // Is this pin rendered?
-	TRUE,           // Is it an output pin?
-	FALSE,          // Can the filter create zero instances?
-	FALSE,          // Does the filter create multiple instances?
-	&CLSID_NULL,    // Obsolete.
-	NULL,           // Obsolete.
-	1,              // Number of media types.
-	&sudOpPinTypes  // Pointer to media types.
+  L"Output",      // Obsolete, not used.
+  FALSE,          // Is this pin rendered?
+  TRUE,           // Is it an output pin?
+  FALSE,          // Can the filter create zero instances?
+  FALSE,          // Does the filter create multiple instances?
+  &CLSID_NULL,    // Obsolete.
+  NULL,           // Obsolete.
+  1,              // Number of media types.
+  &sudOpPinTypes  // Pointer to media types.
 };
 
-const AMOVIESETUP_FILTER sudAdvertSource=
+const AMOVIESETUP_FILTER sudAdvertSource =
 {
-	&CLSID_RTVC_RtspOsSourceFilter,	// Filter CLSID
-	g_wszFilterName,					// String name
-	MERIT_DO_NOT_USE,					// Filter merit
-	1,									// Number pins
-	&sudOutputPinBitmapSet				// Pin details
+  &CLSID_VPP_RtspSourceFilter,  // Filter CLSID
+  g_wszFilterName,              // String name
+  MERIT_DO_NOT_USE,             // Filter merit
+  1,                            // Number pins
+  &sudOutputPinBitmapSet        // Pin details
 };
 
 
@@ -81,26 +81,26 @@ const AMOVIESETUP_FILTER sudAdvertSource=
 // being created. The class factory will call the static CreateInstance.
 // We provide a set of filters in this one DLL.
 
-CFactoryTemplate g_Templates[] = 
+CFactoryTemplate g_Templates[] =
 {
-	{ 
-		g_wszFilterName,					// Name
-		&CLSID_RTVC_RtspOsSourceFilter,  // CLSID
-		RtspSourceFilter::CreateInstance,	// Method to create an instance of MyComponent
-		NULL,								// Initialization function
-		&sudAdvertSource					// Set-up information (for filters)
-	},
-	// This entry is for the property page.
-	{ 
-		L"Rtsp Properties",
-		&CLSID_RtspProperties,
-		RtspProperties::CreateInstance, 
-		NULL, NULL
-	}
+  {
+    g_wszFilterName,                  // Name
+    &CLSID_VPP_RtspSourceFilter,      // CLSID
+    RtspSourceFilter::CreateInstance, // Method to create an instance of MyComponent
+    NULL,                             // Initialization function
+    &sudAdvertSource                  // Set-up information (for filters)
+  },
+  // This entry is for the property page.
+  {
+    L"Rtsp Properties",
+    &CLSID_RtspProperties,
+    RtspProperties::CreateInstance,
+    NULL, NULL
+  }
 
 };
 
-int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);    
+int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 
 
@@ -113,12 +113,12 @@ int g_cTemplates = sizeof(g_Templates) / sizeof(g_Templates[0]);
 
 STDAPI DllRegisterServer()
 {
-	return AMovieDllRegisterServer2( TRUE );
+  return AMovieDllRegisterServer2(TRUE);
 }
 
 STDAPI DllUnregisterServer()
 {
-	return AMovieDllRegisterServer2( FALSE );
+  return AMovieDllRegisterServer2(FALSE);
 }
 
 //
@@ -126,10 +126,10 @@ STDAPI DllUnregisterServer()
 //
 extern "C" BOOL WINAPI DllEntryPoint(HINSTANCE, ULONG, LPVOID);
 
-BOOL APIENTRY DllMain(HANDLE hModule, 
-					  DWORD  dwReason, 
-					  LPVOID lpReserved)
+BOOL APIENTRY DllMain(HANDLE hModule,
+  DWORD  dwReason,
+  LPVOID lpReserved)
 {
-	return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
+  return DllEntryPoint((HINSTANCE)(hModule), dwReason, lpReserved);
 }
 

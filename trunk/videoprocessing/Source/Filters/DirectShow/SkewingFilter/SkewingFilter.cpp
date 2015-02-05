@@ -37,7 +37,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Shared/StringUtil.h>
 
 SkewingFilter::SkewingFilter(LPUNKNOWN pUnk, HRESULT *pHr)
-: CTransInPlaceFilter(NAME("CSIR RTVC Skewing Filter"), pUnk, CLSID_RTVCSkewingFilter, pHr, false),
+: CTransInPlaceFilter(NAME("CSIR RTVC Skewing Filter"), pUnk, CLSID_VPP_SkewingFilter, pHr, false),
   seenFirstFrame(false),
   previousTimestamp(0),
   add_time(0)

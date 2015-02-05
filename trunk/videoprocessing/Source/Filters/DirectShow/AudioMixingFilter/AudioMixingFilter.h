@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <deque>
 
 // {D4F39FA5-3E76-44fc-B8FE-FC62545BA730}
-static const GUID CLSID_AudioMixingFilter = 
+static const GUID CLSID_VPP_AudioMixingFilter = 
 { 0xd4f39fa5, 0x3e76, 0x44fc, { 0xb8, 0xfe, 0xfc, 0x62, 0x54, 0x5b, 0xa7, 0x30 } };
 
 // {D4F39FA5-3E76-44fc-B8FE-FC62545BA730}

@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <Filters/DirectShow/FilterParameters.h>
 
 // {66888CFF-359B-414b-BC20-CFD6D811209B}
-static const GUID CLSID_RotateFilter = 
+static const GUID CLSID_VPP_RotateFilter = 
 { 0x66888cff, 0x359b, 0x414b, { 0xbc, 0x20, 0xcf, 0xd6, 0xd8, 0x11, 0x20, 0x9b } };
 
 // {23C78FEE-5352-4408-914C-B81C98FFBED1}

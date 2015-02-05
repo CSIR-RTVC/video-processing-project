@@ -35,7 +35,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <Filters/DirectShow/FilterParameters.h>
 
 // {4F722923-7E4D-4263-926D-2A1F405B2619}
-static const GUID CLSID_RTVC_VPP_H264Decoder = 
+static const GUID CLSID_VPP_H264Decoder = 
 { 0x4f722923, 0x7e4d, 0x4263, { 0x92, 0x6d, 0x2a, 0x1f, 0x40, 0x5b, 0x26, 0x19 } };
 
 // Forward
