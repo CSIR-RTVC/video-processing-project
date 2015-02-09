@@ -51,8 +51,14 @@ DEFINE_GUID(IID_ICodecControlInterface ,
 #define INTERFACE   ICodecControlInterface
 DECLARE_INTERFACE_(ICodecControlInterface, IUnknown)
 {
+  /// Method to query frame bit limit
+  STDMETHOD(GetFramebitLimit)(int& uiFrameBitLimit) = 0;
   /// Method to set frame bit limit
-  STDMETHOD(SetFramebitLimit)(unsigned uiFrameBitLimit) = 0;
+  STDMETHOD(SetFramebitLimit)(int uiFrameBitLimit) = 0;
+  /// Method to query group id
+  STDMETHOD(GetGroupId)(int& iGroupId) = 0;
+  /// Method to set group id
+  STDMETHOD(SetGroupId)(int iGroupId) = 0;
   /// Method to trigger IDR frame
   STDMETHOD(GenerateIdr)() = 0;
 };

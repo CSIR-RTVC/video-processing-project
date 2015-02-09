@@ -691,19 +691,33 @@ STDMETHODIMP H264EncoderFilter::GetParameterSettings( char* szResult, int nSize 
   }
 }
 
-STDMETHODIMP H264EncoderFilter::SetFramebitLimit(unsigned uiFrameBitLimit)
+STDMETHODIMP H264EncoderFilter::GetFramebitLimit(int& iFrameBitLimit)
+{
+  iFrameBitLimit = m_nFrameBitLimit;
+  return S_OK;
+}
+
+STDMETHODIMP H264EncoderFilter::SetFramebitLimit(int iFrameBitLimit)
 {
   // lock filter so that it can not be reconfigured during a code operation
   CAutoLock lck(&m_csCodec);
 
-  if (uiFrameBitLimit == 0)
+  if (iFrameBitLimit <= 0)
   {
     return E_FAIL;
   }
-  char frameBitLimit[10];
-  itoa(uiFrameBitLimit, frameBitLimit, 10);
-  HRESULT hr = m_pCodec->SetParameter(FRAME_BIT_LIMIT, frameBitLimit);
-  return hr;
+  m_nFrameBitLimit = iFrameBitLimit;
+  return S_OK;
+}
+
+STDMETHODIMP H264EncoderFilter::GetGroupId(int& iGroupId)
+{
+  return E_NOTIMPL;
+}
+
+STDMETHODIMP H264EncoderFilter::SetGroupId(int iGroupId)
+{
+  return E_NOTIMPL;
 }
 
 STDMETHODIMP H264EncoderFilter::GenerateIdr()

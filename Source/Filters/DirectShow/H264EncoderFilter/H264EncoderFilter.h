@@ -114,9 +114,21 @@ public:
    */
   STDMETHODIMP GetParameterSettings( char* szResult, int nSize );
   /**
+   * @brief Getter for frame bit limit
+   */
+  STDMETHODIMP GetFramebitLimit(int& iFrameBitLimit);
+  /**
    * @brief Overridden from ICodecControlInterface
    */
-  STDMETHODIMP SetFramebitLimit(unsigned uiFrameBitLimit);
+  STDMETHODIMP SetFramebitLimit(int iFrameBitLimit);
+  /**
+   * @brief Method to query group id
+   */
+  STDMETHODIMP GetGroupId(int& iGroupId);
+  /**
+   * @brief Method to set group id
+   */
+  STDMETHODIMP SetGroupId(int iGroupId);
   /**
    * @brief Overridden from ICodecControlInterface
    */
