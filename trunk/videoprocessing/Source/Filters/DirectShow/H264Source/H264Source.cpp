@@ -252,20 +252,33 @@ bool H264SourceFilter::parseParameterSets()
     nResult = m_pCodec->Decode(m_pPicParamSet, m_uiPicParamSetLen * 8, buffer);
     if (nResult)
     {
-      // success
-      int len = 0;
-      int res = m_pCodec->GetParameter("width", &len, buffer);
-      ASSERT (res);
-      buffer[len] = 0;
-      m_iWidth = atoi((const char*)buffer);
-      res = m_pCodec->GetParameter("height", &len, buffer);
-      ASSERT (res);
-      buffer[len] = 0;
-      m_iHeight = atoi((const char*)buffer);
-      std::ostringstream ostr;
-      ostr << m_iWidth << "x" << m_iHeight;
-      m_sDimensions = ostr.str();
-      return true;
+      m_pCodec->SetParameter((char *)("generate param set on open"), "0");
+      if (!m_pCodec->Open())
+      {
+        //Houston: we have a failure
+        char* szErrorStr = m_pCodec->GetErrorStr();
+        printf("%s\n", szErrorStr);
+        // report the error to the main application
+        SetLastError(szErrorStr, true);
+        return false;
+      }
+      else
+      {
+        // success
+        int len = 0;
+        int res = m_pCodec->GetParameter("width", &len, buffer);
+        ASSERT(res);
+        buffer[len] = 0;
+        m_iWidth = atoi((const char*)buffer);
+        res = m_pCodec->GetParameter("height", &len, buffer);
+        ASSERT(res);
+        buffer[len] = 0;
+        m_iHeight = atoi((const char*)buffer);
+        std::ostringstream ostr;
+        ostr << m_iWidth << "x" << m_iHeight;
+        m_sDimensions = ostr.str();
+        return true;
+      }
     }
     else
     {
