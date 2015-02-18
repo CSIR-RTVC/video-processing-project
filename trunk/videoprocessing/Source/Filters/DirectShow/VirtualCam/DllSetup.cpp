@@ -89,7 +89,7 @@ const AMOVIESETUP_FILTER AMSFilterVCam =
 CFactoryTemplate g_Templates[] =
 {
   {
-    L"Virtual Cam",
+    L"CSIR VPP Virtual Cam",
     &CLSID_VPP_VirtualCam,
     CVCam::CreateInstance,
     NULL,
