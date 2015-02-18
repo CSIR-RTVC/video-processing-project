@@ -39,7 +39,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <wmcodecdsp.h>
 
 H264OutputPin::H264OutputPin(HRESULT *phr, H264SourceFilter* pFilter)
-  : CSourceStream(NAME("CSIR RTVC H264 Source"), phr, pFilter, L"Out"),
+  : CSourceStream(NAME("CSIR VPP H264 Source"), phr, pFilter, L"Out"),
   m_pFilter(pFilter),
   m_iCurrentFrame(0),
   m_rtFrameLength(FPS_30) 
