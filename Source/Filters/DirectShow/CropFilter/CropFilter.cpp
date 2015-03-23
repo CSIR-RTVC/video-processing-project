@@ -318,7 +318,7 @@ void CropFilter::RecalculateFilterParameters()
     m_nPadding = 0;
   }
 #else
-  m_nStride = ((((m_nOutWidth * 8 * m_nBitCount) + 31) & ~31) >> 3);
+  m_nStride = ((((m_nOutWidth * m_nBitCount) + 31) & ~31) >> 3);
   m_nPadding = m_nStride - (m_nBytesPerPixel * m_nOutWidth);
 #endif
 }
