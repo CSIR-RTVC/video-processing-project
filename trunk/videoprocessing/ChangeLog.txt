@@ -1,3 +1,6 @@
+2015/12/08
+- Bug report in picture in picture filter by Russ. Unitialised mem caused crash in release mode when connecting to 1st input pin of PIP filter. 
+
 ----------------------------- 2014/12/17 - RELEASE v1.2.1 -------------------------------------------------------------------------------------------------
 
 2014/11/13

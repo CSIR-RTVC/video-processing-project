@@ -51,6 +51,7 @@ m_uiEndOfStreamCount(0),
 m_uiBeginFlushCount(0),
 m_uiEndFlushCount(0)
 {
+  memset(&m_VideoInHeader, 0, sizeof(VIDEOINFOHEADER) * 2);
 	//Hack virtual method of subclass can't be called from base class contructor, hence must be called in child contructor
 	Initialise();
 }

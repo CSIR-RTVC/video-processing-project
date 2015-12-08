@@ -40,9 +40,16 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 PicInPicFilter::PicInPicFilter()
 	:VideoMixingBase(NAME("CSIR VPP Picture in Picture Filter"), 0, CLSID_VPP_PicInPicFilter),
+  m_nTargetWidth(0),
+  m_nTargetHeight(0),
+  m_nSubPictureWidth(0),
+  m_nSubPictureHeight(0),
+  m_nCustomOffsetX(0),
+  m_nCustomOffsetY(0),
 	m_pPicInPic(NULL),
 	m_pTargetPicScaler(NULL),
 	m_pSubPicScaler(NULL),
+  m_nBytesPerPixel(0.0),
   m_pBufferForScaledSecondaryImage(NULL)
 {
 	m_pSampleBuffers[0] = NULL;
@@ -395,66 +402,72 @@ void PicInPicFilter::reconfigure()
   // Check sub picture dimensions.
   int iSecondaryWidth = pBmih2->biWidth;
   int iSecondaryHeight = pBmih2->biHeight;
-  int iSubWidth = 0;
-  int iSubHeight = 0;
-  if (!((m_nSubPictureWidth > 0 && m_nSubPictureWidth < getOutputWidth()) &&
-       (m_nSubPictureHeight > 0 && m_nSubPictureHeight < getOutputHeight()))
-    )
+  // check if pin of subpicture has been connected
+  // we can only configure the pip once both pins have been connected
+  if (iSecondaryWidth > 0)
   {
-    m_nSubPictureWidth = iSecondaryWidth;
-    m_nSubPictureHeight = iSecondaryHeight;
-    // if the inner picture is bigger than half the target picture, scale it by a factor of 0.4
-    // TODO: do we need to scale to multiples of 4?
-    if (m_nSubPictureWidth > getOutputWidth() / 2)
-      m_nSubPictureWidth = m_nSubPictureWidth * 0.4;
-    if (m_nSubPictureHeight > getOutputHeight() / 2)
-      m_nSubPictureHeight = m_nSubPictureHeight * 0.4;
-  }
-
-  if (iSecondaryWidth != m_nSubPictureWidth || iSecondaryHeight != m_nSubPictureHeight)
-  {
-    ASSERT(m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24);
-    if (!m_pSubPicScaler)
+    ASSERT(iSecondaryHeight > 0);
+    int iSubWidth = 0;
+    int iSubHeight = 0;
+    if (!((m_nSubPictureWidth > 0 && m_nSubPictureWidth < getOutputWidth()) &&
+      (m_nSubPictureHeight > 0 && m_nSubPictureHeight < getOutputHeight()))
+      )
     {
-      m_pSubPicScaler = new PicScalerRGB24Impl();
+      m_nSubPictureWidth = iSecondaryWidth;
+      m_nSubPictureHeight = iSecondaryHeight;
+      // if the inner picture is bigger than half the target picture, scale it by a factor of 0.4
+      // TODO: do we need to scale to multiples of 4?
+      if (m_nSubPictureWidth > getOutputWidth() / 2)
+        m_nSubPictureWidth = m_nSubPictureWidth * 0.4;
+      if (m_nSubPictureHeight > getOutputHeight() / 2)
+        m_nSubPictureHeight = m_nSubPictureHeight * 0.4;
     }
-    m_pSubPicScaler->SetInDimensions(iSecondaryWidth, iSecondaryHeight);
-    m_pSubPicScaler->SetOutDimensions(m_nSubPictureWidth, m_nSubPictureHeight);
 
-    // recreate picture buffer
-    
-    if (m_pBufferForScaledSecondaryImage)
+    if (iSecondaryWidth != m_nSubPictureWidth || iSecondaryHeight != m_nSubPictureHeight)
     {
-      delete m_pBufferForScaledSecondaryImage;
-      m_pBufferForScaledSecondaryImage = NULL;
-    }
-    m_pBufferForScaledSecondaryImage = new BYTE[m_nSubPictureWidth * m_nSubPictureHeight * m_nBytesPerPixel];
-  }
-  else
-  {
-    if (m_pSubPicScaler)
-    {
-      delete m_pSubPicScaler;
-      m_pSubPicScaler = NULL;
-    }
-    if (m_pBufferForScaledSecondaryImage)
-    {
-      delete[]m_pBufferForScaledSecondaryImage;
-      m_pBufferForScaledSecondaryImage = NULL;
-    }
-  }
+      ASSERT(m_nBytesPerPixel == BYTES_PER_PIXEL_RGB24);
+      if (!m_pSubPicScaler)
+      {
+        m_pSubPicScaler = new PicScalerRGB24Impl();
+      }
+      m_pSubPicScaler->SetInDimensions(iSecondaryWidth, iSecondaryHeight);
+      m_pSubPicScaler->SetOutDimensions(m_nSubPictureWidth, m_nSubPictureHeight);
 
-  // Check validity of sub picture position else use default value
-  if (!((m_nCustomOffsetX + m_nSubPictureWidth < getOutputWidth()) &&
-    (m_nCustomOffsetY + m_nSubPictureHeight < getOutputHeight())))
-  {
-    // otherwise just use 10 pixels
-    m_nCustomOffsetX = 10;
-    m_nCustomOffsetY = 10;
-  }
+      // recreate picture buffer
 
-  // Setup the picture in picture
-  m_pPicInPic->SetDimensions(getOutputWidth(), getOutputHeight());
-  m_pPicInPic->SetSubDimensions(m_nSubPictureWidth, m_nSubPictureHeight);
-  m_pPicInPic->SetPos(m_nCustomOffsetX, m_nCustomOffsetY);
+      if (m_pBufferForScaledSecondaryImage)
+      {
+        delete m_pBufferForScaledSecondaryImage;
+        m_pBufferForScaledSecondaryImage = NULL;
+      }
+      m_pBufferForScaledSecondaryImage = new BYTE[m_nSubPictureWidth * m_nSubPictureHeight * m_nBytesPerPixel];
+    }
+    else
+    {
+      if (m_pSubPicScaler)
+      {
+        delete m_pSubPicScaler;
+        m_pSubPicScaler = NULL;
+      }
+      if (m_pBufferForScaledSecondaryImage)
+      {
+        delete[]m_pBufferForScaledSecondaryImage;
+        m_pBufferForScaledSecondaryImage = NULL;
+      }
+    }
+
+    // Check validity of sub picture position else use default value
+    if (!((m_nCustomOffsetX + m_nSubPictureWidth < getOutputWidth()) &&
+      (m_nCustomOffsetY + m_nSubPictureHeight < getOutputHeight())))
+    {
+      // otherwise just use 10 pixels
+      m_nCustomOffsetX = 10;
+      m_nCustomOffsetY = 10;
+    }
+
+    // Setup the picture in picture
+    m_pPicInPic->SetDimensions(getOutputWidth(), getOutputHeight());
+    m_pPicInPic->SetSubDimensions(m_nSubPictureWidth, m_nSubPictureHeight);
+    m_pPicInPic->SetPos(m_nCustomOffsetX, m_nCustomOffsetY);
+  }
 }
